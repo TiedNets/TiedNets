@@ -55,3 +55,8 @@ docs/_build/
 
 # PyBuilder
 target/
+/MN_power.graphml
+/MN_com.graphml
+/MN_pow.graphml
+/datasets
+/log.txt
