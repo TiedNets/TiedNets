@@ -1,0 +1,5 @@
+conf_fpath = test_sets/ex_2a_full/run_sc_th_5.ini
+Time 0) 8 nodes unstable before the initial attack: ['C1', 'D1', 'D2', 'G1', 'R1', 'R2', 'R3', 'T1']
+Time 1) 0 nodes of network A failed because of initial attack: []
+Time 3) 4 nodes of network A failed for lack of intra support: ['D1', 'D2', 'G1', 'T1']
+Time 4) 4 nodes of network B failed for lack of inter support: ['C1', 'R1', 'R2', 'R3']

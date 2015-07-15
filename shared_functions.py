@@ -1,4 +1,4 @@
-__author__ = 'sturaroa'
+__author__ = 'Agostino Sturaro'
 
 import os
 import re
@@ -50,20 +50,24 @@ def query_yes_no(question, default="yes"):
 
 
 def setup_logging(
-        default_path='logging.json',
-        default_level=logging.INFO,  # used in case config file can't be found
+        log_conf_path='logging.json',
+        log_level=logging.INFO,  # used in case config file can't be found
         env_key='LOG_CFG'
 ):
-    path = default_path
+    log_conf_path = os.path.normpath(log_conf_path)
+    if os.path.isabs(log_conf_path) is False:
+        this_dir = os.path.dirname(__file__)
+        log_conf_path = os.path.join(this_dir, log_conf_path)
+
     value = os.getenv(env_key, None)
     if value:
-        path = value
-    if os.path.exists(path):
-        with open(path, 'rt') as f:
+        log_conf_path = value
+    if os.path.exists(log_conf_path):
+        with open(log_conf_path, 'rt') as f:
             config = json.load(f)
         logging.config.dictConfig(config)
     else:
-        logging.basicConfig(level=default_level)
+        logging.basicConfig(level=log_level)
 
 
 # access the ith column of whatever data structure numpy created
@@ -224,6 +228,8 @@ def mix(colors, markers, desired_cnt=None):
 
 
 def makedirs_clean(path, clean_subdirs=False, ask_confirmation=False):
+    path = os.path.normpath(path)
+
     if not os.path.exists(path):
         # print("dir does not exist")
         os.makedirs(path)
@@ -238,16 +244,13 @@ def makedirs_clean(path, clean_subdirs=False, ask_confirmation=False):
         # print("dir exists and is not empty")
         if ask_confirmation is False or query_yes_no('Output directory not empty, do you want to remove its files?\n'
                                                      'Path: ' + str(path)) is True:
-            prev_cwd = os.getcwd()
-            os.chdir(path)
             # remove all files in the directory, and optionally remove its subdirectories
             for fname in fnames:
-                if os.path.isfile(fname) is True:
-                    os.remove(fname)
+                fpath = os.path.join(path, fname)
+                if os.path.isfile(fpath) is True:
+                    os.remove(fpath)
                 elif clean_subdirs is True:
-                    # print(fname)
-                    shutil.rmtree(fname)
-            os.chdir(prev_cwd)
+                    shutil.rmtree(fpath)
 
 
 def ensure_dir_exists(path):

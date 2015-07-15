@@ -27,6 +27,6 @@
 
     "root": {
         "level": "DEBUG",
-        "handlers": ["log_file_handler"]
+        "handlers": ["console", "log_file_handler"]
     }
 }

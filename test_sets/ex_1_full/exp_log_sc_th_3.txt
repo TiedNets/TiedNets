@@ -1,0 +1,2 @@
+conf_fpath = test_sets/ex_1_full/run_sc_th_3.ini
+Time 1) 1 nodes of network A failed because of initial attack: ['T2']

@@ -1,0 +1,64 @@
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key attr.name="link_type" attr.type="string" for="edge" id="d5" />
+  <key attr.name="network" attr.type="string" for="node" id="d4" />
+  <key attr.name="role" attr.type="string" for="node" id="d3" />
+  <key attr.name="x" attr.type="double" for="node" id="d2" />
+  <key attr.name="y" attr.type="double" for="node" id="d1" />
+  <key attr.name="name" attr.type="string" for="graph" id="d0" />
+  <graph edgedefault="directed">
+    <data key="d0">Inter</data>
+    <node id="G1">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">generator</data>
+    </node>
+    <node id="T1">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">transmission_substation</data>
+    </node>
+    <node id="D1">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">distribution_substation</data>
+    </node>
+    <node id="D2">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">distribution_substation</data>
+    </node>
+    <node id="C1">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">controller</data>
+    </node>
+    <node id="R1">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">relay</data>
+    </node>
+    <node id="R2">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">relay</data>
+    </node>
+    <node id="R3">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">relay</data>
+    </node>
+    <edge source="G1" target="C1" />
+    <edge source="G2" target="C1" />
+    <edge source="T1" target="C1" />
+    <edge source="D1" target="C1" />
+    <edge source="D2" target="C1" />
+    <edge source="G1" target="R2" />
+    <edge source="T1" target="R1" />
+    <edge source="D1" target="R1" />
+    <edge source="D2" target="R3" />
+    <edge source="C1" target="D1" />
+    <edge source="R1" target="D1" />
+    <edge source="R2" target="D1" />
+    <edge source="R3" target="D2" />
+  </graph>
+</graphml>

@@ -1,3 +1,5 @@
+__author__ = 'Agostino Sturaro'
+
 import os
 import filecmp
 import shutil
@@ -5,7 +7,8 @@ import cascades_sim as cs
 import shared_functions as sf
 import networkx as nx
 
-__author__ = 'sturaroa'
+this_dir = os.path.dirname(__file__)
+logging_conf_fpath = os.path.join(this_dir, 'logging_base_conf.json')
 
 
 def test_choose_random_nodes():
@@ -24,11 +27,12 @@ def test_choose_random_nodes():
 
 def test_run_ex_1_realistic():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/run_realistic.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/exp_log_realistic.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_1_full/run_realistic.ini'
+    exp_log_fpath = 'test_sets/ex_1_full/exp_log_realistic.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -36,16 +40,17 @@ def test_run_ex_1_realistic():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/realistic'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/res_realistic')))
 
 
 def test_run_ex_1_kngc():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/run_kngc.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/exp_log_kngc.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_1_full/run_kngc.ini'
+    exp_log_fpath = 'test_sets/ex_1_full/exp_log_kngc.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -53,16 +58,17 @@ def test_run_ex_1_kngc():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/run_kngc'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/res_kngc')))
 
 
 def test_run_ex_1_sc_th_3():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/run_sc_th_3.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/exp_log_sc_th_3.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_1_full/run_sc_th_3.ini'
+    exp_log_fpath = 'test_sets/ex_1_full/exp_log_sc_th_3.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -70,16 +76,17 @@ def test_run_ex_1_sc_th_3():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/sc_th_3'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/res_sc_th_3')))
 
 
 def test_run_ex_1_sc_th_4():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/run_sc_th_4.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/exp_log_sc_th_4.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_1_full/run_sc_th_4.ini'
+    exp_log_fpath = 'test_sets/ex_1_full/exp_log_sc_th_4.txt'
 
     # when
+    os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -87,18 +94,17 @@ def test_run_ex_1_sc_th_4():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/sc_th_4'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/res_sc_th_4')))
 
 
 def test_run_ex_1_uniform():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_max_matching/run_uniform.ini')
-    exp_log_fpath = os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_max_matching/exp_log_uniform.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_1_max_matching/run_uniform.ini'
+    exp_log_fpath = 'test_sets/ex_1_max_matching/exp_log_uniform.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -106,18 +112,19 @@ def test_run_ex_1_uniform():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_max_matching/run_uniform'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_max_matching/res_uniform')))
 
 
 # tests for example 2a
 
 def test_run_ex_2a_realistic():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/run_realistic.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/exp_log_realistic.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2a_full/run_realistic.ini'
+    exp_log_fpath = 'test_sets/ex_2a_full/exp_log_realistic.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -125,17 +132,17 @@ def test_run_ex_2a_realistic():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/realistic')))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_full/res_realistic')))
 
 
 def test_run_ex_2a_kngc():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/run_kngc.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/exp_log_kngc.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2a_full/run_kngc.ini'
+    exp_log_fpath = 'test_sets/ex_2a_full/exp_log_kngc.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -143,17 +150,17 @@ def test_run_ex_2a_kngc():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/run_kngc')))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_full/res_kngc')))
 
 
 def test_run_ex_2a_sc_th_3():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/run_sc_th_3.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/exp_log_sc_th_3.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2a_full/run_sc_th_3.ini'
+    exp_log_fpath = 'test_sets/ex_2a_full/exp_log_sc_th_3.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -161,17 +168,17 @@ def test_run_ex_2a_sc_th_3():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/sc_th_3')))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_full/res_sc_th_3')))
 
 
 def test_run_ex_2a_sc_th_4():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/run_sc_th_4.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/exp_log_sc_th_4.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2a_full/run_sc_th_4.ini'
+    exp_log_fpath = 'test_sets/ex_2a_full/exp_log_sc_th_4.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -179,19 +186,17 @@ def test_run_ex_2a_sc_th_4():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/sc_th_4')))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_full/res_sc_th_4')))
 
 
 def test_run_ex_2a_uniform():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_max_matching/run_uniform.ini')
-    exp_log_fpath = os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_max_matching/exp_log_uniform.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2a_max_matching/run_uniform.ini'
+    exp_log_fpath = 'test_sets/ex_2a_max_matching/exp_log_uniform.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -199,19 +204,19 @@ def test_run_ex_2a_uniform():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_max_matching/run_uniform')))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_max_matching/res_uniform')))
 
 
 # tests for example 2b
 
 def test_run_ex_2b_realistic():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/run_realistic.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/exp_log_realistic.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2b_full/run_realistic.ini'
+    exp_log_fpath = 'test_sets/ex_2b_full/exp_log_realistic.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -219,17 +224,17 @@ def test_run_ex_2b_realistic():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/realistic'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2b_full/res_realistic')))
 
 
 def test_run_ex_2b_kngc():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/run_kngc.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/exp_log_kngc.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2b_full/run_kngc.ini'
+    exp_log_fpath = 'test_sets/ex_2b_full/exp_log_kngc.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -237,17 +242,17 @@ def test_run_ex_2b_kngc():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/run_kngc'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2b_full/res_kngc')))
 
 
 def test_run_ex_2b_sc_th_3():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/run_sc_th_3.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/exp_log_sc_th_3.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2b_full/run_sc_th_3.ini'
+    exp_log_fpath = 'test_sets/ex_2b_full/exp_log_sc_th_3.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -255,17 +260,17 @@ def test_run_ex_2b_sc_th_3():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/sc_th_3'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2b_full/res_sc_th_3')))
 
 
 def test_run_ex_2b_sc_th_4():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/run_sc_th_4.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/exp_log_sc_th_4.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2b_full/run_sc_th_4.ini'
+    exp_log_fpath = 'test_sets/ex_2b_full/exp_log_sc_th_4.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -273,19 +278,17 @@ def test_run_ex_2b_sc_th_4():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_full/sc_th_4'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2b_full/res_sc_th_4')))
 
 
 def test_run_ex_2b_uniform():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_max_matching/run_uniform.ini')
-    exp_log_fpath = os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_max_matching/exp_log_uniform.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2b_max_matching/run_uniform.ini'
+    exp_log_fpath = 'test_sets/ex_2b_max_matching/exp_log_uniform.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -293,19 +296,19 @@ def test_run_ex_2b_uniform():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2b_max_matching/run_uniform'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2b_max_matching/res_uniform')))
 
 
 # tests for example 3
 
 def test_run_ex_3_realistic():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/run_realistic.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/exp_log_realistic.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_3_full/run_realistic.ini'
+    exp_log_fpath = 'test_sets/ex_3_full/exp_log_realistic.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -313,17 +316,17 @@ def test_run_ex_3_realistic():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/realistic'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_full/res_realistic')))
 
 
 def test_run_ex_3_kngc():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/run_kngc.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/exp_log_kngc.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_3_full/run_kngc.ini'
+    exp_log_fpath = 'test_sets/ex_3_full/exp_log_kngc.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -331,17 +334,17 @@ def test_run_ex_3_kngc():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/run_kngc'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_full/res_kngc')))
 
 
 def test_run_ex_3_sc_th_3():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/run_sc_th_3.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/exp_log_sc_th_3.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_3_full/run_sc_th_3.ini'
+    exp_log_fpath = 'test_sets/ex_3_full/exp_log_sc_th_3.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -349,17 +352,17 @@ def test_run_ex_3_sc_th_3():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/sc_th_3'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_full/res_sc_th_3')))
 
 
 def test_run_ex_3_sc_th_4():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/run_sc_th_4.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/exp_log_sc_th_4.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_3_full/run_sc_th_4.ini'
+    exp_log_fpath = 'test_sets/ex_3_full/exp_log_sc_th_4.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -367,19 +370,17 @@ def test_run_ex_3_sc_th_4():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_full/sc_th_4'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_full/res_sc_th_4')))
 
 
 def test_run_ex_3_uniform():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_max_matching/run_uniform.ini')
-    exp_log_fpath = os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_max_matching/exp_log_uniform.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_3_max_matching/run_uniform.ini'
+    exp_log_fpath = 'test_sets/ex_3_max_matching/exp_log_uniform.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -387,19 +388,19 @@ def test_run_ex_3_uniform():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_3_max_matching/run_uniform'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_max_matching/res_uniform')))
 
 
 # test instabilities
 
 def test_run_ex_unstable_1():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/run_sc_th_5.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/exp_log_sc_th_5.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_2a_full/run_sc_th_5.ini'
+    exp_log_fpath = 'test_sets/ex_2a_full/exp_log_sc_th_5.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -407,17 +408,17 @@ def test_run_ex_unstable_1():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_2a_full/sc_th_5')))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_full/res_sc_th_5')))
 
 
 def test_run_ex_unstable_2():
     # given
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    sim_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_unstable_2/run_uniform.ini')
-    exp_log_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_unstable_2/exp_log_uniform.txt')
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_unstable_2/run_uniform.ini'
+    exp_log_fpath = 'test_sets/ex_unstable_2/exp_log_uniform.txt'
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     cs.run(sim_conf_fpath)
 
@@ -425,16 +426,16 @@ def test_run_ex_unstable_2():
     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
 
     # tear down
-    shutil.rmtree(os.path.normpath(
-        'C:/Users/sturaroa/Documents/Simulations/test_0/ex_unstable_2/run_uniform'))
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_unstable_2/res_uniform')))
 
 
 def test_choose_most_used_distr_subs():
-    logging_conf_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/logging_conf.json')
-    netw_a_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/A.graphml')
-    netw_inter_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/test_0/ex_1_full/Inter.graphml')
+    global this_dir, logging_conf_fpath
+    netw_a_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/A.graphml'))
+    netw_inter_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/Inter.graphml'))
 
     # when
+    os.chdir(os.path.dirname(__file__))
     sf.setup_logging(logging_conf_fpath)
     A = nx.read_graphml(netw_a_fpath)
     I = nx.read_graphml(netw_inter_fpath)

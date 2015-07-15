@@ -1,3 +1,5 @@
+__author__ = 'Agostino Sturaro'
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -49,7 +51,7 @@ ax = plt.axes()
 ax.set_xlabel('#initial attacks')
 ax.set_ylabel('#final dead nodes')
 
-#for the minor ticks, use no labels; default NullFormatter
+# for the minor ticks, use no labels; default NullFormatter
 # x_min_loc = MultipleLocator(1)
 # ax.xaxis.set_minor_locator(x_min_loc)
 #

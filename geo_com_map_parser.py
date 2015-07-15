@@ -1,8 +1,6 @@
-__author__ = 'sturaroa'
+__author__ = 'Agostino Sturaro'
 
-from decimal import *
 import json
-from collections import defaultdict
 import networkx as nx
 import matplotlib.pyplot as plt
 

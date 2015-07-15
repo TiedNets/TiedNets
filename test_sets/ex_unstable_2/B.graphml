@@ -1,0 +1,38 @@
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key attr.name="role" attr.type="string" for="node" id="d3" />
+  <key attr.name="x" attr.type="double" for="node" id="d2" />
+  <key attr.name="y" attr.type="double" for="node" id="d1" />
+  <key attr.name="name" attr.type="string" for="graph" id="d0" />
+  <graph edgedefault="undirected">
+    <data key="d0">B</data>
+    <node id="C1">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">controller</data>
+    </node>
+    <node id="R1">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">relay</data>
+    </node>
+    <node id="R2">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">relay</data>
+    </node>
+    <node id="R3">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">relay</data>
+    </node>
+    <node id="R4">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+      <data key="d3">relay</data>
+    </node>
+    <edge source="C1" target="R1" />
+    <edge source="R1" target="R2" />
+    <edge source="R1" target="R3" />
+    <edge source="R1" target="R4" />
+  </graph>
+</graphml>

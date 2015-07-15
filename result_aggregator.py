@@ -1,4 +1,4 @@
-__author__ = 'sturaroa'
+__author__ = 'Agostino Sturaro'
 
 import os
 import csv
@@ -10,7 +10,8 @@ sf.setup_logging('logging.json')
 logger = logging.getLogger(__name__)
 
 index_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/subst_atk/sc_th_400/_index.tsv')
-aggregate_fpath = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/subst_atk/sc_th_400/_stats.tsv')
+aggregate_fpath = os.path.normpath(
+    'C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/subst_atk/sc_th_400/_stats.tsv')
 
 with open(index_fpath, 'r') as index_file, open(aggregate_fpath, 'wb') as aggregate_file:
     aggregate = csv.writer(aggregate_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)

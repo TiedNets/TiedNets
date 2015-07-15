@@ -1,4 +1,4 @@
-__author__ = 'sturaroa'
+__author__ = 'Agostino Sturaro'
 
 import os
 import csv

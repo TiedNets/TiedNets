@@ -1,4 +1,4 @@
-__author__ = 'sturaroa'
+__author__ = 'Agostino Sturaro'
 
 import networkx as nx
 from collections import defaultdict
@@ -44,14 +44,14 @@ def test_assign_power_roles_to_subnets():
     for node in G.nodes():
         role = G.node[node]['role']
         nodes_by_role_G[role].add(node)
-    assert(nodes_by_role_G)
+    assert (nodes_by_role_G)
 
     nc.assign_power_roles_to_subnets(H, 5, 7, 128)
     nodes_by_role_H = defaultdict(set)
     for node in H.nodes():
         role = H.node[node]['role']
         nodes_by_role_H[role].add(node)
-    assert(nodes_by_role_H)
+    assert (nodes_by_role_H)
 
     assert len(nodes_by_role_G['generator']) == 4
     assert len(nodes_by_role_G['distribution_substation']) == 5
@@ -212,4 +212,3 @@ def test_create_k_to_n_dep():
     assert sum(I_0.in_degree(['R0', 'R1']).values()) == 4
     assert sum(I_0.in_degree(['C0', 'C1']).values()) == 8
     assert sorted(I_0.edges()) == sorted(I_1.edges())
-

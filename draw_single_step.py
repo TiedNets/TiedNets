@@ -1,4 +1,4 @@
-__author__ = 'Agostino'
+__author__ = 'Agostino Sturaro'
 
 import os
 import networkx as nx

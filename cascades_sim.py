@@ -1,4 +1,4 @@
-__author__ = 'sturaroa'
+__author__ = 'Agostino Sturaro'
 
 import os
 import logging
@@ -17,6 +17,7 @@ except ImportError:
 # global variables
 logger = None
 time = None
+
 
 # choose node_cnt random nodes
 def choose_random_nodes(G, node_cnt, seed=None):
@@ -42,7 +43,7 @@ def choose_nodes_by_betweenness_centrality(G, node_cnt, seed=None):
     return chosen_nodes
 
 
-def choose_most_used_distr_subs(G, I, node_cnt, seed=None):
+def choose_most_used_distr_subs(G, I, node_cnt):
     # select distribution substations from G
     # get the in-degree of each distribution substation from I
     # make that a list of tuples
@@ -50,11 +51,11 @@ def choose_most_used_distr_subs(G, I, node_cnt, seed=None):
     for node in G.nodes():
         role = G.node[node]['role']
         if role == 'distribution_substation':
-            rank = I.in_degree()
+            rank = I.in_degree(node)
             dist_subs_with_rank.append((rank, node))
 
     # sort the data structure by degree and node id
-    dist_subs_with_rank.sort()
+    dist_subs_with_rank.sort(reverse=True)
 
     # pick the first node_cnt nodes from the data structure
     # put them in a list and return it
@@ -106,7 +107,7 @@ def find_nodes_in_smaller_clusters(G, min_cluster_size):
     return unsupported_nodes
 
 
-# find nodes in small clusters without any inter links, used by the small clusters model
+# find nodes in small clusters without any inter links, not used
 def find_nodes_in_unsupported_clusters(G, I):
     unsupported_nodes = list()
     components = sorted(nx.connected_components(G), key=len, reverse=True)
@@ -153,12 +154,15 @@ def find_unpowered_substations(G):
 
 
 # find nodes of the power grid that have no access to a control center, used by the realistic model
-def find_uncontrolled_pow_nodes(A, B, I):
-    unsupported_nodes = list()
+def find_uncontrolled_pow_nodes(A, B, I, by_reason=False):
+    unsupported_nodes_by_reason = {'no_sup_controllers': [], 'no_sup_relays': [], 'no_com_path': []}
 
+    # for each power node
     for node_a in A.nodes():
         support_controllers = list()
         support_relays = list()
+
+        # find the nodes it's supported by in the other network (check the inter-graph) and separate them by role
         if I.has_node(node_a):
             for node_b in I.neighbors(node_a):
                 role = B.node[node_b]['role']
@@ -167,9 +171,16 @@ def find_uncontrolled_pow_nodes(A, B, I):
                 elif role == 'controller':
                     support_controllers.append(node_b)
 
+        # check if there's a control node supporting the power node, then check if there's a relay node granting it
+        # access to the communication network and, finally, check if one of the supporting control centers can be
+        # reached from one of the supporting relay nodes
         support_found = False
-        if len(support_controllers) >= 1:
-            if len(support_relays) >= 1:
+        if len(support_controllers) < 1:
+            unsupported_nodes_by_reason['no_sup_controllers'].append(node_a)
+        else:
+            if len(support_relays) < 1:
+                unsupported_nodes_by_reason['no_sup_relays'].append(node_a)
+            else:
                 for controller in support_controllers:
                     for relay in support_relays:
                         if nx.has_path(B, controller, relay):
@@ -177,11 +188,16 @@ def find_uncontrolled_pow_nodes(A, B, I):
                             break
                     if support_found is True:
                         break
+                if support_found is False:
+                    unsupported_nodes_by_reason['no_com_path'].append(node_a)
 
-        if support_found is False:
-            unsupported_nodes.append(node_a)
-
-    return unsupported_nodes
+    if by_reason is True:
+        return unsupported_nodes_by_reason
+    else:
+        unsupported_nodes = list()
+        for node_list in unsupported_nodes_by_reason.values():
+            unsupported_nodes.extend(node_list)
+        return unsupported_nodes
 
 
 def save_state(time, A, B, I, results_dir):
@@ -197,7 +213,12 @@ def save_state(time, A, B, I, results_dir):
 def run(conf_fpath):
     global logger
     logger = logging.getLogger(__name__)
-    logger.info('conf_fpath = ' + conf_fpath)
+    logger.info('conf_fpath = {}'.format(conf_fpath))
+
+    this_dir = os.path.normpath(os.path.dirname(__file__))
+    conf_fpath = os.path.normpath(conf_fpath)
+    if os.path.isabs(conf_fpath) is False:
+        conf_fpath = os.path.join(this_dir, conf_fpath)
 
     global time
     time = 0
@@ -213,6 +234,8 @@ def run(conf_fpath):
     seed = config.get('run_opts', 'seed')
 
     netw_dir = os.path.normpath(config.get('paths', 'netw_dir'))
+    if os.path.isabs(netw_dir) is False:
+        netw_dir = os.path.join(this_dir, netw_dir)
     netw_a_fname = config.get('paths', 'netw_a_fname')
     netw_a_fpath_in = os.path.join(netw_dir, netw_a_fname)
     A = nx.read_graphml(netw_a_fpath_in, node_type=str)
@@ -247,9 +270,13 @@ def run(conf_fpath):
     # read output paths
 
     results_dir = os.path.normpath(config.get('paths', 'results_dir'))
+    if os.path.isabs(results_dir) is False:
+        results_dir = os.path.join(this_dir, results_dir)
     run_stats_fname = config.get('paths', 'run_stats_fname')
     run_stats_fpath = os.path.join(results_dir, run_stats_fname)
     end_stats_fpath = os.path.normpath(config.get('paths', 'end_stats_fpath'))
+    if os.path.isabs(end_stats_fpath) is False:
+        end_stats_fpath = os.path.join(this_dir, end_stats_fpath)
 
     # ensure output directories exist and are empty
     sf.ensure_dir_exists(results_dir)
@@ -422,6 +449,6 @@ def run(conf_fpath):
     save_state('final', A, B, I, results_dir)  # TODO: print time of last mod
 
     # write statistics about the final result
-    with open(end_stats_fpath, 'ab+') as end_stats_file:
+    with open(end_stats_fpath, 'ab') as end_stats_file:
         end_stats = csv.writer(end_stats_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
         end_stats.writerow([total_dead_a + total_dead_b])

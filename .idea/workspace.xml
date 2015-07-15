@@ -1,7 +1,97 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9a43b10c-bd01-4f4c-82ea-eb307c5c063f" name="Default" comment="" />
+    <list default="true" id="9a43b10c-bd01-4f4c-82ea-eb307c5c063f" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/A.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_max_matching/A.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/A.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_max_matching/A.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/A.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_max_matching/A.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/A.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_max_matching/A.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_unstable_2/A.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/B.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_max_matching/B.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/B.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_max_matching/B.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/B.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_max_matching/B.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/B.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_max_matching/B.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_unstable_2/B.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/Inter.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_max_matching/Inter.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/Inter.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_max_matching/Inter.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/Inter.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_max_matching/Inter.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/Inter.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_max_matching/Inter.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_unstable_2/Inter.graphml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/exp_log_kngc.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_kngc.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/exp_log_kngc.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/exp_log_kngc.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/exp_log_realistic.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_realistic.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/exp_log_realistic.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/exp_log_realistic.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/exp_log_sc_th_3.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_sc_th_3.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/exp_log_sc_th_3.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/exp_log_sc_th_3.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/exp_log_sc_th_4.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_sc_th_4.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/exp_log_sc_th_4.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/exp_log_sc_th_4.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_sc_th_5.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_max_matching/exp_log_uniform.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_max_matching/exp_log_uniform.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_max_matching/exp_log_uniform.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_max_matching/exp_log_uniform.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_unstable_2/exp_log_uniform.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/run_kngc.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/run_kngc.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/run_kngc.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/run_kngc.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/run_realistic.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/run_realistic.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/run_realistic.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/run_realistic.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/run_sc_th_3.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/run_sc_th_3.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/run_sc_th_3.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/run_sc_th_3.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_full/run_sc_th_4.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/run_sc_th_4.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_full/run_sc_th_4.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_full/run_sc_th_4.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_full/run_sc_th_5.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_1_max_matching/run_uniform.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2a_max_matching/run_uniform.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_2b_max_matching/run_uniform.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_3_max_matching/run_uniform.ini" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_sets/ex_unstable_2/run_uniform.ini" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/batch_instance_creator.py" afterPath="$PROJECT_DIR$/batch_instance_creator.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/batch_sim_runner.py" afterPath="$PROJECT_DIR$/batch_sim_runner.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cascades_sim.py" afterPath="$PROJECT_DIR$/cascades_sim.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/draw_single_step.py" afterPath="$PROJECT_DIR$/draw_single_step.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/geo_com_map_parser.py" afterPath="$PROJECT_DIR$/geo_com_map_parser.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/geo_pow_map_parser.py" afterPath="$PROJECT_DIR$/geo_pow_map_parser.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/logging_base_conf.json" afterPath="$PROJECT_DIR$/logging_base_conf.json" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/netw_creator.py" afterPath="$PROJECT_DIR$/netw_creator.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/netw_creator_runner.py" afterPath="$PROJECT_DIR$/netw_creator_runner.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plot_results.py" afterPath="$PROJECT_DIR$/plot_results.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plot_sim_steps.py" afterPath="$PROJECT_DIR$/plot_sim_steps.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/result_aggregator.py" afterPath="$PROJECT_DIR$/result_aggregator.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/shared_functions.py" afterPath="$PROJECT_DIR$/shared_functions.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sim_runner.py" afterPath="$PROJECT_DIR$/sim_runner.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test_cascades_sim.py" afterPath="$PROJECT_DIR$/test_cascades_sim.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test_netw_creator.py" afterPath="$PROJECT_DIR$/test_netw_creator.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/vcs.xml" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+    </list>
     <ignored path="TiedNets.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path=".idea/dataSources.local.xml" />
@@ -14,29 +104,37 @@
   </component>
   <component name="ChangesViewManager" flattened_view="true" show_ignored="false" />
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/TiedNets$netw_creator_runner.coverage" NAME="netw_creator_runner Coverage Results" MODIFIED="1436312803289" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_2b_uniform.coverage" NAME="py.test in test_run_ex_2b_uniform Coverage Results" MODIFIED="1436232044474" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
-    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_unstable_1.coverage" NAME="py.test in test_run_ex_unstable_1 Coverage Results" MODIFIED="1436232188610" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
-    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_assign_power_roles_to_subnets.coverage" NAME="py.test in test_assign_power_roles_to_subnets Coverage Results" MODIFIED="1436241374726" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_2a_kngc.coverage" NAME="py.test in test_run_ex_2a_kngc Coverage Results" MODIFIED="1436913691463" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_netw_creator_py.coverage" NAME="py.test in test_netw_creator.py Coverage Results" MODIFIED="1436479767317" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
-    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_assign_power_roles.coverage" NAME="py.test in test_assign_power_roles Coverage Results" MODIFIED="1436235164116" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/TiedNets$batch_instance_creator.coverage" NAME="batch_instance_creator Coverage Results" MODIFIED="1436482134416" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/TiedNets$plot_sim_steps.coverage" NAME="plot_sim_steps Coverage Results" MODIFIED="1436485606711" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/TiedNets$shared_functions.coverage" NAME="shared_functions Coverage Results" MODIFIED="1436485448438" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_cascades_sim_py.coverage" NAME="py.test in test_cascades_sim.py Coverage Results" MODIFIED="1436232235836" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
-    <SUITE FILE_PATH="coverage/TiedNets$plot_creator.coverage" NAME="plot_creator Coverage Results" MODIFIED="1436471085764" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_2a_realistic.coverage" NAME="py.test in test_run_ex_2a_realistic Coverage Results" MODIFIED="1436231573496" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_choose_most_used_distr_subs.coverage" NAME="py.test in test_choose_most_used_distr_subs Coverage Results" MODIFIED="1436953601973" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_cascades_sim_py.coverage" NAME="py.test in test_cascades_sim.py Coverage Results" MODIFIED="1436953450010" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/TiedNets$result_aggregator.coverage" NAME="result_aggregator Coverage Results" MODIFIED="1436556888227" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_1_realistic.coverage" NAME="py.test in test_run_ex_1_realistic Coverage Results" MODIFIED="1436231246084" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
-    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_2a_uniform.coverage" NAME="py.test in test_run_ex_2a_uniform Coverage Results" MODIFIED="1436231796107" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_1_realistic.coverage" NAME="py.test in test_run_ex_1_realistic Coverage Results" MODIFIED="1436912941991" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/TiedNets$cascades_runner.coverage" NAME="cascades_runner Coverage Results" MODIFIED="1436482606860" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/TiedNets$test_netw_creator.coverage" NAME="test_netw_creator Coverage Results" MODIFIED="1436547752206" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/TiedNets$batch_sim_runner.coverage" NAME="batch_sim_runner Coverage Results" MODIFIED="1436556560004" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_1_sc_th_4.coverage" NAME="py.test in test_run_ex_1_sc_th_4 Coverage Results" MODIFIED="1436915282924" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$netw_creator_runner.coverage" NAME="netw_creator_runner Coverage Results" MODIFIED="1436312803289" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_unstable_1.coverage" NAME="py.test in test_run_ex_unstable_1 Coverage Results" MODIFIED="1436232188610" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_assign_power_roles_to_subnets.coverage" NAME="py.test in test_assign_power_roles_to_subnets Coverage Results" MODIFIED="1436241374726" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_2b_sc_th_3.coverage" NAME="py.test in test_run_ex_2b_sc_th_3 Coverage Results" MODIFIED="1436913439291" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_assign_power_roles.coverage" NAME="py.test in test_assign_power_roles Coverage Results" MODIFIED="1436235164116" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$plot_sim_steps.coverage" NAME="plot_sim_steps Coverage Results" MODIFIED="1436485606711" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/TiedNets$plot_creator.coverage" NAME="plot_creator Coverage Results" MODIFIED="1436471085764" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/TiedNets$scratch.coverage" NAME="scratch Coverage Results" MODIFIED="1436910708756" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/scratches" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_2a_realistic.coverage" NAME="py.test in test_run_ex_2a_realistic Coverage Results" MODIFIED="1436914422762" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_2a_uniform.coverage" NAME="py.test in test_run_ex_2a_uniform Coverage Results" MODIFIED="1436231796107" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$cascades_sim.coverage" NAME="cascades_sim Coverage Results" MODIFIED="1436911128315" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_unstable_2.coverage" NAME="py.test in test_run_ex_unstable_2 Coverage Results" MODIFIED="1436915023578" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$sim_runner.coverage" NAME="sim_runner Coverage Results" MODIFIED="1436911579219" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_create_k_to_n_dep.coverage" NAME="py.test in test_create_k_to_n_dep Coverage Results" MODIFIED="1436548249311" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/TiedNets$plot_results.coverage" NAME="plot_results Coverage Results" MODIFIED="1436556918742" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_3_uniform.coverage" NAME="py.test in test_run_ex_3_uniform Coverage Results" MODIFIED="1436232089552" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
-    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_2a_sc_th_4.coverage" NAME="py.test in test_run_ex_2a_sc_th_4 Coverage Results" MODIFIED="1436231791180" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/TiedNets$py_test_in_test_run_ex_2a_sc_th_4.coverage" NAME="py.test in test_run_ex_2a_sc_th_4 Coverage Results" MODIFIED="1436914510096" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/TiedNets$netw_creator.coverage" NAME="netw_creator Coverage Results" MODIFIED="1436380690468" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/TiedNets$batch_sim_runner.coverage" NAME="batch_sim_runner Coverage Results" MODIFIED="1436556560004" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="CreatePatchCommitExecutor">
     <option name="PATCH_PATH" value="" />
@@ -47,86 +145,14 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="batch_instance_creator.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/batch_instance_creator.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="46" column="16" selection-start-line="46" selection-start-column="16" selection-end-line="46" selection-end-column="16" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="test_netw_creator.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test_netw_creator.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="13" column="37" selection-start-line="13" selection-start-column="37" selection-end-line="13" selection-end-column="37" />
-              <folding>
-                <element signature="e#25#46#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="result_aggregator.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/result_aggregator.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="15" column="85" selection-start-line="15" selection-start-column="85" selection-end-line="15" selection-end-column="85" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="cascades_sim.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/cascades_sim.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="105" column="28" selection-start-line="105" selection-start-column="28" selection-end-line="105" selection-end-column="28" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="test_cascades_sim.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="test_cascades_sim.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/test_cascades_sim.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="439" column="41" selection-start-line="439" selection-start-column="41" selection-end-line="439" selection-end-column="41" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="batch_sim_runner.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/batch_sim_runner.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.63033706">
-              <caret line="47" column="41" selection-start-line="47" selection-start-column="41" selection-end-line="47" selection-end-column="41" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="plot_results.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/plot_results.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="7" column="109" selection-start-line="7" selection-start-column="109" selection-end-line="7" selection-end-column="109" />
+            <state vertical-scroll-proportion="0.7325843">
+              <caret line="441" column="37" selection-start-line="441" selection-start-column="37" selection-end-line="441" selection-end-column="37" />
               <folding>
-                <element signature="e#0#9#0" expanded="true" />
+                <element signature="e#33#42#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="shared_functions.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/shared_functions.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="159" column="34" selection-start-line="159" selection-start-column="34" selection-end-line="159" selection-end-column="34" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -140,32 +166,63 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/datasets/ComLines.geojson" />
-        <option value="$PROJECT_DIR$/2d_plot_test.py" />
-        <option value="$PROJECT_DIR$/draw_single_step.py" />
-        <option value="$PROJECT_DIR$/geo_com_map_parser.py" />
-        <option value="$PROJECT_DIR$/geo_pow_map_parser.py" />
-        <option value="$PROJECT_DIR$/logging_adv_conf.json" />
-        <option value="$PROJECT_DIR$/MN_com.graphml" />
-        <option value="$PROJECT_DIR$/MN_pow.graphml" />
-        <option value="$PROJECT_DIR$/MN_power.graphml" />
-        <option value="$PROJECT_DIR$/netw_creator_runner.py" />
-        <option value="$PROJECT_DIR$/logging_base_conf.json" />
-        <option value="$PROJECT_DIR$/log.txt" />
-        <option value="$PROJECT_DIR$/plot_creator.py" />
-        <option value="$PROJECT_DIR$/netw_creator.py" />
-        <option value="$PROJECT_DIR$/batch_instance_creator.py" />
-        <option value="$PROJECT_DIR$/cascades_runner.py" />
-        <option value="$PROJECT_DIR$/shared_functions.py" />
         <option value="$PROJECT_DIR$/test_netw_creator.py" />
+        <option value="$PROJECT_DIR$/result_aggregator.py" />
+        <option value="$PROJECT_DIR$/plot_sim_steps.py" />
+        <option value="$PROJECT_DIR$/plot_results.py" />
+        <option value="$PROJECT_DIR$/netw_creator_runner.py" />
+        <option value="$PROJECT_DIR$/netw_creator.py" />
+        <option value="$PROJECT_DIR$/geo_pow_map_parser.py" />
+        <option value="$PROJECT_DIR$/geo_com_map_parser.py" />
+        <option value="$PROJECT_DIR$/draw_single_step.py" />
+        <option value="$PROJECT_DIR$/batch_sim_runner.py" />
+        <option value="$PROJECT_DIR$/batch_instance_creator.py" />
+        <option value="$APPLICATION_CONFIG_DIR$/scratches/scratch" />
+        <option value="$PROJECT_DIR$/logging_base_conf.json" />
+        <option value="$PROJECT_DIR$/test_sets/ex_1_full/exp_log_kngc.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_1_full/exp_log_realistic.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_1_full/exp_log_sc_th_3.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_1_full/exp_log_sc_th_4.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_1_max_matching/exp_log_uniform.txt" />
+        <option value="$PROJECT_DIR$/sim_runner.py" />
+        <option value="$PROJECT_DIR$/shared_functions.py" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_realistic.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_sc_th_3.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_sc_th_4.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_sc_th_5.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_kngc.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_max_matching/exp_log_uniform.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_1_full/run_realistic.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_full/run_realistic.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2b_full/run_realistic.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_3_full/run_realistic.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_1_full/run_kngc.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_full/run_kngc.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2b_full/run_kngc.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_3_full/run_kngc.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_unstable_2/exp_log_uniform.txt" />
+        <option value="$PROJECT_DIR$/test_sets/ex_1_max_matching/run_uniform.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_max_matching/run_uniform.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2b_max_matching/run_uniform.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_3_max_matching/run_uniform.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_unstable_2/run_uniform.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_1_full/run_sc_th_3.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_full/run_sc_th_3.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2b_full/run_sc_th_3.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_3_full/run_sc_th_3.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_1_full/run_sc_th_4.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_full/run_sc_th_4.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2b_full/run_sc_th_4.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_3_full/run_sc_th_4.ini" />
+        <option value="$PROJECT_DIR$/test_sets/ex_2a_full/run_sc_th_5.ini" />
         <option value="$PROJECT_DIR$/test_cascades_sim.py" />
         <option value="$PROJECT_DIR$/cascades_sim.py" />
-        <option value="$PROJECT_DIR$/plot_results.py" />
-        <option value="$PROJECT_DIR$/batch_sim_runner.py" />
-        <option value="$PROJECT_DIR$/result_aggregator.py" />
       </list>
     </option>
   </component>
@@ -182,7 +239,7 @@
     <option name="width" value="1696" />
     <option name="height" value="1026" />
   </component>
-  <component name="ProjectLevelVcsManager" settingsEditedManually="false">
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <OptionsSetting value="true" id="Add" />
     <OptionsSetting value="true" id="Remove" />
     <OptionsSetting value="true" id="Checkout" />
@@ -205,6 +262,7 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -223,10 +281,23 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="TiedNets" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="TiedNets" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="test_sets" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
       <pane id="Scratches" />
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -236,32 +307,32 @@
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="FullScreen" value="false" />
     <property name="recentsLimit" value="5" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth0" value="244" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder0" value="0" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth1" value="244" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder1" value="1" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth2" value="244" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder2" value="2" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth3" value="918" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder3" value="3" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth0" value="244" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder0" value="0" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth1" value="243" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder1" value="1" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth2" value="244" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder2" value="2" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth3" value="919" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder3" value="3" />
+    <property name="com.intellij.ide.scratch.NewScratchFileAction" value="Python" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Agostino\Documents\TiedNets" />
       <recent name="C:\Users\sturaroa\Documents\TiedNets" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.plot_results">
-    <configuration default="false" name="test_netw_creator" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="TiedNets" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test_netw_creator.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
-    <configuration default="false" name="py.test in test_create_k_to_n_dep" type="tests" factoryName="py.test" temporary="true">
+  <component name="RunManager" selected="Python tests.py.test in test_choose_most_used_distr_subs">
+    <configuration default="false" name="py.test in test_cascades_sim.py" type="tests" factoryName="py.test" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs />
@@ -279,65 +350,111 @@
       <option name="TEST_TYPE" value="TEST_SCRIPT" />
       <option name="PATTERN" value="" />
       <option name="USE_PATTERN" value="false" />
-      <option name="testToRun" value="$PROJECT_DIR$/test_netw_creator.py" />
-      <option name="keywords" value="test_create_k_to_n_dep" />
+      <option name="testToRun" value="$PROJECT_DIR$/test_cascades_sim.py" />
+      <option name="keywords" value="" />
+      <option name="params" value="" />
+      <option name="USE_PARAM" value="false" />
+      <option name="USE_KEYWORD" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="py.test in test_run_ex_1_sc_th_4" type="tests" factoryName="py.test" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="TiedNets" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="testToRun" value="$PROJECT_DIR$/test_cascades_sim.py" />
+      <option name="keywords" value="test_run_ex_1_sc_th_4" />
       <option name="params" value="" />
       <option name="USE_PARAM" value="false" />
       <option name="USE_KEYWORD" value="true" />
       <method />
     </configuration>
-    <configuration default="false" name="batch_sim_runner" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration default="false" name="py.test in test_run_ex_2a_sc_th_4" type="tests" factoryName="py.test" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
+      <envs />
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="TiedNets" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/batch_sim_runner.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="testToRun" value="$PROJECT_DIR$/test_cascades_sim.py" />
+      <option name="keywords" value="test_run_ex_2a_sc_th_4" />
+      <option name="params" value="" />
+      <option name="USE_PARAM" value="false" />
+      <option name="USE_KEYWORD" value="true" />
       <method />
     </configuration>
-    <configuration default="false" name="result_aggregator" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration default="false" name="py.test in test_run_ex_unstable_2" type="tests" factoryName="py.test" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
+      <envs />
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="TiedNets" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/result_aggregator.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="testToRun" value="$PROJECT_DIR$/test_cascades_sim.py" />
+      <option name="keywords" value="test_run_ex_unstable_2" />
+      <option name="params" value="" />
+      <option name="USE_PARAM" value="false" />
+      <option name="USE_KEYWORD" value="true" />
       <method />
     </configuration>
-    <configuration default="false" name="plot_results" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration default="false" name="py.test in test_choose_most_used_distr_subs" type="tests" factoryName="py.test" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
+      <envs />
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="TiedNets" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/plot_results.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="testToRun" value="$PROJECT_DIR$/test_cascades_sim.py" />
+      <option name="keywords" value="test_choose_most_used_distr_subs" />
+      <option name="params" value="" />
+      <option name="USE_PARAM" value="false" />
+      <option name="USE_KEYWORD" value="true" />
       <method />
     </configuration>
     <configuration default="true" type="DjangoTestsConfigurationType" factoryName="Django tests">
@@ -529,19 +646,19 @@
       <method />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.test_netw_creator" />
-      <item index="1" class="java.lang.String" itemvalue="Python tests.py.test in test_create_k_to_n_dep" />
-      <item index="2" class="java.lang.String" itemvalue="Python.batch_sim_runner" />
-      <item index="3" class="java.lang.String" itemvalue="Python.result_aggregator" />
-      <item index="4" class="java.lang.String" itemvalue="Python.plot_results" />
+      <item index="0" class="java.lang.String" itemvalue="Python tests.py.test in test_cascades_sim.py" />
+      <item index="1" class="java.lang.String" itemvalue="Python tests.py.test in test_run_ex_1_sc_th_4" />
+      <item index="2" class="java.lang.String" itemvalue="Python tests.py.test in test_run_ex_2a_sc_th_4" />
+      <item index="3" class="java.lang.String" itemvalue="Python tests.py.test in test_run_ex_unstable_2" />
+      <item index="4" class="java.lang.String" itemvalue="Python tests.py.test in test_choose_most_used_distr_subs" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.plot_results" />
-        <item index="1" class="java.lang.String" itemvalue="Python.result_aggregator" />
-        <item index="2" class="java.lang.String" itemvalue="Python.batch_sim_runner" />
-        <item index="3" class="java.lang.String" itemvalue="Python tests.py.test in test_create_k_to_n_dep" />
-        <item index="4" class="java.lang.String" itemvalue="Python.test_netw_creator" />
+        <item index="0" class="java.lang.String" itemvalue="Python tests.py.test in test_choose_most_used_distr_subs" />
+        <item index="1" class="java.lang.String" itemvalue="Python tests.py.test in test_cascades_sim.py" />
+        <item index="2" class="java.lang.String" itemvalue="Python tests.py.test in test_run_ex_1_sc_th_4" />
+        <item index="3" class="java.lang.String" itemvalue="Python tests.py.test in test_run_ex_unstable_2" />
+        <item index="4" class="java.lang.String" itemvalue="Python tests.py.test in test_run_ex_2a_sc_th_4" />
       </list>
     </recent_temporary>
   </component>
@@ -559,28 +676,28 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1696" height="1026" extended-state="7" />
-    <editor active="true" />
+    <frame x="-8" y="-8" width="1696" height="1026" extended-state="6" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13095239" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13333334" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.28867102" sideWeight="0.5021322" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32897604" sideWeight="0.50238097" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32897604" sideWeight="0.49761903" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.41285402" sideWeight="0.4978678" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39651415" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26702702" sideWeight="0.4978678" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32864866" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3278867" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
     <layout-to-restore>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -617,7 +734,10 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="1" />
+      <breakpoints-dialog>
+        <breakpoints-dialog />
+      </breakpoints-dialog>
+      <option name="time" value="8" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -625,349 +745,366 @@
     <entry file="file://$PROJECT_DIR$/batch_instance_creator.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="46" column="16" selection-start-line="46" selection-start-column="16" selection-end-line="46" selection-end-column="16" />
-          <folding />
+          <caret line="30" column="34" selection-start-line="30" selection-start-column="34" selection-end-line="30" selection-end-column="34" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test_netw_creator.py">
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_full/A.graphml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="13" column="37" selection-start-line="13" selection-start-column="37" selection-end-line="13" selection-end-column="37" />
-          <folding>
-            <element signature="e#25#46#0" expanded="true" />
-          </folding>
+        <state vertical-scroll-proportion="0.23089983">
+          <caret line="8" column="31" selection-start-line="8" selection-start-column="31" selection-end-line="8" selection-end-column="31" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/result_aggregator.py">
+    <entry file="file://$PROJECT_DIR$/netw_creator_runner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="15" column="85" selection-start-line="15" selection-start-column="85" selection-end-line="15" selection-end-column="85" />
-          <folding />
+        <state vertical-scroll-proportion="0.20203735">
+          <caret line="7" column="20" selection-start-line="7" selection-start-column="20" selection-end-line="7" selection-end-column="20" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/cascades_sim.py">
+    <entry file="file://C:/Anaconda/Lib/site-packages/networkx/utils/decorators.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="105" column="28" selection-start-line="105" selection-start-column="28" selection-end-line="105" selection-end-column="28" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_cascades_sim.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="439" column="41" selection-start-line="439" selection-start-column="41" selection-end-line="439" selection-end-column="41" />
-          <folding />
+          <caret line="197" column="0" selection-start-line="197" selection-start-column="0" selection-end-line="197" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/batch_sim_runner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+        <state vertical-scroll-proportion="0.03820225">
+          <caret line="6" column="26" selection-start-line="6" selection-start-column="26" selection-end-line="6" selection-end-column="26" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/plot_results.py">
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_full/exp_log_sc_th_4.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="7" column="109" selection-start-line="7" selection-start-column="109" selection-end-line="7" selection-end-column="109" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
+          <caret line="0" column="33" selection-start-line="0" selection-start-column="33" selection-end-line="0" selection-end-column="33" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/shared_functions.py">
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_full/exp_log_sc_th_3.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="159" column="34" selection-start-line="159" selection-start-column="34" selection-end-line="159" selection-end-column="34" />
-          <folding />
+          <caret line="0" column="33" selection-start-line="0" selection-start-column="33" selection-end-line="0" selection-end-column="33" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/batch_instance_creator.py">
+    <entry file="file://C:/Anaconda/Lib/logging/config.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="102" column="29" selection-start-line="102" selection-start-column="29" selection-end-line="102" selection-end-column="29" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_netw_creator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#25#46#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/netw_creator_runner.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="23" selection-start-line="0" selection-start-column="23" selection-end-line="0" selection-end-column="23" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/netw_creator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="975" column="0" selection-start-line="975" selection-start-column="0" selection-end-line="975" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_cascades_sim.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="417" column="36" selection-start-line="417" selection-start-column="20" selection-end-line="417" selection-end-column="36" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/batch_instance_creator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="55" column="20" selection-start-line="55" selection-start-column="20" selection-end-line="55" selection-end-column="20" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_netw_creator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="33" column="0" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
-          <folding>
-            <element signature="e#25#46#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/netw_creator_runner.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="23" selection-start-line="0" selection-start-column="23" selection-end-line="0" selection-end-column="23" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/netw_creator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_cascades_sim.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="417" column="36" selection-start-line="417" selection-start-column="20" selection-end-line="417" selection-end-column="36" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/datasets/ComLines.geojson">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-4.1492205">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/datasets/ElecSubs_epsg_4326.geojson">
-      <provider editor-type-id="com.intellij.database.editor.CsvTableFileEditorProvider">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/datasets/ElecLine_epsg_4326.geojson">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/draw_single_step.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/geo_com_map_parser.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/geo_pow_map_parser.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/MN_com.graphml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/MN_pow.graphml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/MN_power.graphml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://C:/Anaconda/Lib/collections.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="51" column="0" selection-start-line="51" selection-start-column="0" selection-end-line="51" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://C:/Anaconda/Lib/ConfigParser.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="617" column="0" selection-start-line="617" selection-start-column="0" selection-end-line="617" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/logging_adv_conf.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/netw_creator_runner.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="7" column="53" selection-start-line="7" selection-start-column="44" selection-end-line="7" selection-end-column="53" />
+        <state vertical-scroll-proportion="0.33333334">
+          <caret line="793" column="0" selection-start-line="793" selection-start-column="0" selection-end-line="793" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/logging_base_conf.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-18.961538">
-          <caret line="29" column="21" selection-start-line="29" selection-start-column="21" selection-end-line="29" selection-end-column="21" />
+        <state vertical-scroll-proportion="0.5706019">
+          <caret line="29" column="32" selection-start-line="29" selection-start-column="32" selection-end-line="29" selection-end-column="32" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/shared_functions.py">
       <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.35505617">
+          <caret line="42" column="10" selection-start-line="42" selection-start-column="10" selection-end-line="42" selection-end-column="10" />
+          <folding>
+            <element signature="e#33#42#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch">
+      <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="159" column="34" selection-start-line="159" selection-start-column="34" selection-end-line="159" selection-end-column="34" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plot_sim_steps.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.31432974">
-          <caret line="18" column="0" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/netw_creator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.4899846">
-          <caret line="95" column="32" selection-start-line="95" selection-start-column="26" selection-end-line="95" selection-end-column="32" />
+          <caret line="5" column="24" selection-start-line="5" selection-start-column="24" selection-end-line="5" selection-end-column="24" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/sim_runner.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="23" selection-start-line="0" selection-start-column="23" selection-end-line="0" selection-end-column="23" />
+          <caret line="8" column="69" selection-start-line="8" selection-start-column="69" selection-end-line="8" selection-end-column="69" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/batch_instance_creator.py">
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_sc_th_4.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="46" column="16" selection-start-line="46" selection-start-column="16" selection-end-line="46" selection-end-column="16" />
-          <folding />
+          <caret line="0" column="34" selection-start-line="0" selection-start-column="34" selection-end-line="0" selection-end-column="34" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test_netw_creator.py">
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_sc_th_5.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="13" column="37" selection-start-line="13" selection-start-column="37" selection-end-line="13" selection-end-column="37" />
-          <folding>
-            <element signature="e#25#46#0" expanded="true" />
-          </folding>
+          <caret line="0" column="34" selection-start-line="0" selection-start-column="34" selection-end-line="0" selection-end-column="34" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/log.txt">
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_sc_th_3.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-0.54307693">
-          <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="34" selection-start-line="0" selection-start-column="34" selection-end-line="0" selection-end-column="34" />
         </state>
       </provider>
-      <provider editor-type-id="LargeFileEditor">
-        <state />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_realistic.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="34" selection-start-line="0" selection-start-column="34" selection-end-line="0" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_3_full/run_realistic.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="33" selection-start-line="6" selection-start-column="33" selection-end-line="6" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2b_full/run_realistic.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="34" selection-start-line="6" selection-start-column="34" selection-end-line="6" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_full/run_realistic.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="34" selection-start-line="6" selection-start-column="34" selection-end-line="6" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_full/run_realistic.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="33" selection-start-line="6" selection-start-column="33" selection-end-line="6" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_full/exp_log_realistic.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="36" selection-start-line="0" selection-start-column="36" selection-end-line="0" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_full/exp_log_kngc.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="32" selection-start-line="0" selection-start-column="32" selection-end-line="0" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_full/run_kngc.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="6" column="33" selection-start-line="6" selection-start-column="33" selection-end-line="6" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_full/exp_log_kngc.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="33" selection-start-line="0" selection-start-column="33" selection-end-line="0" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_full/run_kngc.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="6" column="34" selection-start-line="6" selection-start-column="34" selection-end-line="6" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2b_full/exp_log_kngc.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="33" selection-start-line="0" selection-start-column="33" selection-end-line="0" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2b_full/run_kngc.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="6" column="34" selection-start-line="6" selection-start-column="34" selection-end-line="6" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_3_full/exp_log_kngc.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="32" selection-start-line="0" selection-start-column="32" selection-end-line="0" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_3_full/run_kngc.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.17317487">
+          <caret line="6" column="33" selection-start-line="6" selection-start-column="33" selection-end-line="6" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_max_matching/run_uniform.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="6" column="42" selection-start-line="6" selection-start-column="42" selection-end-line="6" selection-end-column="42" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2b_max_matching/exp_log_uniform.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="41" selection-start-line="0" selection-start-column="41" selection-end-line="0" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2b_max_matching/run_uniform.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="6" column="42" selection-start-line="6" selection-start-column="42" selection-end-line="6" selection-end-column="42" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_3_max_matching/exp_log_uniform.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="40" selection-start-line="0" selection-start-column="40" selection-end-line="0" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_unstable_2/exp_log_uniform.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="36" selection-start-line="0" selection-start-column="36" selection-end-line="0" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_3_max_matching/run_uniform.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.17317487">
+          <caret line="6" column="41" selection-start-line="6" selection-start-column="41" selection-end-line="6" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_max_matching/exp_log_uniform.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="41" selection-start-line="0" selection-start-column="41" selection-end-line="0" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_max_matching/run_uniform.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.17317487">
+          <caret line="6" column="41" selection-start-line="6" selection-start-column="41" selection-end-line="6" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_max_matching/exp_log_uniform.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="40" selection-start-line="0" selection-start-column="40" selection-end-line="0" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Anaconda/Lib/shutil.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="236" column="0" selection-start-line="236" selection-start-column="0" selection-end-line="236" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_unstable_2/run_uniform.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.16943522">
+          <caret line="6" column="41" selection-start-line="6" selection-start-column="41" selection-end-line="6" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_3_full/run_sc_th_3.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="33" selection-start-line="6" selection-start-column="33" selection-end-line="6" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2b_full/run_sc_th_3.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="34" selection-start-line="6" selection-start-column="34" selection-end-line="6" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_full/run_sc_th_3.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="34" selection-start-line="6" selection-start-column="34" selection-end-line="6" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_full/run_sc_th_3.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="33" selection-start-line="6" selection-start-column="33" selection-end-line="6" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_full/run_sc_th_5.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="34" selection-start-line="6" selection-start-column="34" selection-end-line="6" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_3_full/run_sc_th_4.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="33" selection-start-line="6" selection-start-column="33" selection-end-line="6" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2b_full/run_sc_th_4.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="34" selection-start-line="6" selection-start-column="34" selection-end-line="6" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_2a_full/run_sc_th_4.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="34" selection-start-line="6" selection-start-column="34" selection-end-line="6" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_sets/ex_1_full/run_sc_th_4.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11460674">
+          <caret line="6" column="33" selection-start-line="6" selection-start-column="33" selection-end-line="6" selection-end-column="33" />
+        </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/cascades_sim.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="105" column="28" selection-start-line="105" selection-start-column="28" selection-end-line="105" selection-end-column="28" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/result_aggregator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="15" column="85" selection-start-line="15" selection-start-column="85" selection-end-line="15" selection-end-column="85" />
-          <folding />
+          <caret line="57" column="42" selection-start-line="57" selection-start-column="42" selection-end-line="57" selection-end-column="42" />
+          <folding>
+            <element signature="e#33#42#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/test_cascades_sim.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="439" column="41" selection-start-line="439" selection-start-column="41" selection-end-line="439" selection-end-column="41" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plot_results.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="7" column="109" selection-start-line="7" selection-start-column="109" selection-end-line="7" selection-end-column="109" />
+        <state vertical-scroll-proportion="0.7325843">
+          <caret line="441" column="37" selection-start-line="441" selection-start-column="37" selection-end-line="441" selection-end-column="37" />
           <folding>
-            <element signature="e#0#9#0" expanded="true" />
+            <element signature="e#33#42#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/batch_sim_runner.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.63033706">
-          <caret line="47" column="41" selection-start-line="47" selection-start-column="41" selection-end-line="47" selection-end-column="41" />
-          <folding />
         </state>
       </provider>
     </entry>

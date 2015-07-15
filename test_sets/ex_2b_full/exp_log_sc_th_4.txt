@@ -1,0 +1,4 @@
+conf_fpath = test_sets/ex_2b_full/run_sc_th_4.ini
+Time 1) 1 nodes of network A failed because of initial attack: ['G1']
+Time 3) 3 nodes of network A failed for lack of intra support: ['D1', 'D2', 'T1']
+Time 4) 4 nodes of network B failed for lack of inter support: ['C1', 'R1', 'R2', 'R3']

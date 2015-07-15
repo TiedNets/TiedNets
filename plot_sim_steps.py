@@ -1,12 +1,11 @@
-__author__ = 'sturaroa'
+__author__ = 'Agostino Sturaro'
 
 import os
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 import shared_functions as sf
-
-from PyPDF2 import PdfFileMerger, PdfFileReader
+from PyPDF2 import PdfFileMerger
 
 try:
     from configparser import ConfigParser
@@ -14,7 +13,8 @@ except ImportError:
     from ConfigParser import ConfigParser  # ver. < 3.0
 
 config = ConfigParser()
-conf_path = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_test_2/rnd_atk/realistic/instance_0/run_0.ini')
+conf_path = os.path.normpath(
+    'C:/Users/sturaroa/Documents/Simulations/exp_1000n_test_2/rnd_atk/realistic/instance_0/run_0.ini')
 config.read(conf_path)
 
 # copypaste
@@ -68,7 +68,7 @@ for time in times:
     I = nx.read_graphml(os.path.join(step_graphs_dir, str(time) + '_' + netw_inter_fname))
 
     edge_col_per_type = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
-                     'distribution_substation': 'magenta', 'communication': 'b', 'controller': 'c', 'relay': 'b'}
+                         'distribution_substation': 'magenta', 'communication': 'b', 'controller': 'c', 'relay': 'b'}
     # sf.paint_inter_graph(I, original_I, 'orange', pos_shifts_by_netw, edge_col_per_type)
 
     pdf_fpaths.append(os.path.join(step_graphs_dir, str(time) + '_full.pdf'))
