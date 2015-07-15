@@ -883,6 +883,11 @@ def run(conf_fpath):
     global logger
     logger.info('conf_fpath = ' + conf_fpath)
 
+    conf_fpath = os.path.normpath(conf_fpath)
+    if os.path.isabs(conf_fpath) is False:
+        conf_fpath = os.path.abspath(conf_fpath)
+    if not os.path.isfile(conf_fpath):
+        raise ValueError('Invalid value for parameter "conf_fpath", no such file.\nPath: ' + conf_fpath)
     config = ConfigParser()
     config.read(conf_fpath)
 
@@ -896,6 +901,8 @@ def run(conf_fpath):
 
     netw_inter_name = config.get('build_inter', 'name')
     output_dir = os.path.normpath(config.get('paths', 'netw_dir'))
+    if os.path.isabs(output_dir) is False:
+        output_dir = os.path.abspath(output_dir)
 
     # create directory if it does not exist
     # clean it if it does exist
@@ -946,6 +953,8 @@ def run(conf_fpath):
         A = RT_nested_Smallworld(node_cnt, avg_k, d_0, alpha, beta, q_rw, subnet_cnt, seed=netw_a_seed)
     elif netw_model == 'user_defined_graph':
         fpath_a = config.get('build_a', 'graph_fpath')
+        if os.path.isabs(fpath_a) is False:
+            fpath_a = os.path.abspath(fpath_a)
         fformat_a = config.get('build_a', 'file_format')
         if fformat_a.lower() == 'GraphML'.lower():
             A = nx.read_graphml(fpath_a)
@@ -1001,6 +1010,8 @@ def run(conf_fpath):
         B = nx.barabasi_albert_graph(node_cnt, m, seed=netw_b_seed)
     elif netw_model == 'user_defined_graph':
         fpath_b = config.get('build_b', 'graph_fpath')
+        if os.path.isabs(fpath_b) is False:
+            fpath_b = os.path.abspath(fpath_b)
         fformat_b = config.get('build_b', 'file_format')
         if fformat_b.lower() == 'GraphML'.lower():
             B = nx.read_graphml(fpath_b)

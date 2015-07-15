@@ -20,7 +20,7 @@ with open(index_fpath, 'r') as index_file, open(aggregate_fpath, 'wb') as aggreg
     index = csv.DictReader(index_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
     for line in index:
         stats_fpath = line['Results_file']
-        stats = np.genfromtxt(stats_fpath, delimiter='\t', skip_header=0, dtype=None)
+        stats = np.genfromtxt(stats_fpath, delimiter='\t', skip_header=1, dtype=None)  # TODO: turn into DictReader
 
         # access the first column according to the different structures numpy can output
         logger.debug('stats = {}'.format(stats))

@@ -34,12 +34,12 @@ logger = logging.getLogger(__name__)
 
 # begin of user defined variables
 index_fname = '_index.tsv'
-instances_dir = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/')
+instances_dir = os.path.normpath('../Simulations/exp_1000n_many/')
 
 group_results_dirs = [
     # os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/subst_atk/realistic/'),
     #                   os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/subst_atk/sc_th_5/'),
-                      os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/subst_atk/sc_th_400/')
+                      os.path.normpath('../Simulations/exp_1000n_many/subst_atk/sc_th_400/')
                       # os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/subst_atk/uniform/')
 ]
 

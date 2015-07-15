@@ -55,9 +55,6 @@ def setup_logging(
         env_key='LOG_CFG'
 ):
     log_conf_path = os.path.normpath(log_conf_path)
-    if os.path.isabs(log_conf_path) is False:
-        this_dir = os.path.dirname(__file__)
-        log_conf_path = os.path.join(this_dir, log_conf_path)
 
     value = os.getenv(env_key, None)
     if value:

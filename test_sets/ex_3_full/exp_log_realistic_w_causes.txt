@@ -1,0 +1,7 @@
+conf_fpath = test_sets/ex_3_full/run_realistic_w_causes.ini
+Time 1) 1 nodes of network A failed because of initial attack: ['D3']
+Time 4) 1 nodes of network B failed for lack of inter support: ['R6']
+Time 6) 1 nodes of network A failed for lack of inter support: ['T2']
+Time 7) 1 nodes of network A failed for lack of intra support: ['D2']
+Time 8) 2 nodes of network B failed for lack of inter support: ['R4', 'R5']
+Time 10) 1 nodes of network A failed for lack of inter support: ['G2']

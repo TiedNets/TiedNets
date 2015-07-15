@@ -155,7 +155,7 @@ def find_unpowered_substations(G):
 
 # find nodes of the power grid that have no access to a control center, used by the realistic model
 def find_uncontrolled_pow_nodes(A, B, I, by_reason=False):
-    unsupported_nodes_by_reason = {'no_sup_controllers': [], 'no_sup_relays': [], 'no_com_path': []}
+    unsupported_nodes_by_reason = {'no_sup_ccs': [], 'no_sup_relays': [], 'no_com_path': []}
 
     # for each power node
     for node_a in A.nodes():
@@ -176,7 +176,7 @@ def find_uncontrolled_pow_nodes(A, B, I, by_reason=False):
         # reached from one of the supporting relay nodes
         support_found = False
         if len(support_controllers) < 1:
-            unsupported_nodes_by_reason['no_sup_controllers'].append(node_a)
+            unsupported_nodes_by_reason['no_sup_ccs'].append(node_a)
         else:
             if len(support_relays) < 1:
                 unsupported_nodes_by_reason['no_sup_relays'].append(node_a)
@@ -215,27 +215,29 @@ def run(conf_fpath):
     logger = logging.getLogger(__name__)
     logger.info('conf_fpath = {}'.format(conf_fpath))
 
-    this_dir = os.path.normpath(os.path.dirname(__file__))
     conf_fpath = os.path.normpath(conf_fpath)
     if os.path.isabs(conf_fpath) is False:
-        conf_fpath = os.path.join(this_dir, conf_fpath)
+        conf_fpath = os.path.abspath(conf_fpath)
+    if not os.path.isfile(conf_fpath):
+        raise ValueError('Invalid value for parameter "conf_fpath", no such file.\nPath: ' + conf_fpath)
+    config = ConfigParser()
+    config.read(conf_fpath)
 
     global time
     time = 0
-
-    if not os.path.isfile(conf_fpath):
-        raise ValueError('Invalid value for parameter "conf_fpath", no such file.\nPath: ' + conf_fpath)
-
-    config = ConfigParser()
-    config.read(conf_fpath)
 
     # read graphml files and instantiate network graphs
 
     seed = config.get('run_opts', 'seed')
 
+    if config.has_option('run_opts', 'save_death_cause'):
+        save_death_cause = config.getboolean('run_opts', 'save_death_cause')
+    else:
+        save_death_cause = False
+
     netw_dir = os.path.normpath(config.get('paths', 'netw_dir'))
     if os.path.isabs(netw_dir) is False:
-        netw_dir = os.path.join(this_dir, netw_dir)
+        netw_dir = os.path.abspath(netw_dir)
     netw_a_fname = config.get('paths', 'netw_a_fname')
     netw_a_fpath_in = os.path.join(netw_dir, netw_a_fname)
     A = nx.read_graphml(netw_a_fpath_in, node_type=str)
@@ -271,12 +273,12 @@ def run(conf_fpath):
 
     results_dir = os.path.normpath(config.get('paths', 'results_dir'))
     if os.path.isabs(results_dir) is False:
-        results_dir = os.path.join(this_dir, results_dir)
+        results_dir = os.path.abspath(results_dir)
     run_stats_fname = config.get('paths', 'run_stats_fname')
     run_stats_fpath = os.path.join(results_dir, run_stats_fname)
     end_stats_fpath = os.path.normpath(config.get('paths', 'end_stats_fpath'))
     if os.path.isabs(end_stats_fpath) is False:
-        end_stats_fpath = os.path.join(this_dir, end_stats_fpath)
+        end_stats_fpath = os.path.abspath(end_stats_fpath)
 
     # ensure output directories exist and are empty
     sf.ensure_dir_exists(results_dir)
@@ -318,6 +320,15 @@ def run(conf_fpath):
 
     total_dead_a = 0
     total_dead_b = 0
+    intra_sup_deaths_a = 0
+    intra_sup_deaths_b = 0
+    inter_sup_deaths_a = 0
+    inter_sup_deaths_b = 0
+
+    if save_death_cause is True and inter_support_type == 'realistic':
+        no_sup_ccs_deaths = 0
+        no_sup_relays_deaths = 0
+        no_com_path_deaths = 0
 
     # execute simulation of failure propagation
     with open(run_stats_fpath, 'wb') as run_stats_file:
@@ -333,6 +344,8 @@ def run(conf_fpath):
                 attacked_nodes = choose_random_nodes(A, attack_cnt, seed)
             elif attack_tactic == 'betweenness_centrality':
                 attacked_nodes = choose_nodes_by_betweenness_centrality(A, attack_cnt, seed)
+            elif attack_tactic == 'most_used_distr_subs':
+                attacked_nodes = choose_most_used_distr_subs(A, attack_cnt)
             elif attack_tactic == 'targeted':
                 target_nodes = config.get('run_opts', 'target_nodes')
                 attacked_nodes = [node for node in target_nodes.split()]  # split list on space
@@ -347,6 +360,8 @@ def run(conf_fpath):
                 attacked_nodes = choose_random_nodes(B, attack_cnt, seed)
             elif attack_tactic == 'betweenness_centrality':
                 attacked_nodes = choose_nodes_by_betweenness_centrality(B, attack_cnt, seed)
+            elif attack_tactic == 'most_used_distr_subs':
+                attacked_nodes = choose_most_used_distr_subs(B, attack_cnt)
             elif attack_tactic == 'targeted':
                 target_nodes = config.get('run_opts', 'target_nodes')
                 attacked_nodes = [node for node in target_nodes.split()]
@@ -376,12 +391,25 @@ def run(conf_fpath):
             # elif inter_support_type == 'cluster_interlink':
             #     unsupported_nodes_a = find_nodes_in_unsupported_clusters(A, I)
             elif inter_support_type == 'realistic':
-                unsupported_nodes_a = find_uncontrolled_pow_nodes(A, B, I)
+                unsupported_nodes_a = find_uncontrolled_pow_nodes(A, B, I, save_death_cause)
+
+            if save_death_cause is True and inter_support_type == 'realistic':
+                no_sup_ccs_deaths += len(unsupported_nodes_a['no_sup_ccs'])
+                no_sup_relays_deaths += len(unsupported_nodes_a['no_sup_relays'])
+                no_com_path_deaths += len(unsupported_nodes_a['no_com_path'])
+                temp_list = list()
+
+                # convert dictionary of lists to simple list
+                for node_list in unsupported_nodes_a.values():
+                    temp_list.extend(node_list)
+                unsupported_nodes_a = temp_list
+
             failed_cnt_a = len(unsupported_nodes_a)
             if failed_cnt_a > 0:
                 logger.info('Time {}) {} nodes of network {} failed for lack of inter support: {}'.format(
                     time, failed_cnt_a, A.graph['name'], sorted(unsupported_nodes_a, key=sf.natural_sort_key)))
                 total_dead_a += failed_cnt_a
+                inter_sup_deaths_a += failed_cnt_a
                 A.remove_nodes_from(unsupported_nodes_a)
                 I.remove_nodes_from(unsupported_nodes_a)
                 updated = True
@@ -401,6 +429,7 @@ def run(conf_fpath):
                 logger.info('Time {}) {} nodes of network {} failed for lack of intra support: {}'.format(
                     time, failed_cnt_a, A.graph['name'], sorted(unsupported_nodes_a, key=sf.natural_sort_key)))
                 total_dead_a += failed_cnt_a
+                intra_sup_deaths_a += failed_cnt_a
                 A.remove_nodes_from(unsupported_nodes_a)
                 I.remove_nodes_from(unsupported_nodes_a)
                 updated = True
@@ -420,6 +449,7 @@ def run(conf_fpath):
                 logger.info('Time {}) {} nodes of network {} failed for lack of inter support: {}'.format(
                     time, failed_cnt_b, B.graph['name'], sorted(unsupported_nodes_b, key=sf.natural_sort_key)))
                 total_dead_b += failed_cnt_b
+                inter_sup_deaths_b += failed_cnt_b
                 B.remove_nodes_from(unsupported_nodes_b)
                 I.remove_nodes_from(unsupported_nodes_b)
                 updated = True
@@ -439,6 +469,7 @@ def run(conf_fpath):
                 logger.info('Time {}) {} nodes of network {} failed for lack of intra support: {}'.format(
                     time, failed_cnt_b, B.graph['name'], sorted(unsupported_nodes_b, key=sf.natural_sort_key)))
                 total_dead_b += failed_cnt_b
+                intra_sup_deaths_b += failed_cnt_b
                 B.remove_nodes_from(unsupported_nodes_b)
                 I.remove_nodes_from(unsupported_nodes_b)
                 updated = True
@@ -446,9 +477,28 @@ def run(conf_fpath):
                 run_stats.writerow({'time': time, 'total_dead_A': total_dead_a, 'total_dead_B': total_dead_b})
             time += 1
 
-    save_state('final', A, B, I, results_dir)  # TODO: print time of last mod
+    save_state('final', A, B, I, results_dir)
 
     # write statistics about the final result
+    if os.path.isfile(end_stats_fpath) is False:
+        write_header = True
+    else:
+        write_header = False
     with open(end_stats_fpath, 'ab') as end_stats_file:
-        end_stats = csv.writer(end_stats_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
-        end_stats.writerow([total_dead_a + total_dead_b])
+        end_stats_header = ['total_dead_nodes']
+        if save_death_cause is True:
+            end_stats_header.extend(['intra_sup_deaths_a', 'inter_sup_deaths_a',
+                                     'intra_sup_deaths_b', 'inter_sup_deaths_b'])
+            if inter_support_type == 'realistic':
+                end_stats_header.extend(['no_sup_ccs', 'no_sup_relays', 'no_com_path'])
+        end_stats = csv.DictWriter(end_stats_file, end_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        if write_header is True:
+            end_stats.writeheader()
+        end_stats_row = {'total_dead_nodes': total_dead_a + total_dead_b}
+        if save_death_cause is True:
+            end_stats_row.update({'intra_sup_deaths_a': intra_sup_deaths_a, 'inter_sup_deaths_a': inter_sup_deaths_a,
+                                  'intra_sup_deaths_b': intra_sup_deaths_b, 'inter_sup_deaths_b': inter_sup_deaths_b})
+            if inter_support_type == 'realistic':
+                end_stats_row.update({'no_sup_ccs': no_sup_ccs_deaths, 'no_sup_relays': no_sup_relays_deaths,
+                                      'no_com_path': no_com_path_deaths})
+        end_stats.writerow(end_stats_row)
