@@ -38,38 +38,13 @@ def write_conf(instance_dir, conf_fpath, a_options, b_options, inter_options, se
         config.write(configfile)
 
 
-sf.setup_logging('logging.json')
+this_dir = os.path.normpath(os.path.dirname(__file__))
+os.chdir(this_dir)
+sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-
-base_dir = os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_test_2')
+base_dir = os.path.normpath('../Simulations/exp_1000n_many')
 
 build_a_options = [{
-    'name': 'A',
-    'model': 'rt_nested_smallworld',
-    'avg_k': '4',
-    'd_0': '7',
-    'alpha': '0.2',
-    'beta': '0.2',
-    'q_rw': '0.5',
-    'subnets': '20',
-    'nodes': '1000',
-    'roles': 'subnet_gen_transm_distr',
-    'generators': '100',
-    'distribution_substations': '630'
-}, {
-    'name': 'A',
-    'model': 'rt_nested_smallworld',
-    'avg_k': '4',
-    'd_0': '7',
-    'alpha': '0.2',
-    'beta': '0.2',
-    'q_rw': '0.5',
-    'subnets': '20',
-    'nodes': '1000',
-    'roles': 'subnet_gen_transm_distr',
-    'generators': '100',
-    'distribution_substations': '630'
-}, {
     'name': 'A',
     'model': 'rt_nested_smallworld',
     'avg_k': '4',
@@ -109,22 +84,8 @@ build_b_options = [{
     'model': 'barabasi_albert',
     'm': 3,
     'roles': 'relay_attached_controllers',
-    'controllers': '5',
-    'relays': '995'
-}, {
-    'name': 'B',
-    'model': 'barabasi_albert',
-    'm': 3,
-    'roles': 'relay_attached_controllers',
-    'controllers': '10',
-    'relays': '990'
-}, {
-    'name': 'B',
-    'model': 'barabasi_albert',
-    'm': 3,
-    'roles': 'relay_attached_controllers',
-    'controllers': '15',
-    'relays': '985'
+    'controllers': '50',
+    'relays': '950'
 }]
 
 build_inter_options = [{
@@ -136,30 +97,16 @@ build_inter_options = [{
     'max_matching_name': 'InterMM'
 }, {
     'name': 'Inter',
-    'k': '5',
-    'dependency_model': 'k-to-n',
-    'n': '1000',
-    'produce_max_matching': 'True',
-    'max_matching_name': 'InterMM'
-}, {
-    'name': 'Inter',
-    'k': '10',
-    'dependency_model': 'k-to-n',
-    'n': '1000',
-    'produce_max_matching': 'True',
-    'max_matching_name': 'InterMM'
-}, {
-    'name': 'Inter',
-    'k': '15',
+    'k': '50',
     'dependency_model': 'k-to-n',
     'n': '1000',
     'produce_max_matching': 'True',
     'max_matching_name': 'InterMM'
 }]
 
-instances_per_type = 1
-seeds = list()  # hack
-first_group = True  # hack
+instances_per_type = 20
+seeds = list()
+first_group = True
 
 my_random = random.Random(256)
 

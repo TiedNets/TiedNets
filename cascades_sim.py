@@ -43,27 +43,51 @@ def choose_nodes_by_betweenness_centrality(G, node_cnt, seed=None):
     return chosen_nodes
 
 
-def choose_most_used_distr_subs(G, I, node_cnt):
+def choose_most_inter_used_nodes(G, I, node_cnt, role):
     # select distribution substations from G
     # get the in-degree of each distribution substation from I
     # make that a list of tuples
-    dist_subs_with_rank = list()
+    nodes_with_rank = list()
     for node in G.nodes():
-        role = G.node[node]['role']
-        if role == 'distribution_substation':
-            rank = I.in_degree(node)
-            dist_subs_with_rank.append((rank, node))
+        node_role = G.node[node]['role']
+        if node_role == role:
+            if nx.is_directed(I):
+                rank = I.in_degree(node)
+            else:
+                rank = I.degree(node)
+            nodes_with_rank.append((rank, node))
 
     # sort the data structure by degree and node id
-    dist_subs_with_rank.sort(reverse=True)
+    nodes_with_rank.sort()
+    print('========= nodes_with_rank {}'.format(nodes_with_rank))
 
     # pick the first node_cnt nodes from the data structure
     # put them in a list and return it
     chosen_nodes = list()
-    for i, rank_and_node in enumerate(dist_subs_with_rank):
-        if i >= node_cnt:
-            break
-        chosen_nodes.append(rank_and_node[1])
+    for i in range(0, node_cnt):
+        chosen_nodes.append(nodes_with_rank.pop()[1])
+    return chosen_nodes
+
+
+def choose_most_intra_used_nodes(G, node_cnt, role):
+    # select nodes from G, get their degree
+    # make that a list of tuples
+    nodes_with_rank = list()
+    for node in G.nodes():
+        node_role = G.node[node]['role']
+        if node_role == role:
+            rank = G.degree(node)
+            nodes_with_rank.append((rank, node))
+
+    # sort the data structure by degree and node id
+    nodes_with_rank.sort()
+    print('========= nodes_with_rank {}'.format(nodes_with_rank))
+
+    # pick the first node_cnt nodes from the data structure
+    # put them in a list and return it
+    chosen_nodes = list()
+    for i in range(0, node_cnt):
+        chosen_nodes.append(nodes_with_rank.pop()[1])
     return chosen_nodes
 
 
@@ -254,9 +278,9 @@ def run(conf_fpath):
 
     attacked_netw = config.get('run_opts', 'attacked_netw')
     attack_tactic = config.get('run_opts', 'attack_tactic')
-    if attack_tactic not in ['random', 'targeted', 'betweenness_centrality']:
+    if attack_tactic not in ['random', 'targeted', 'betweenness_centrality', 'most_used_distr_subs']:
         raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
-    if attack_tactic in ['random', 'betweenness_centrality']:
+    if attack_tactic != 'targeted':
         attack_cnt = config.getint('run_opts', 'attacks')
     intra_support_type = config.get('run_opts', 'intra_support_type')
     if intra_support_type not in ['giant_component', 'cluster_size', 'realistic']:
@@ -342,13 +366,19 @@ def run(conf_fpath):
         if attacked_netw == A.graph['name']:
             if attack_tactic == 'random':
                 attacked_nodes = choose_random_nodes(A, attack_cnt, seed)
-            elif attack_tactic == 'betweenness_centrality':
-                attacked_nodes = choose_nodes_by_betweenness_centrality(A, attack_cnt, seed)
-            elif attack_tactic == 'most_used_distr_subs':
-                attacked_nodes = choose_most_used_distr_subs(A, attack_cnt)
             elif attack_tactic == 'targeted':
                 target_nodes = config.get('run_opts', 'target_nodes')
                 attacked_nodes = [node for node in target_nodes.split()]  # split list on space
+            elif attack_tactic == 'betweenness_centrality':
+                attacked_nodes = choose_nodes_by_betweenness_centrality(A, attack_cnt, seed)
+            elif attack_tactic == 'most_inter_used_distr_subs':
+                attacked_nodes = choose_most_inter_used_nodes(A, I, attack_cnt, 'distribution_substation')
+            elif attack_tactic == 'most_intra_used_distr_subs':
+                attacked_nodes = choose_most_intra_used_nodes(A, attack_cnt, 'distribution_substation')
+            elif attack_tactic == 'most_intra_used_transm_subs':
+                attacked_nodes = choose_most_intra_used_nodes(A, attack_cnt, 'transmission_substation')
+            elif attack_tactic == 'most_intra_used_generators':
+                attacked_nodes = choose_most_intra_used_nodes(A, attack_cnt, 'generator')
             else:
                 raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
             total_dead_a = len(attacked_nodes)
@@ -358,13 +388,11 @@ def run(conf_fpath):
         elif attacked_netw == B.graph['name']:
             if attack_tactic == 'random':
                 attacked_nodes = choose_random_nodes(B, attack_cnt, seed)
-            elif attack_tactic == 'betweenness_centrality':
-                attacked_nodes = choose_nodes_by_betweenness_centrality(B, attack_cnt, seed)
-            elif attack_tactic == 'most_used_distr_subs':
-                attacked_nodes = choose_most_used_distr_subs(B, attack_cnt)
             elif attack_tactic == 'targeted':
                 target_nodes = config.get('run_opts', 'target_nodes')
                 attacked_nodes = [node for node in target_nodes.split()]
+            elif attack_tactic == 'betweenness_centrality':
+                attacked_nodes = choose_nodes_by_betweenness_centrality(B, attack_cnt, seed)
             else:
                 raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
             total_dead_b = len(attacked_nodes)

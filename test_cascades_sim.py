@@ -486,7 +486,7 @@ def test_run_ex_unstable_2():
     os.remove(os.path.join(this_dir, os.path.normpath('test_sets/useless/useless_4.tsv')))
 
 
-def test_choose_most_used_distr_subs():
+def test_choose_most_inter_used_nodes():
     global this_dir, logging_conf_fpath
     netw_a_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/A.graphml'))
     netw_inter_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/Inter.graphml'))
@@ -496,11 +496,30 @@ def test_choose_most_used_distr_subs():
     sf.setup_logging(logging_conf_fpath)
     A = nx.read_graphml(netw_a_fpath)
     I = nx.read_graphml(netw_inter_fpath)
-    chosen_nodes_1 = cs.choose_most_used_distr_subs(A, I, 1)
-    chosen_nodes_2 = cs.choose_most_used_distr_subs(A, I, 2)
-    chosen_nodes_3 = cs.choose_most_used_distr_subs(A, I, 3)
+    chosen_nodes_1 = cs.choose_most_inter_used_nodes(A, I, 1, 'distribution_substation')
+    chosen_nodes_2 = cs.choose_most_inter_used_nodes(A, I, 2, 'distribution_substation')
+    chosen_nodes_3 = cs.choose_most_inter_used_nodes(A, I, 3, 'distribution_substation')
 
     # then
     assert chosen_nodes_1 == ['D2']
     assert sorted(chosen_nodes_2) == ['D2', 'D3']
     assert sorted(chosen_nodes_3) == ['D1', 'D2', 'D3']
+
+def test_choose_most_intra_used_nodes():
+    global this_dir, logging_conf_fpath
+    netw_a_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/A.graphml'))
+    netw_inter_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/Inter.graphml'))
+
+    # when
+    os.chdir(this_dir)
+    sf.setup_logging(logging_conf_fpath)
+    A = nx.read_graphml(netw_a_fpath)
+    I = nx.read_graphml(netw_inter_fpath)
+    chosen_nodes_1 = cs.choose_most_intra_used_nodes(A, 1, 'transmission_substation')
+    chosen_nodes_2 = cs.choose_most_intra_used_nodes(A, 2, 'transmission_substation')
+    chosen_nodes_3 = cs.choose_most_intra_used_nodes(A, 3, 'transmission_substation')
+
+    # then
+    assert chosen_nodes_1 == ['T1']
+    assert sorted(chosen_nodes_2) == ['T1', 'T3']
+    assert sorted(chosen_nodes_3) == ['T1', 'T2', 'T3']

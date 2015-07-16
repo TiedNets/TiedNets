@@ -28,7 +28,8 @@ def write_conf(conf_fpath, paths, run_options):
     with open(conf_fpath, 'w') as conf_file:
         config.write(conf_file)
 
-
+this_dir = os.path.normpath(os.path.dirname(__file__))
+os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
 
@@ -37,67 +38,68 @@ index_fname = '_index.tsv'
 instances_dir = os.path.normpath('../Simulations/exp_1000n_many/')
 
 group_results_dirs = [
-    # os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/subst_atk/realistic/'),
-    #                   os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/subst_atk/sc_th_5/'),
-                      os.path.normpath('../Simulations/exp_1000n_many/subst_atk/sc_th_400/')
-                      # os.path.normpath('C:/Users/sturaroa/Documents/Simulations/exp_1000n_many/subst_atk/uniform/')
+    os.path.normpath('../Simulations/exp_1000n_many/tran_atk/1_cc/realistic/')
+    # os.path.normpath('../Simulations/exp_1000n_many/subst_atk/1_cc/sc_th_21/'),
+    # os.path.normpath('../Simulations/exp_1000n_many/subst_atk/1_cc/sc_th_200/'),
+    # os.path.normpath('../Simulations/exp_1000n_many/subst_atk/1_cc/uniform/')
 ]
 
 diff_paths = [
     {
-#     'netw_inter_fname': 'Inter.graphml'
-# # }, {
-# #     'netw_inter_fname': 'Inter.graphml'
-# }, {
-    'netw_inter_fname': 'Inter.graphml'
-}
-#     , {
-#     'netw_inter_fname': 'InterMM.graphml'
-# }
+        'netw_inter_fname': 'Inter.graphml'
+    # }, {
+    #     'netw_inter_fname': 'Inter.graphml'
+    # }, {
+    #     'netw_inter_fname': 'Inter.graphml'
+    # }, {
+    #     'netw_inter_fname': 'InterMM.graphml'
+    }
 ]
 
 diff_run_options = [
     {
-#     'attacked_netw': 'A',
-#     'attack_tactic': 'random',
-#     'intra_support_type': 'realistic',
-#     'inter_support_type': 'realistic'
-# }, {
-#     'attacked_netw': 'A',
-#     'attack_tactic': 'random',
-#     'intra_support_type': 'cluster_size',
-#     'min_cluster_size': '5',
-#     'inter_support_type': 'node_interlink'
-# }, {
-    'attacked_netw': 'A',
-    'attack_tactic': 'random',
-    'intra_support_type': 'cluster_size',
-    'min_cluster_size': '400',
-    'inter_support_type': 'node_interlink'
-}
-#     , {
-#     'attacked_netw': 'A',
-#     'attack_tactic': 'random',
-#     'intra_support_type': 'giant_component',
-#     'inter_support_type': 'node_interlink'
-# }
+        'attacked_netw': 'A',
+        'attack_tactic': 'most_used_tran_subs',
+        'intra_support_type': 'realistic',
+        'inter_support_type': 'realistic',
+        'save_death_cause': True
+    # }, {
+    #     'attacked_netw': 'A',
+    #     'attack_tactic': 'most_used_distr_subs',
+    #     'intra_support_type': 'cluster_size',
+    #     'min_cluster_size': '21',
+    #     'inter_support_type': 'node_interlink',
+    #     'save_death_cause': True
+    # }, {
+    #     'attacked_netw': 'A',
+    #     'attack_tactic': 'most_used_distr_subs',
+    #     'intra_support_type': 'cluster_size',
+    #     'min_cluster_size': '200',
+    #     'inter_support_type': 'node_interlink',
+    #     'save_death_cause': True
+    # }, {
+    #     'attacked_netw': 'A',
+    #     'attack_tactic': 'most_used_distr_subs',
+    #     'intra_support_type': 'giant_component',
+    #     'inter_support_type': 'node_interlink',
+    #     'save_death_cause': True
+    }
 ]
 
 if len(group_results_dirs) != len(diff_paths) != len(diff_run_options):
     raise ValueError('group_output_dirs, diff_paths and diff_run_options lists should have the same length')
 
-instances_per_type = 10  # used to group instances, must have the same value used for network creation
+instances_per_type = 20  # used to group instances, must have the same value used for network creation
 first_instance_num = 0
-last_instance_num = 9
+last_instance_num = 19
 
 if (1 + last_instance_num - first_instance_num) % instances_per_type:
     raise ValueError('The number of instances is not such that there cannot be the same number of instances for each'
                      'type. Check parameters last_instance_num, first_instance_num, instances_per_type')
 
-# seeds = list(range(130, 141, 1))  # used to execute multiple tests on the same network instance
-seeds = [130]
+seeds = [0]  # used to execute multiple tests on the same network instance
 
-attack_counts = list(range(10, 49, 10) + range(50, 401, 50))  # values of the independent value of the simulation
+attack_counts = list(range(10, 401, 10))  # values of the independent value of the simulation
 # end of user defined variables
 
 for i in range(0, len(diff_paths)):
