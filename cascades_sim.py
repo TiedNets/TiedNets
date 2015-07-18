@@ -278,20 +278,12 @@ def run(conf_fpath):
 
     attacked_netw = config.get('run_opts', 'attacked_netw')
     attack_tactic = config.get('run_opts', 'attack_tactic')
-    if attack_tactic not in ['random', 'targeted', 'betweenness_centrality', 'most_used_distr_subs']:
-        raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
     if attack_tactic != 'targeted':
         attack_cnt = config.getint('run_opts', 'attacks')
     intra_support_type = config.get('run_opts', 'intra_support_type')
-    if intra_support_type not in ['giant_component', 'cluster_size', 'realistic']:
-        raise ValueError('Invalid value for parameter "intra_support_type": ' + intra_support_type)
-    inter_support_type = config.get('run_opts', 'inter_support_type')
-    # if inter_support_type not in ['node_interlink', 'cluster_interlink', 'realistic']:
-    if inter_support_type not in ['node_interlink', 'realistic']:
-        raise ValueError('Invalid value for parameter "inter_support_type": ' + inter_support_type)
-
     if intra_support_type == 'cluster_size':
         min_cluster_size = config.getint('run_opts', 'min_cluster_size')
+    inter_support_type = config.get('run_opts', 'inter_support_type')
 
     # read output paths
 
@@ -316,6 +308,8 @@ def run(conf_fpath):
     #     unstable_nodes.update(find_nodes_in_unsupported_clusters(A, I))
     elif inter_support_type == 'realistic':
         unstable_nodes.update(find_uncontrolled_pow_nodes(A, B, I))
+    else:
+        raise ValueError('Invalid value for parameter "inter_support_type": ' + inter_support_type)
 
     if intra_support_type == 'giant_component':
         unstable_nodes.update(find_nodes_not_in_giant_component(A))
@@ -323,6 +317,8 @@ def run(conf_fpath):
         unstable_nodes.update(find_nodes_in_smaller_clusters(A, min_cluster_size))
     elif intra_support_type == 'realistic':
         unstable_nodes.update(find_unpowered_substations(A))
+    else:
+        raise ValueError('Invalid value for parameter "intra_support_type": ' + intra_support_type)
 
     if inter_support_type == 'node_interlink':
         unstable_nodes.update(find_nodes_without_inter_links(B, I))
@@ -524,8 +520,8 @@ def run(conf_fpath):
             end_stats.writeheader()
         end_stats_row = {'total_dead_nodes': total_dead_a + total_dead_b}
         if save_death_cause is True:
-            end_stats_row.update({'intra_sup_deaths_a': intra_sup_deaths_a, 'inter_sup_deaths_a': inter_sup_deaths_a,
-                                  'intra_sup_deaths_b': intra_sup_deaths_b, 'inter_sup_deaths_b': inter_sup_deaths_b})
+            end_stats_row.update({'no_intra_sup_a': intra_sup_deaths_a, 'no_inter_sup_a': inter_sup_deaths_a,
+                                  'no_intra_sup_b': intra_sup_deaths_b, 'no_inter_sup_b': inter_sup_deaths_b})
             if inter_support_type == 'realistic':
                 end_stats_row.update({'no_sup_ccs': no_sup_ccs_deaths, 'no_sup_relays': no_sup_relays_deaths,
                                       'no_com_path': no_com_path_deaths})

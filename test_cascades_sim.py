@@ -343,33 +343,6 @@ def test_run_ex_3_realistic():
     os.remove(os.path.join(this_dir, os.path.normpath('test_sets/useless/useless_3.tsv')))
 
 
-# def test_run_ex_3_realistic_with_reasons():
-#     # given
-#     global this_dir, logging_conf_fpath
-#     sim_conf_fpath = 'test_sets/ex_3_full/run_realistic_w_causes.ini'
-#     exp_log_fpath = 'test_sets/ex_3_full/exp_log_realistic_w_causes.txt'
-#     exp_end_stats_fpath = os.path.normpath('test_sets/ex_3_full/exp_end_stats_realistic_w_causes.tsv')
-#     res_end_stats_fpath = os.path.normpath('test_sets/useless/useless_3.tsv')
-#
-#     # when
-#     os.chdir(this_dir)
-#     sf.setup_logging(logging_conf_fpath)
-#     cs.run(sim_conf_fpath)
-#
-#     # then
-#     assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
-#
-#     # confront the 2 files line by line, without caring about different line endings
-#     same_end_stats = False
-#     if open(exp_end_stats_fpath, 'r').read() == open(res_end_stats_fpath, 'r').read():
-#         same_end_stats = True
-#     assert same_end_stats is True
-#
-#     # tear down
-#     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_full/res_realistic_w_causes')))
-#     # os.remove(os.path.join(this_dir, os.path.normpath('test_sets/useless/useless_3.tsv')))
-
-
 def test_run_ex_3_kngc():
     # given
     global this_dir, logging_conf_fpath
@@ -508,13 +481,11 @@ def test_choose_most_inter_used_nodes():
 def test_choose_most_intra_used_nodes():
     global this_dir, logging_conf_fpath
     netw_a_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/A.graphml'))
-    netw_inter_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/Inter.graphml'))
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
     A = nx.read_graphml(netw_a_fpath)
-    I = nx.read_graphml(netw_inter_fpath)
     chosen_nodes_1 = cs.choose_most_intra_used_nodes(A, 1, 'transmission_substation')
     chosen_nodes_2 = cs.choose_most_intra_used_nodes(A, 2, 'transmission_substation')
     chosen_nodes_3 = cs.choose_most_intra_used_nodes(A, 3, 'transmission_substation')
@@ -523,3 +494,45 @@ def test_choose_most_intra_used_nodes():
     assert chosen_nodes_1 == ['T1']
     assert sorted(chosen_nodes_2) == ['T1', 'T3']
     assert sorted(chosen_nodes_3) == ['T1', 'T2', 'T3']
+
+
+def test_find_uncontrolled_pow_nodes():
+    global this_dir, logging_conf_fpath
+    netw_a_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_4_full/A.graphml'))
+    netw_b_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_4_full/B.graphml'))
+    netw_inter_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_4_full/Inter.graphml'))
+
+    # when
+    os.chdir(this_dir)
+    sf.setup_logging(logging_conf_fpath)
+    A = nx.read_graphml(netw_a_fpath)
+    B = nx.read_graphml(netw_b_fpath)
+    I = nx.read_graphml(netw_inter_fpath)
+
+    tmp_B = B.copy()
+    tmp_I = I.copy()
+    tmp_B.remove_node('R1')
+    tmp_I.remove_node('R1')
+    found_nodes_1 = cs.find_uncontrolled_pow_nodes(A, tmp_B, tmp_I, True)
+
+    tmp_B = B.copy()
+    tmp_I = I.copy()
+    tmp_B.remove_node('R4')
+    tmp_I.remove_node('R4')
+    found_nodes_2 = cs.find_uncontrolled_pow_nodes(A, tmp_B, tmp_I, True)
+
+    tmp_B = B.copy()
+    tmp_I = I.copy()
+    tmp_B.remove_node('C1')
+    tmp_I.remove_node('C1')
+    found_nodes_3 = cs.find_uncontrolled_pow_nodes(A, tmp_B, tmp_I, True)
+    tmp_B.remove_node('C2')
+    tmp_I.remove_node('C2')
+    found_nodes_4 = cs.find_uncontrolled_pow_nodes(A, tmp_B, tmp_I, True)
+
+    # then
+    assert found_nodes_1.keys() == ['no_sup_relays', 'no_com_path', 'no_sup_ccs']
+    assert sorted(found_nodes_1['no_sup_relays']) == ['D1', 'G1', 'T1']
+    assert sorted(found_nodes_2['no_com_path']) == ['D2', 'G2', 'T2']
+    assert found_nodes_3['no_sup_ccs'] == []
+    assert sorted(found_nodes_4['no_sup_ccs']) == ['D1', 'D2', 'G1', 'G2', 'T1', 'T2']

@@ -38,9 +38,9 @@ index_fname = '_index.tsv'
 instances_dir = os.path.normpath('../Simulations/exp_1000n_many/')
 
 group_results_dirs = [
-    os.path.normpath('../Simulations/exp_1000n_many/tran_atk/1_cc/realistic/')
-    # os.path.normpath('../Simulations/exp_1000n_many/subst_atk/1_cc/sc_th_21/'),
-    # os.path.normpath('../Simulations/exp_1000n_many/subst_atk/1_cc/sc_th_200/'),
+    # os.path.normpath('../Simulations/exp_1000n_many/subst_atk/1_cc/realistic/'),
+    # os.path.normpath('../Simulations/exp_1000n_many/tran_atk/1_cc/realistic/'),
+    os.path.normpath('../Simulations/exp_1000n_many/gen_atk/1_cc/realistic/')
     # os.path.normpath('../Simulations/exp_1000n_many/subst_atk/1_cc/uniform/')
 ]
 
@@ -58,25 +58,23 @@ diff_paths = [
 
 diff_run_options = [
     {
+        # 'attacked_netw': 'A',
+        # 'attack_tactic': 'most_inter_used_distr_subs',
+        # 'intra_support_type': 'realistic',
+        # 'inter_support_type': 'realistic',
+        # 'save_death_cause': True
+    # }, {
+    #     'attacked_netw': 'A',
+    #     'attack_tactic': 'most_intra_used_transm_subs',
+    #     'intra_support_type': 'realistic',
+    #     'inter_support_type': 'realistic',
+    #     'save_death_cause': True
+    # }, {
         'attacked_netw': 'A',
-        'attack_tactic': 'most_used_tran_subs',
+        'attack_tactic': 'most_intra_used_generators',
         'intra_support_type': 'realistic',
         'inter_support_type': 'realistic',
         'save_death_cause': True
-    # }, {
-    #     'attacked_netw': 'A',
-    #     'attack_tactic': 'most_used_distr_subs',
-    #     'intra_support_type': 'cluster_size',
-    #     'min_cluster_size': '21',
-    #     'inter_support_type': 'node_interlink',
-    #     'save_death_cause': True
-    # }, {
-    #     'attacked_netw': 'A',
-    #     'attack_tactic': 'most_used_distr_subs',
-    #     'intra_support_type': 'cluster_size',
-    #     'min_cluster_size': '200',
-    #     'inter_support_type': 'node_interlink',
-    #     'save_death_cause': True
     # }, {
     #     'attacked_netw': 'A',
     #     'attack_tactic': 'most_used_distr_subs',
@@ -99,7 +97,7 @@ if (1 + last_instance_num - first_instance_num) % instances_per_type:
 
 seeds = [0]  # used to execute multiple tests on the same network instance
 
-attack_counts = list(range(10, 401, 10))  # values of the independent value of the simulation
+attack_counts = list(range(10, 101, 10))  # values of the independent value of the simulation
 # end of user defined variables
 
 for i in range(0, len(diff_paths)):

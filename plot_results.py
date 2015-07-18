@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import shared_functions as sf
 
-input_fpath = os.path.normpath('../Simulations/exp_1000n_many/tran_atk/15_cc/_stats.tsv')
-output_fpath = os.path.normpath('../Simulations/exp_1000n_many/tran_atk/1_cc/subst_atk_15cc.pdf')
+input_fpath = os.path.normpath('../Simulations/exp_1000n_many/rnd_atk/1_cc/_stats.tsv')
+output_fpath = os.path.normpath('../Simulations/exp_1000n_many/rnd_atk/1_cc/rnd_atk_1cc.pdf')
 
 # read values from file, by column
 values = np.genfromtxt(input_fpath, delimiter='\t', skip_header=1, dtype=None)
-# print('my_data\n' + str(values))
 
 groups = sf.get_unnamed_numpy_col(values, 0)
 X = sf.get_unnamed_numpy_col(values, 1)
