@@ -478,6 +478,7 @@ def test_choose_most_inter_used_nodes():
     assert sorted(chosen_nodes_2) == ['D2', 'D3']
     assert sorted(chosen_nodes_3) == ['D1', 'D2', 'D3']
 
+
 def test_choose_most_intra_used_nodes():
     global this_dir, logging_conf_fpath
     netw_a_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/A.graphml'))

@@ -2,9 +2,9 @@ __author__ = 'Agostino Sturaro'
 
 import os
 import sys
-import random
+import json
 import math
-import numbers
+import random
 import logging
 import numpy as np
 import networkx as nx
@@ -338,10 +338,8 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
 def create_ranged_dep(G1, G2, radius):
     global logger
 
-    if not isinstance(radius, numbers.Real):
-        raise TypeError('radius is not a real number')
-    elif radius <= 0:
-        raise ValueError('radius is not larger than 0')
+    if radius <= 0:
+        raise ValueError('radius is not a number larger than 0')
 
     Inter_G = nx.Graph()
 
@@ -450,30 +448,52 @@ def draw_node_groups(G, node_groups):
 
 
 # G is the network graph
+# nodes_by_role is a dictionary in the form {'role': list of nodes with role}
+def assign_specific_roles(G, nodes_by_role):
+    for role in nodes_by_role:
+        nodes = nodes_by_role[role]
+        for node in nodes:
+            G.node[node]['role'] = role
+
+
+# G is the network graph
 # generator_cnt is the number of generators in the network
 # distr_subst_cnt is the number of distribution substations in the network
-def assign_power_roles(G, generator_cnt, distr_subst_cnt, seed=None):
+# only_unassigned is a boolean telling if nodes that already have a role should not be reassigned one
+def assign_power_roles(G, generator_cnt, transm_subst_cnt, distr_subst_cnt, only_unassigned, seed=None):
     global logger
-    if generator_cnt <= 0:
-        raise ValueError('generators must be larger than 0')
-    elif not 0 <= distr_subst_cnt:
-        raise ValueError('distribution_subs must be larger than 0')
+    if generator_cnt < 0:
+        raise ValueError('generators must be a positive number')
+    elif distr_subst_cnt < 0:
+        raise ValueError('distribution_subs must be a positive number')
+    elif transm_subst_cnt < 0:
+        raise ValueError('transm_subst_cnt must be a positive number')
+    elif generator_cnt + transm_subst_cnt + distr_subst_cnt > G.number_of_nodes():
+        raise ValueError('The number of roles to assign is larger than the number of nodes in the graph')
 
     my_random = random.Random(seed)
 
-    transm_subst_cnt = G.number_of_nodes() - generator_cnt - distr_subst_cnt
-    if transm_subst_cnt <= 0:
-        raise ValueError('There should be room for at least 1 transmission substation in the network')
+    # find out which nodes have not been assigned a role
+    if only_unassigned is True:
+        assignable_nodes = list()
+        for node in G.nodes():
+            if 'role' not in G.node[node] or G.node[node]['role'] is None:
+                assignable_nodes.append(node)
+        if len(assignable_nodes) < generator_cnt + transm_subst_cnt + distr_subst_cnt:
+            raise ValueError('The number of roles to assign is larger than the number of nodes without a role')
+    else:
+        assignable_nodes = list(G.nodes())
 
-    nodes = list(G.nodes())
-    my_random.shuffle(nodes)  # shuffle nodes
+    assignable_nodes.sort()  # sort to make the algorithm deterministic
+    my_random.shuffle(assignable_nodes)  # shuffle nodes
     for i in range(0, generator_cnt):
-        node = nodes.pop(0)  # pop front
+        node = assignable_nodes.pop(0)  # pop front
         G.node[node]['role'] = 'generator'
     for i in range(0, distr_subst_cnt):
-        node = nodes.pop()
+        node = assignable_nodes.pop()
         G.node[node]['role'] = 'distribution_substation'
-    for node in nodes:
+    for i in range(0, transm_subst_cnt):
+        node = assignable_nodes.pop()
         G.node[node]['role'] = 'transmission_substation'
 
 
@@ -910,24 +930,24 @@ def run(conf_fpath):
 
     # create the power network
 
-    netw_model = config.get('build_a', 'model')
-    netw_model = netw_model.lower()
+    netw_a_model = config.get('build_a', 'model')
+    netw_a_model = netw_a_model.lower()
     roles_a = config.get('build_a', 'roles')
     netw_a_seed = seed
 
-    if netw_model != 'user_defined_graph':
+    if netw_a_model != 'user_defined_graph':
         node_cnt = config.getint('build_a', 'nodes')
 
-    if netw_model in ['rr', 'random_regular', 'random-regular']:
+    if netw_a_model in ['rr', 'random_regular', 'random-regular']:
         degree = config.getint('build_a', 'degree')
         A = nx.random_regular_graph(degree, node_cnt, seed=netw_a_seed)
         while not nx.is_connected(A):
             netw_a_seed += 1
             A = nx.random_regular_graph(degree, node_cnt, seed=netw_a_seed)
-    elif netw_model in ['ba', 'barabasi_albert', 'barabasi-albert']:
+    elif netw_a_model in ['ba', 'barabasi_albert', 'barabasi-albert']:
         m = config.getint('build_a', 'm')
         A = nx.barabasi_albert_graph(node_cnt, m, seed=netw_a_seed)
-    elif netw_model in ['rt-nested-smallworld', 'rt_nested_smallworld']:
+    elif netw_a_model in ['rt-nested-smallworld', 'rt_nested_smallworld']:
         avg_k = config.getfloat('build_a', 'avg_k')
         d_0 = config.getint('build_a', 'd_0')
         q_rw = config.getfloat('build_a', 'q_rw')
@@ -951,7 +971,7 @@ def run(conf_fpath):
         else:
             subnet_cnt = None
         A = RT_nested_Smallworld(node_cnt, avg_k, d_0, alpha, beta, q_rw, subnet_cnt, seed=netw_a_seed)
-    elif netw_model == 'user_defined_graph':
+    elif netw_a_model == 'user_defined_graph':
         fpath_a = config.get('build_a', 'graph_fpath')
         if os.path.isabs(fpath_a) is False:
             fpath_a = os.path.abspath(fpath_a)
@@ -961,10 +981,18 @@ def run(conf_fpath):
         else:
             raise ValueError('Unsupported value for parameter "file_format" of network A: ' + fformat_a)
     else:
-        raise ValueError('Invalid value for parameter "model" of network A: ' + netw_model)
+        raise ValueError('Invalid value for parameter "model" of network A: ' + netw_a_model)
 
     A.graph['name'] = netw_a_name  # assign the correct name to the graph
     role_prefixes_a = {'generator': 'G', 'transmission_substation': 'T', 'distribution_substation': 'D'}
+
+    check_preassigned = False
+    if config.has_option('build_a', 'preassigned_roles_fpath'):
+        preassigned_roles_fpath = config.get('build_a', 'preassigned_roles_fpath')
+        with open(preassigned_roles_fpath) as preassigned_roles_file:
+            preassigned_roles = json.load(preassigned_roles_file)
+        assign_specific_roles(A, preassigned_roles)
+        check_preassigned = True
 
     # assign roles and relabel nodes
     if roles_a == 'same':
@@ -973,10 +1001,13 @@ def run(conf_fpath):
         relabel_nodes(A, netw_a_name)
     elif roles_a == 'random_gen_transm_distr':
         generator_cnt = config.getint('build_a', 'generators')
+        transm_subst_cnt = config.getint('build_a', 'transmission_substations')
         distr_subst_cnt = config.getint('build_a', 'distribution_substations')
-        assign_power_roles(A, generator_cnt, distr_subst_cnt, seed)
+        assign_power_roles(A, generator_cnt, transm_subst_cnt, distr_subst_cnt, check_preassigned, seed)
         relabel_nodes_by_role(A, role_prefixes_a)
     elif roles_a == 'subnet_gen_transm_distr':
+        if check_preassigned is True:
+            raise ValueError('preassigned_roles_fpath has not been implemented for subnets yet')  # TODO: implement this
         generator_cnt = config.getint('build_a', 'generators')
         distr_subst_cnt = config.getint('build_a', 'distribution_substations')
         assign_power_roles_to_subnets(A, generator_cnt, distr_subst_cnt, seed)
@@ -984,14 +1015,18 @@ def run(conf_fpath):
     else:
         raise ValueError('Invalid value for parameter "roles" of network A: ' + roles_a)
 
+    if netw_a_model != 'user_defined_graph':
+        span = 5
+        arrange_nodes(A, span)
+
     # create the communication network
 
-    netw_model = config.get('build_b', 'model')
-    netw_model = netw_model.lower()
+    netw_b_model = config.get('build_b', 'model')
+    netw_b_model = netw_b_model.lower()
     roles_b = config.get('build_b', 'roles')
     netw_b_seed = seed
 
-    if netw_model != 'user_defined_graph':
+    if netw_b_model != 'user_defined_graph':
         if roles_b == 'relay_attached_controllers':
             node_cnt = config.getint('build_b', 'relays')
         else:
@@ -999,16 +1034,16 @@ def run(conf_fpath):
             controllers = config.getint('build_b', 'controllers')
             node_cnt = relays + controllers
 
-    if netw_model in ['rr', 'random_regular', 'random-regular']:
+    if netw_b_model in ['rr', 'random_regular', 'random-regular']:
         degree = config.getint('build_b', 'degree')
         B = nx.random_regular_graph(degree, node_cnt, seed=netw_b_seed)
         while not nx.is_connected(B):
             netw_b_seed += 1
             B = nx.random_regular_graph(degree, node_cnt, seed=netw_b_seed)
-    elif netw_model in ['ba', 'barabasi_albert', 'barabasi-albert']:
+    elif netw_b_model in ['ba', 'barabasi_albert', 'barabasi-albert']:
         m = config.getint('build_b', 'm')
         B = nx.barabasi_albert_graph(node_cnt, m, seed=netw_b_seed)
-    elif netw_model == 'user_defined_graph':
+    elif netw_b_model == 'user_defined_graph':
         fpath_b = config.get('build_b', 'graph_fpath')
         if os.path.isabs(fpath_b) is False:
             fpath_b = os.path.abspath(fpath_b)
@@ -1018,7 +1053,7 @@ def run(conf_fpath):
         else:
             raise ValueError('Invalid value for parameter "file_format" of network B: ' + fformat_b)
     else:
-        raise ValueError('Invalid value for parameter "model" of network B: ' + netw_model)
+        raise ValueError('Invalid value for parameter "model" of network B: ' + netw_b_model)
 
     B.graph['name'] = netw_b_name  # assign the correct name to the graph
     role_prefixes_b = {'relay': 'R', 'controller': 'C'}
@@ -1057,11 +1092,8 @@ def run(conf_fpath):
     else:
         raise ValueError('Invalid value for parameter "roles" of network B: ' + roles_b)
 
-    # logger.info('arranging nodes start')
-
-    # TODO: the geographical position and the draw position should be distinct
     # assign positions to nodes
-    if netw_model == 'user_defined_graph':
+    if netw_b_model == 'user_defined_graph':
         if roles_b == 'relay_attached_controllers':
             control_nodes = list()
             first_it = True
@@ -1098,8 +1130,7 @@ def run(conf_fpath):
                 B.node[node]['x'] = my_random.uniform(x_min, x_max)
                 B.node[node]['y'] = my_random.uniform(y_min, y_max)
     else:
-        span = 5
-        arrange_nodes(A, span)
+        span = 5  # TODO: make this the bigger span of A and B
         arrange_nodes(B, span)
 
     # create the interdependency network
@@ -1170,7 +1201,7 @@ def run(conf_fpath):
 
     dist_perc = 0.16
     plt.figure(figsize=(15 + 1.6, 10))
-    if netw_model != 'user_defined_graph':
+    if netw_b_model != 'user_defined_graph':  # TODO: make this work for whatever
         margin = span * 0.02
         plt.xlim(-margin, span * 2 + span * dist_perc + margin)
         plt.ylim(-margin, span + margin)
@@ -1186,7 +1217,7 @@ def run(conf_fpath):
     sf.paint_netw_graph(A, A, edge_col_per_type, 'r')
     sf.paint_netw_graph(B, B, edge_col_per_type, 'b', pos_shifts_by_netw[netw_b_name])
 
-    # sf.paint_inter_graph(I, I, 'orange', pos_shifts_by_netw, edge_col_per_type)
+    sf.paint_inter_graph(I, I, 'orange', pos_shifts_by_netw, edge_col_per_type)
 
     logger.info('output_dir = ' + output_dir)
     plt.savefig(os.path.join(output_dir, '_full.pdf'))

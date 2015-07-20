@@ -1,5 +1,6 @@
 __author__ = 'Agostino Sturaro'
 
+import os
 import json
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -14,20 +15,29 @@ final_G = nx.Graph()
 lines_by_id = dict()
 point_to_id = dict()
 
-com_lines_fpath = 'datasets/ComLines.geojson'
+com_lines_fpath = os.path.normpath('datasets/ComLines.geojson')
+parsed_graph_fpath = os.path.normpath('MN_pow.graphml')
+
+this_dir = os.path.normpath(os.path.dirname(__file__))
+os.chdir(this_dir)
+
+if not os.path.isabs(com_lines_fpath):
+    com_lines_fpath = os.path.abspath(com_lines_fpath)
+if not os.path.isabs(parsed_graph_fpath):
+    parsed_graph_fpath = os.path.abspath(parsed_graph_fpath)
 
 with open(com_lines_fpath) as com_lines_file:
     # elec_lines = json.load(elec_lines_file, parse_float=Decimal)
     com_lines = json.load(com_lines_file)
     for line in com_lines['features']:
+        line_id = line['properties']['id']  # these ids probably start from 1 and may not be continuous
 
         if line['geometry'] is None:
-            print('Missing geometry for line with id ' + str(line['properties']['id']))  # debug
+            print('Missing geometry for line {}'.format(line_id))  # debug
             continue
 
-        line_id = line['properties']['id']  # these ids probably start from 1 and may not be continuous
         if line_id in lines_by_id:
-            print('Duplicated line id ' + str(line_id))  # debug
+            print('Duplicated line id {}'.format(line_id))  # debug
             continue
 
         line_attrs = dict()
@@ -40,27 +50,27 @@ with open(com_lines_fpath) as com_lines_file:
 
         lines_by_id[line_id] = line_attrs
 
-    for line_id in lines_by_id:
-        line_attrs = lines_by_id[line_id]
-        line_points = line_attrs['points']
+for line_id in lines_by_id:
+    line_attrs = lines_by_id[line_id]
+    line_points = line_attrs['points']
 
-        # add line points as nodes to the graph
-        for point in line_points:
-            if point not in point_to_id:
-                point_id = len(point_to_id)
-                point_to_id[point] = point_id
-                final_G.add_node(point_id, attr_dict={'x': point[0], 'y': point[1]})
+    # add line points as nodes to the graph
+    for point in line_points:
+        if point not in point_to_id:
+            point_id = len(point_to_id)
+            point_to_id[point] = point_id
+            final_G.add_node(point_id, attr_dict={'x': point[0], 'y': point[1]})
 
-        # connect consecutive line points to form arcs in the graph
-        for idx in range(0, len(line_points)):
-            if idx <= len(line_points) - 2:
-                node = point_to_id[line_points[idx]]
-                other_node = point_to_id[line_points[idx + 1]]
-                final_G.add_edge(node, other_node)
+    # connect consecutive line points to form arcs in the graph
+    for idx in range(0, len(line_points)):
+        if idx <= len(line_points) - 2:
+            node = point_to_id[line_points[idx]]
+            other_node = point_to_id[line_points[idx + 1]]
+            final_G.add_edge(node, other_node)
 
-        lines_by_id[line_id] = line_attrs
+    lines_by_id[line_id] = line_attrs
 
-    print('len(lines) {}'.format(len(lines_by_id)))  # debug
+print('len(lines) {}'.format(len(lines_by_id)))  # debug
 
 # throw away isolated components (this step is optional)
 components = sorted(nx.connected_components(final_G), key=len, reverse=True)

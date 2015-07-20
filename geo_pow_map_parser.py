@@ -1,5 +1,6 @@
 __author__ = 'Agostino Sturaro'
 
+import os
 import json
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -31,31 +32,117 @@ def find_neighboring_subs(G, v):
     return subs
 
 
+def add_generators(elec_gens_fpath, G):
+    free_id = max(G.nodes()) + 1
+    gen_names = list()
+    gen_ids = list()
+    gen_id_to_node = dict()  # only used for tests
+
+    # map substation ids used in the map with node ids used in the graph
+    sub_id_to_node = dict()
+    for node in G.nodes():
+        for sub_id in G.node[node]['sub_ids']:
+            sub_id_to_node[sub_id] = node
+
+    # here we assume there are no overlapping generators
+    # add generators to the graph and connect them to their respective substations
+    with open(elec_gens_fpath) as elec_gens_file:
+        elec_gens = json.load(elec_gens_file)
+
+        print('gen_cnt features = {}'.format(len(elec_gens['features'])))  # debug
+
+        for gen in elec_gens['features']:
+            gen_name = gen['properties']['NAME']  # these ids probably start from 1 and may not be continuous
+
+            if gen['geometry'] is None:
+                print('Missing geometry for generator {}'.format(gen_name))  # debug
+                continue
+
+            if gen_name in gen_names:
+                print('Duplicated generator {}'.format(gen_name))  # debug
+                continue
+
+            gen_names.append(gen_name)  # remember this node id has been encountered
+            gen_attrs = dict()
+            gen_attrs['COMPANY'] = gen['properties']['COMPANY']
+            gen_attrs['MW'] = gen['properties']['MW']
+            gen_attrs['SUBST_ID'] = gen['properties']['SUBST_ID']
+
+            # remember coordinates as a tuple (lat, long)
+            point = tuple(gen['geometry']['coordinates'])
+            gen_attrs['x'] = point[0]
+            gen_attrs['y'] = point[1]
+
+            # add the node with the properties
+            G.add_node(free_id, gen_attrs)
+            gen_ids.append(free_id)
+            gen_id_to_node[gen_name] = free_id
+            free_id += 1
+
+    print('len(gen_names) {}'.format(len(gen_names)))  # debug
+
+    for gen_id in gen_ids:
+        subs_to_link = G.node[gen_id]['SUBST_ID']
+        subs_to_link = [node for node in subs_to_link.split(', ')]
+        for sub_id in subs_to_link:
+            node_id = sub_id_to_node[int(sub_id)]
+            G.add_edge(gen_id, node_id)
+
+    # small tests
+
+    test_gen_node = gen_id_to_node['Minnesota Valley']
+    test_neigh_nodes = list()
+    test_neigh_nodes.append(sub_id_to_node[1090])
+    print G.neighbors(test_gen_node) == test_neigh_nodes
+
+    test_gen_node = gen_id_to_node['Rapids Energy Center']
+    test_neigh_nodes = list()
+    test_neigh_nodes.append(sub_id_to_node[878])
+    test_neigh_nodes.append(sub_id_to_node[879])
+    print G.neighbors(test_gen_node) == test_neigh_nodes
+
+    return gen_ids
+
 subs_G = nx.Graph()
 final_G = nx.Graph()
 subs = dict()
 lines_by_id = dict()
 point_to_id = dict()
 
-elec_subs_fpath = 'datasets/ElecSubs_epsg_4326.geojson'
-elec_lines_fpath = 'datasets/ElecLine_epsg_4326.geojson'
+elec_subs_fpath = os.path.normpath('datasets/ElecSubs_epsg_4326.geojson')
+elec_lines_fpath = os.path.normpath('datasets/ElecLine_epsg_4326.geojson')
+elec_gens_fpath = os.path.normpath('datasets/ElecGens_epsg_4326.geojson')
+parsed_graph_fpath = os.path.normpath('MN_pow.graphml')
+roles_fpath = os.path.normpath('MN_pow_roles.json')
 
-with open(elec_subs_fpath) as elec_subs_file, open(elec_lines_fpath) as elec_lines_file:
-    # add nodes to the graph
+this_dir = os.path.normpath(os.path.dirname(__file__))
+os.chdir(this_dir)
+
+if not os.path.isabs(elec_subs_fpath):
+    elec_subs_fpath = os.path.abspath(elec_subs_fpath)
+if not os.path.isabs(elec_lines_fpath):
+    elec_lines_fpath = os.path.abspath(elec_lines_fpath)
+if not os.path.isabs(elec_gens_fpath):
+    elec_gens_fpath = os.path.abspath(elec_gens_fpath)
+if not os.path.isabs(parsed_graph_fpath):
+    parsed_graph_fpath = os.path.abspath(parsed_graph_fpath)
+
+with open(elec_subs_fpath) as elec_subs_file:
     # elec_subs = json.load(elec_subs_file, parse_float=Decimal)
     elec_subs = json.load(elec_subs_file)
 
-    print('sub_cnt features ' + str(len(elec_subs['features'])))  # debug
+    print('sub_cnt features = {}'.format(len(elec_subs['features'])))  # debug
 
+    # add nodes to a temporary graph
     for sub in elec_subs['features']:
+        sub_id = sub['properties']['OBJECTID']  # these ids probably start from 1 and may not be continuous
 
         if sub['geometry'] is None:
-            print('Missing geometry for sub with OBJECTID ' + str(sub['properties']['OBJECTID']))  # debug
+            print('Missing geometry for substation {}'.format(sub_id))  # debug
             continue
 
-        sub_id = sub['properties']['OBJECTID']  # these ids probably start from 1 and may not be continuous
         if sub_id in subs:
-            print('Duplicated sub OBJECTID ' + str(sub_id))  # debug
+            print('Duplicated substation {}'.format(sub_id))  # debug
             continue
 
         sub_attrs = dict()
@@ -67,7 +154,7 @@ with open(elec_subs_fpath) as elec_subs_file, open(elec_lines_fpath) as elec_lin
         point = tuple(sub['geometry']['coordinates'])
         sub_attrs['coordinates'] = point
 
-        # save the properties of the substation indexing with by the substation OBJECTID
+        # store the properties of the substation, indexed by id
         subs[sub_id] = sub_attrs
 
         # remember that this substation is found at this point
@@ -83,24 +170,25 @@ with open(elec_subs_fpath) as elec_subs_file, open(elec_lines_fpath) as elec_lin
 
     print('len(subs) {}'.format(len(subs)))  # debug
 
-    final_G.add_nodes_from(subs_G.nodes(data=True))  # copy nodes representing substation locations to a multigraph
-
     for node in subs_G.nodes():
         if len(subs_G.node[node]['sub_ids']) > 1:
             print('Group of substations with the same coords ' + str(subs_G.node[node]['sub_ids']))
 
+    final_G.add_nodes_from(subs_G.nodes(data=True))  # copy nodes representing substation locations to a multigraph
+
+with open(elec_lines_fpath) as elec_lines_file:
     # elec_lines = json.load(elec_lines_file, parse_float=Decimal)
     voltages = list()
     elec_lines = json.load(elec_lines_file)
     for line in elec_lines['features']:
+        line_id = line['properties']['OBJECTID']  # these ids probably start from 1 and may not be continuous
 
         if line['geometry'] is None:
-            print('Missing geometry for line with OBJECTID ' + str(line['properties']['OBJECTID']))  # debug
+            print('Missing geometry for line {}'.format(line_id))  # debug
             continue
 
-        line_id = line['properties']['OBJECTID']  # these ids probably start from 1 and may not be continuous
         if line_id in lines_by_id:
-            print('Duplicated line OBJECTID ' + str(line_id))  # debug
+            print('Duplicated line {}'.format(line_id))  # debug
             continue
 
         line_attrs = dict()
@@ -186,12 +274,12 @@ for voltage in voltages:
     for node in voltage_G.nodes():
         neighboring_subs = find_neighboring_subs(temp_G, node)  # search in the other graph
         for neighbor in neighboring_subs:
-            if not voltage_G.has_edge(node, other_node):
+            if not voltage_G.has_edge(node, neighbor):
                 voltage_G.add_edge(node, neighbor)  # TODO: think about some data for the edge (like voltage)
             else:
                 second_hits += 1
 
-    print('Voltage = {}, second_hits = {}'.format(voltage, second_hits))  # debug
+    print('Voltage = {}, number of edges = {}'.format(voltage, voltage_G.number_of_edges()))  # debug
 
     # small test
     point_sub_24 = subs[24]['coordinates']
@@ -214,6 +302,19 @@ for voltage in voltages:
     # copy graph edges (if they are already there, no problem)
     final_G.add_edges_from(voltage_G.edges())  # TODO: find a way to add edge data to a list
 
+# add generators to the graph and save their node ids in the roles file
+
+gen_ids = add_generators(elec_gens_fpath, final_G)
+roles = {'generator': gen_ids}
+
+with open(roles_fpath, 'w') as roles_file:
+    json.dump(roles, roles_file)
+
+# since GraphML does not support attributes with list values, we convert them to strings
+for node in final_G.nodes():
+    if 'sub_ids' in final_G.node[node]:
+        final_G.node[node]['sub_ids'] = str(final_G.node[node]['sub_ids'])
+
 # throw away isolated components (this step is optional)
 components = sorted(nx.connected_components(final_G), key=len, reverse=True)
 for component_idx in range(1, len(components)):
@@ -221,12 +322,8 @@ for component_idx in range(1, len(components)):
     final_G.remove_nodes_from(components[component_idx])
 print('node count without isolated components = {}'.format(final_G.number_of_nodes()))
 
-# since GraphML does not support attributes with list values, we convert them to strings
-for node in final_G.nodes():
-    final_G.node[node]['sub_ids'] = str(final_G.node[node]['sub_ids'])
-
 # export graph in GraphML format
-nx.write_graphml(final_G, 'MN_pow.graphml')
+nx.write_graphml(final_G, parsed_graph_fpath)
 
 # draw the final graph
 
