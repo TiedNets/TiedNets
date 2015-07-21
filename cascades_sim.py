@@ -509,16 +509,16 @@ def run(conf_fpath):
     else:
         write_header = False
     with open(end_stats_fpath, 'ab') as end_stats_file:
-        end_stats_header = ['total_dead_nodes']
+        end_stats_header = ['total_dead']
         if save_death_cause is True:
-            end_stats_header.extend(['intra_sup_deaths_a', 'inter_sup_deaths_a',
-                                     'intra_sup_deaths_b', 'inter_sup_deaths_b'])
+            end_stats_header.extend(['no_intra_sup_a', 'no_inter_sup_a',
+                                     'no_intra_sup_b', 'no_inter_sup_b'])
             if inter_support_type == 'realistic':
                 end_stats_header.extend(['no_sup_ccs', 'no_sup_relays', 'no_com_path'])
         end_stats = csv.DictWriter(end_stats_file, end_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
         if write_header is True:
             end_stats.writeheader()
-        end_stats_row = {'total_dead_nodes': total_dead_a + total_dead_b}
+        end_stats_row = {'total_dead': total_dead_a + total_dead_b}
         if save_death_cause is True:
             end_stats_row.update({'no_intra_sup_a': intra_sup_deaths_a, 'no_inter_sup_a': inter_sup_deaths_a,
                                   'no_intra_sup_b': intra_sup_deaths_b, 'no_inter_sup_b': inter_sup_deaths_b})

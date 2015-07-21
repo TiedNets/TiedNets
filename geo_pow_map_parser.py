@@ -64,6 +64,7 @@ def add_generators(elec_gens_fpath, G):
 
             gen_names.append(gen_name)  # remember this node id has been encountered
             gen_attrs = dict()
+            gen_attrs['NAME'] = gen_name
             gen_attrs['COMPANY'] = gen['properties']['COMPANY']
             gen_attrs['MW'] = gen['properties']['MW']
             gen_attrs['SUBST_ID'] = gen['properties']['SUBST_ID']
@@ -357,6 +358,18 @@ delta_y = abs(y_max - y_min)
 print('x_min = {}\nx_max = {}\ny_min = {}\ny_max = {}'.format(x_min, x_max, y_min, y_max))
 # plt.xlim(x_min - margin * delta_x, x_max + margin * delta_x)
 # plt.xlim(y_min - margin * delta_y, y_max + margin * delta_y)
-nx.draw_networkx(final_G, pos, with_labels=False, node_size=2, linewidths=0.0)
+nx.draw_networkx(final_G, pos, with_labels=False, node_color='r', node_size=8, linewidths=0.0)
+
+# debug
+# generators no longer in the graph (probably because part of isolated components)
+removed_gens = list()
+remaining_nodes = final_G.nodes()
+for gen_node in gen_ids:
+    if gen_node not in remaining_nodes:
+        removed_gens.append(gen_node)
+        gen_ids.remove(gen_node)
+        print('removed generator node {}'.format(gen_node))
+
+nx.draw_networkx_nodes(final_G, pos, nodelist=gen_ids, node_color='b', node_size=8, linewidths=0.0)
 plt.show()
 plt.close()

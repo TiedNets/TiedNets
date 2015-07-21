@@ -42,69 +42,40 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-base_dir = os.path.normpath('../Simulations/exp_1000n_many')
+base_dir = os.path.normpath('../Simulations/test_MN')
 
 build_a_options = [{
     'name': 'A',
-    'model': 'rt_nested_smallworld',
-    'avg_k': '4',
-    'd_0': '7',
-    'alpha': '0.2',
-    'beta': '0.2',
-    'q_rw': '0.5',
-    'subnets': '20',
-    'nodes': '1000',
-    'roles': 'subnet_gen_transm_distr',
-    'generators': '100',
-    'distribution_substations': '630'
-}, {
-    'name': 'A',
-    'model': 'rt_nested_smallworld',
-    'avg_k': '4',
-    'd_0': '7',
-    'alpha': '0.2',
-    'beta': '0.2',
-    'q_rw': '0.5',
-    'subnets': '20',
-    'nodes': '1000',
-    'roles': 'subnet_gen_transm_distr',
-    'generators': '100',
-    'distribution_substations': '630'
+    'model': 'user_defined_graph',
+    'graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
+    'file_format': 'graphml',
+    'roles': 'random_gen_transm_distr',
+    'preassigned_roles_fpath': '../Simulations/MN_data/MN_pow_roles.json',
+    'generators': '0',
+    'distribution_substations': '714',
+    'transmission_substations': '306'
 }]
 
 build_b_options = [{
     'name': 'B',
-    'model': 'barabasi_albert',
-    'm': 3,
+    'model': 'user_defined_graph',
+    'graph_fpath': '../Simulations/MN_data/MN_com.graphml',
+    'file_format': 'graphml',
     'roles': 'relay_attached_controllers',
     'controllers': '1',
-    'relays': '999'
-}, {
-    'name': 'B',
-    'model': 'barabasi_albert',
-    'm': 3,
-    'roles': 'relay_attached_controllers',
-    'controllers': '50',
-    'relays': '950'
+    'relays': '1079'
 }]
 
 build_inter_options = [{
     'name': 'Inter',
     'k': '1',
     'dependency_model': 'k-to-n',
-    'n': '1000',
-    'produce_max_matching': 'True',
-    'max_matching_name': 'InterMM'
-}, {
-    'name': 'Inter',
-    'k': '50',
-    'dependency_model': 'k-to-n',
-    'n': '1000',
+    'n': '1089',
     'produce_max_matching': 'True',
     'max_matching_name': 'InterMM'
 }]
 
-instances_per_type = 20
+instances_per_type = 1
 seeds = list()
 first_group = True
 

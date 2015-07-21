@@ -977,7 +977,8 @@ def run(conf_fpath):
             fpath_a = os.path.abspath(fpath_a)
         fformat_a = config.get('build_a', 'file_format')
         if fformat_a.lower() == 'GraphML'.lower():
-            A = nx.read_graphml(fpath_a)
+            # TODO: make this generic (any type of id), the ids in the preassigned roles should be compatible
+            A = nx.read_graphml(fpath_a, node_type=int)
         else:
             raise ValueError('Unsupported value for parameter "file_format" of network A: ' + fformat_a)
     else:
@@ -1207,17 +1208,17 @@ def run(conf_fpath):
         plt.ylim(-margin, span + margin)
 
     # map used to separate nodes of the 2 networks (e.g. draw A nodes on the left side and B nodes on the right)
-    pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
-                          netw_b_name: {'x': span + span * dist_perc, 'y': 0}}
     # pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
-    #                       netw_b_name: {'x': 0, 'y': 0}}
+    #                       netw_b_name: {'x': span + span * dist_perc, 'y': 0}}
+    pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
+                          netw_b_name: {'x': 0, 'y': 0}}
 
     edge_col_per_type = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
                          'distribution_substation': 'magenta', 'communication': 'b', 'controller': 'c', 'relay': 'b'}
     sf.paint_netw_graph(A, A, edge_col_per_type, 'r')
     sf.paint_netw_graph(B, B, edge_col_per_type, 'b', pos_shifts_by_netw[netw_b_name])
 
-    sf.paint_inter_graph(I, I, 'orange', pos_shifts_by_netw, edge_col_per_type)
+    # sf.paint_inter_graph(I, I, 'orange', pos_shifts_by_netw, edge_col_per_type)
 
     logger.info('output_dir = ' + output_dir)
     plt.savefig(os.path.join(output_dir, '_full.pdf'))

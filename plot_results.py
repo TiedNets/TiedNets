@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import shared_functions as sf
 
-input_fpath = os.path.normpath('../Simulations/exp_1000n_many/rnd_atk/1_cc/_stats.tsv')
-output_fpath = os.path.normpath('../Simulations/exp_1000n_many/rnd_atk/1_cc/rnd_atk_1cc.pdf')
+input_fpath = os.path.normpath('../Simulations/test_MN/rnd_atk/_stats.tsv')
+output_fpath = os.path.normpath('../Simulations/test_MN/rnd_atk/rnd_atks.pdf')
 
 # read values from file, by column
 values = np.genfromtxt(input_fpath, delimiter='\t', skip_header=1, dtype=None)

@@ -11,8 +11,8 @@ os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
 
-index_fpath = os.path.normpath('../Simulations/exp_1000n_many/rnd_atk/1_cc/realistic/_index.tsv')
-aggregate_fpath = os.path.normpath('../Simulations/exp_1000n_many/rnd_atk/1_cc/realistic/_stats.tsv')
+index_fpath = os.path.normpath('../Simulations/test_MN/gen_atk/realistic/_index.tsv')
+aggregate_fpath = os.path.normpath('../Simulations/test_MN/gen_atk/realistic/_stats.tsv')
 
 with open(index_fpath, 'r') as index_file, open(aggregate_fpath, 'wb') as aggregate_file:
     first_it = True

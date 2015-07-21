@@ -35,13 +35,17 @@ logger = logging.getLogger(__name__)
 
 # begin of user defined variables
 index_fname = '_index.tsv'
-instances_dir = os.path.normpath('../Simulations/exp_1000n_many/')
+instances_dir = os.path.normpath('../Simulations/test_MN')
 
 group_results_dirs = [
-    # os.path.normpath('../Simulations/exp_1000n_many/subst_atk/1_cc/realistic/'),
-    # os.path.normpath('../Simulations/exp_1000n_many/tran_atk/1_cc/realistic/'),
-    os.path.normpath('../Simulations/exp_1000n_many/gen_atk/1_cc/realistic/')
-    # os.path.normpath('../Simulations/exp_1000n_many/subst_atk/1_cc/uniform/')
+    # os.path.normpath('../Simulations/test_MN/rnd_atk/realistic'),
+    # os.path.normpath('../Simulations/test_MN/rnd_atk/sc_th_21'),
+    # os.path.normpath('../Simulations/test_MN/rnd_atk/sc_th_201'),
+    # os.path.normpath('../Simulations/test_MN/rnd_atk/uniform')
+    # the part below is used for another kind of plot
+    # os.path.normpath('../Simulations/test_MN/subst_atk/realistic')
+    # os.path.normpath('../Simulations/test_MN/tran_atk/realistic')
+    os.path.normpath('../Simulations/test_MN/gen_atk/realistic')
 ]
 
 diff_paths = [
@@ -57,6 +61,30 @@ diff_paths = [
 ]
 
 diff_run_options = [
+    # {
+    #     'attacked_netw': 'A',
+    #     'attack_tactic': 'random',
+    #     'intra_support_type': 'realistic',
+    #     'inter_support_type': 'realistic'
+    # }, {
+    #     'attacked_netw': 'A',
+    #     'attack_tactic': 'random',
+    #     'intra_support_type': 'cluster_size',
+    #     'min_cluster_size': '21',
+    #     'inter_support_type': 'node_interlink'
+    # }, {
+    #     'attacked_netw': 'A',
+    #     'attack_tactic': 'random',
+    #     'intra_support_type': 'cluster_size',
+    #     'min_cluster_size': '201',
+    #     'inter_support_type': 'node_interlink'
+    # }, {
+    #     'attacked_netw': 'A',
+    #     'attack_tactic': 'random',
+    #     'intra_support_type': 'giant_component',
+    #     'inter_support_type': 'node_interlink'
+    # }
+    # the part below is used for another kind of plot
     {
         # 'attacked_netw': 'A',
         # 'attack_tactic': 'most_inter_used_distr_subs',
@@ -75,29 +103,23 @@ diff_run_options = [
         'intra_support_type': 'realistic',
         'inter_support_type': 'realistic',
         'save_death_cause': True
-    # }, {
-    #     'attacked_netw': 'A',
-    #     'attack_tactic': 'most_used_distr_subs',
-    #     'intra_support_type': 'giant_component',
-    #     'inter_support_type': 'node_interlink',
-    #     'save_death_cause': True
     }
 ]
 
 if len(group_results_dirs) != len(diff_paths) != len(diff_run_options):
     raise ValueError('group_output_dirs, diff_paths and diff_run_options lists should have the same length')
 
-instances_per_type = 20  # used to group instances, must have the same value used for network creation
+instances_per_type = 1  # used to group instances, must have the same value used for network creation
 first_instance_num = 0
-last_instance_num = 19
+last_instance_num = 0
 
 if (1 + last_instance_num - first_instance_num) % instances_per_type:
     raise ValueError('The number of instances is not such that there cannot be the same number of instances for each'
                      'type. Check parameters last_instance_num, first_instance_num, instances_per_type')
 
-seeds = [0]  # used to execute multiple tests on the same network instance
+seeds = [128, 129]  # used to execute multiple tests on the same network instance
 
-attack_counts = list(range(10, 101, 10))  # values of the independent value of the simulation
+attack_counts = list(range(10, 61, 10)) + [69]  # values of the independent value of the simulation
 # end of user defined variables
 
 for i in range(0, len(diff_paths)):
