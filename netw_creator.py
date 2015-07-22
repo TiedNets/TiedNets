@@ -194,8 +194,9 @@ def create_m_to_n_dep(G1, G2, m, n, arc_dir='dependeds_from', max_tries=10, seed
 
 # k is the number of control centers supporting each power node
 # n is the number of power nodes that each control center supports
-def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False, prefer_nearest=False, max_tries=10,
-                      seed=None):
+# com_access_pts is the number of relays a power node uses to access the communication network
+def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False, prefer_nearest=False, com_access_pts=1,
+                      max_tries=100, seed=None):
     if not isinstance(k, integer_types):
         raise TypeError('k is not an integer')
     elif k <= 0:
@@ -204,6 +205,12 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
         raise TypeError('n is not an integer')
     elif n <= 0:
         raise ValueError('n is not larger than 0')
+    elif not isinstance(power_roles, bool):
+        raise ValueError('power_roles is not a boolean')
+    elif not isinstance(prefer_nearest, bool):
+        raise ValueError('prefer_nearest is not a boolean')
+    elif com_access_pts < 0:
+        raise ValueError('com_access_pts is not a positive number')
 
     # logger.info('create_k_to_n_dep start')
 
@@ -289,9 +296,9 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
         else:
             other_nodes = G1.nodes()
         for node in G2.nodes():
-            nearest_other = other_nodes[0]
+            nearest_other = other_nodes[0]  # pick the first element to initialize the search
             min_distance = distances[node][nearest_other]
-            for other_node in other_nodes:
+            for other_node in other_nodes:  # search for the closest node
                 distance = distances[node][other_node]
                 if distance < min_distance:
                     nearest_other = other_node
@@ -301,29 +308,40 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
         # every power node needs to access a relay node
         other_nodes = relay_nodes
         for node in G1.nodes():
-            nearest_other = other_nodes[0]
-            min_distance = distances[node][nearest_other]
-            for other_node in other_nodes:
-                distance = distances[node][other_node]
-                if distance < min_distance:
-                    nearest_other = other_node
-                    min_distance = distance
-            Inter_G.add_edge(nearest_other, node)  # the nearest relay provides the service
-
+            if com_access_pts == 1:  # if only the nearest needs to be selected (faster code)
+                nearest_other = other_nodes[0]  # pick the first element to initialize the search
+                min_distance = distances[node][nearest_other]
+                for other_node in other_nodes:
+                    distance = distances[node][other_node]
+                    if distance < min_distance:
+                        nearest_other = other_node
+                        min_distance = distance
+                Inter_G.add_edge(nearest_other, node)  # the nearest relay provides the service
+            else:  # if the n nearest need to be selected
+                dist_from_others = list()
+                for other_node in other_nodes:
+                    distance = distances[node][other_node]
+                    dist_from_others.append((distance, other_node))
+                dist_from_others.sort()
+                for i in range(0, com_access_pts):
+                    other_node = dist_from_others[i][1]
+                    Inter_G.add_edge(other_node, node)  # the nearest relays provide the service
     else:
+        # every communication node receives power from a single power node
         if power_roles is True:  # select distribution substations only
             other_nodes = distribution_subs
         else:
             other_nodes = G1.nodes()
         for node in G2.nodes():
-            other_node = my_random.choice(other_nodes)
-            Inter_G.add_edge(other_node, node)  # a power node provides the service
+            chosen_other = my_random.choice(other_nodes)
+            Inter_G.add_edge(chosen_other, node)  # a power node provides the service
 
         # every power node needs to access a relay node
         other_nodes = relay_nodes
         for node in G1.nodes():
-            other_node = my_random.choice(other_nodes)
-            Inter_G.add_edge(other_node, node)  # a relay provides the service
+            chosen_other_nodes = my_random.sample(other_nodes, com_access_pts)  # function to pick n nodes at random
+            for chosen_other in chosen_other_nodes:
+                Inter_G.add_edge(chosen_other, node)  # a relay provides the service
 
     # in the k-n description, an arc (a, b) means a offers services to be
     # usually though, we want (a, b) to mean a depends from b
@@ -1050,7 +1068,8 @@ def run(conf_fpath):
             fpath_b = os.path.abspath(fpath_b)
         fformat_b = config.get('build_b', 'file_format')
         if fformat_b.lower() == 'GraphML'.lower():
-            B = nx.read_graphml(fpath_b)
+            # TODO: make this generic (any type of id), the ids in the preassigned roles should be compatible
+            B = nx.read_graphml(fpath_b, node_type=int)
         else:
             raise ValueError('Invalid value for parameter "file_format" of network B: ' + fformat_b)
     else:
@@ -1077,7 +1096,6 @@ def run(conf_fpath):
             B.node[candidate]['role'] = 'controller'
         relabel_nodes_by_role(B, role_prefixes_b)
     elif roles_b == 'relay_attached_controllers':
-        relays = config.getint('build_b', 'relays')
         controllers = config.getint('build_b', 'controllers')  # number of control nodes
         relay_nodes = B.nodes()  # number of relay nodes
         # TODO: rename controllers and relay_nodes to _cnt
@@ -1085,7 +1103,11 @@ def run(conf_fpath):
         for node in relay_nodes:
             B.node[node]['role'] = 'relay'
 
-        for i in range(relays, relays + controllers):  # add control nodes attaching them to existing relays
+        # done in case IDs are not continous
+        # TODO: make this work for string IDs as well
+        highest_id = max(B.nodes())
+
+        for i in range(highest_id, highest_id + controllers):  # add control nodes attaching them to existing relays
             B.add_node(i, {'role': 'controller'})
             B.add_edge(i, my_random.choice(relay_nodes))
 
@@ -1140,10 +1162,10 @@ def run(conf_fpath):
     dep_model = dep_model.lower()
 
     if config.has_option('build_inter', 'prefer_nearest'):
-        prefer_nearest = config.get('build_inter', 'prefer_nearest')
+        prefer_nearest = config.getboolean('build_inter', 'prefer_nearest')
     else:
         prefer_nearest = False
-    if prefer_nearest is True and dep_model.lower() not in ['k-to-n', 'k_to_n', 'kton', 'k-n']:
+    if prefer_nearest is True and dep_model not in ['k-to-n', 'k_to_n', 'kton', 'k-n']:
         raise ValueError('The option prefer_nearest is currently only available for the k-n model')
 
     if dep_model in ['1-to-1', '1_to_1', '1to1']:
@@ -1157,17 +1179,23 @@ def run(conf_fpath):
         I = create_m_to_n_dep(A, B, m, n, seed=seed)
         for node in A.nodes():
             A.node[node]['role'] = 'power'
-    elif dep_model.lower() in ['k-to-n', 'k_to_n', 'kton', 'k-n']:
+    elif dep_model in ['k-to-n', 'k_to_n', 'kton', 'k-n']:
         if not (roles_b == 'random_relay_controller' or roles_b == 'relay_attached_controllers'):
             raise ValueError('Invalid value for parameter "roles" of network B: {}. '
                              'When the k-n model is used, acceptable values are "random_relay_controller" '
                              'and "relay_attached_controllers"'.format(roles_b))
         k = config.getint('build_inter', 'k')
         n = config.getint('build_inter', 'n')
-        if roles_a != 'same':
-            I = create_k_to_n_dep(A, B, k, n, prefer_nearest=prefer_nearest, power_roles=True, seed=seed)
+        if config.has_option('build_inter', 'com_access_points'):
+            com_access_points = config.getint('build_inter', 'com_access_points')
         else:
-            I = create_k_to_n_dep(A, B, k, n, prefer_nearest=prefer_nearest, power_roles=False, seed=seed)
+            com_access_points = 1
+        if roles_a != 'same':
+            I = create_k_to_n_dep(A, B, k, n, prefer_nearest=prefer_nearest, power_roles=True,
+                                  com_access_pts=com_access_points, seed=seed)
+        else:
+            I = create_k_to_n_dep(A, B, k, n, prefer_nearest=prefer_nearest, power_roles=False,
+                                  com_access_pts=com_access_points, seed=seed)
     elif dep_model == 'ranged':
         radius = config.getfloat('build_inter', 'radius')
         I = create_ranged_dep(A, B, radius)
@@ -1202,10 +1230,11 @@ def run(conf_fpath):
 
     dist_perc = 0.16
     plt.figure(figsize=(15 + 1.6, 10))
+    magnification = 15
     if netw_b_model != 'user_defined_graph':  # TODO: make this work for whatever
-        margin = span * 0.02
-        plt.xlim(-margin, span * 2 + span * dist_perc + margin)
-        plt.ylim(-margin, span + margin)
+        margin = span * magnification * 0.02
+        plt.xlim(-margin, span * magnification * 2 + span * magnification * dist_perc + margin)
+        plt.ylim(-margin, span * magnification + margin)
 
     # map used to separate nodes of the 2 networks (e.g. draw A nodes on the left side and B nodes on the right)
     # pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
@@ -1215,10 +1244,10 @@ def run(conf_fpath):
 
     edge_col_per_type = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
                          'distribution_substation': 'magenta', 'communication': 'b', 'controller': 'c', 'relay': 'b'}
-    sf.paint_netw_graph(A, A, edge_col_per_type, 'r')
-    sf.paint_netw_graph(B, B, edge_col_per_type, 'b', pos_shifts_by_netw[netw_b_name])
+    sf.paint_netw_graph(A, A, edge_col_per_type, 'r', magnification=magnification)
+    sf.paint_netw_graph(B, B, edge_col_per_type, 'b', pos_shifts_by_netw[netw_b_name], magnification=magnification)
 
-    # sf.paint_inter_graph(I, I, 'orange', pos_shifts_by_netw, edge_col_per_type)
+    sf.paint_inter_graph(I, I, 'orange', pos_shifts_by_netw, edge_col_per_type, magnification)
 
     logger.info('output_dir = ' + output_dir)
     plt.savefig(os.path.join(output_dir, '_full.pdf'))

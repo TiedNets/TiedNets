@@ -42,37 +42,121 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-base_dir = os.path.normpath('../Simulations/test_MN')
+base_dir = os.path.normpath('../Simulations/MN_access_pt_diffs_synt_')
 
 build_a_options = [{
     'name': 'A',
-    'model': 'user_defined_graph',
-    'graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
-    'file_format': 'graphml',
-    'roles': 'random_gen_transm_distr',
-    'preassigned_roles_fpath': '../Simulations/MN_data/MN_pow_roles.json',
-    'generators': '0',
-    'distribution_substations': '714',
-    'transmission_substations': '306'
+    'model': 'rt_nested_smallworld',
+    'nodes': 1000,
+    'subnets': 20,
+    'beta': 0.2,
+    'alpha': 0.2,
+    'd_0': 7,
+    'avg_k': 4,
+    'q_rw': 0.5,
+    'roles': 'subnet_gen_transm_distr',
+    'generators': 100,
+    'transmission_substations': 270,
+    'distribution_substations': 630
+}, {
+    'name': 'A',
+    'model': 'rt_nested_smallworld',
+    'nodes': 1000,
+    'subnets': 20,
+    'beta': 0.2,
+    'alpha': 0.2,
+    'd_0': 7,
+    'avg_k': 4,
+    'q_rw': 0.5,
+    'roles': 'subnet_gen_transm_distr',
+    'generators': 100,
+    'transmission_substations': 270,
+    'distribution_substations': 630
+#     'name': 'A',
+#     'model': 'user_defined_graph',
+#     'graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
+#     'file_format': 'graphml',
+#     'roles': 'random_gen_transm_distr',
+#     'preassigned_roles_fpath': '../Simulations/MN_data/MN_pow_roles.json',
+#     'generators': 0,
+#     'distribution_substations': 714,
+#     'transmission_substations': 306
+# }, {
+#     'name': 'A',
+#     'model': 'user_defined_graph',
+#     'graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
+#     'file_format': 'graphml',
+#     'roles': 'random_gen_transm_distr',
+#     'preassigned_roles_fpath': '../Simulations/MN_data/MN_pow_roles.json',
+#     'generators': 0,
+#     'distribution_substations': 714,
+#     'transmission_substations': 306
 }]
 
 build_b_options = [{
     'name': 'B',
-    'model': 'user_defined_graph',
-    'graph_fpath': '../Simulations/MN_data/MN_com.graphml',
-    'file_format': 'graphml',
+    'model': 'barabasi_albert',
+    'm': 3,
     'roles': 'relay_attached_controllers',
-    'controllers': '1',
-    'relays': '1079'
+    'controllers': 1,
+    'relays': 999
+}, {
+    'name': 'B',
+    'model': 'barabasi_albert',
+    'm': 3,
+    'roles': 'relay_attached_controllers',
+    'controllers': 2,
+    'relays': 999
+#     'name': 'B',
+#     'model': 'user_defined_graph',
+#     'graph_fpath': '../Simulations/MN_data/MN_com.graphml',
+#     'file_format': 'graphml',
+#     'roles': 'relay_attached_controllers',
+#     'controllers': 1
+#     # 'relays': 681  # not used when the user defined graph is passed
+# }, {
+#     'name': 'B',
+#     'model': 'user_defined_graph',
+#     'graph_fpath': '../Simulations/MN_data/MN_com.graphml',
+#     'file_format': 'graphml',
+#     'roles': 'relay_attached_controllers',
+#     'controllers': 2
+#     # 'relays': 681  # not used when the user defined graph is passed
 }]
 
 build_inter_options = [{
     'name': 'Inter',
-    'k': '1',
     'dependency_model': 'k-to-n',
-    'n': '1089',
-    'produce_max_matching': 'True',
+    'k': 1,
+    'n': 1000,
+    'com_access_points': 1,
+    'produce_max_matching': True,
     'max_matching_name': 'InterMM'
+}, {
+    'name': 'Inter',
+    'dependency_model': 'k-to-n',
+    'k': 2,
+    'n': 1000,
+    'com_access_points': 2,
+    'produce_max_matching': True,
+    'max_matching_name': 'InterMM'
+#     'name': 'Inter',
+#     'dependency_model': 'k-to-n',
+#     'k': 1,
+#     'n': 1089,
+#     'com_access_points': 1,
+#     'prefer_nearest': True,  # geographical attachment
+#     'produce_max_matching': True,
+#     'max_matching_name': 'InterMM'
+# }, {
+#     'name': 'Inter',
+#     'dependency_model': 'k-to-n',
+#     'k': 2,
+#     'n': 1089,
+#     'com_access_points': 2,
+#     'prefer_nearest': True,  # geographical attachment
+#     'produce_max_matching': True,
+#     'max_matching_name': 'InterMM'
 }]
 
 instances_per_type = 1
@@ -95,9 +179,10 @@ for a_opts, b_opts, inter_opts in zip(build_a_options, build_b_options, build_in
         if first_group is True:
             seed = my_random.randint(0, sys.maxsize)
             seeds.append(seed)
+            print('seeds[{}] = {}'.format(len(seeds) - 1, seed))
         else:
             seed = seeds[instance_num % instances_per_type]
-            print('seeds[{} % {}] = {}'.format(instance_num, instances_per_type, seed))
+            print('seeds[{}] = {}'.format(instance_num % instances_per_type, seed))
         instance_dir = os.path.join(base_dir, 'instance_{}'.format(instance_num))
         conf_fpath = os.path.join(base_dir, 'config_{}.ini'.format(instance_num))
         write_conf(instance_dir, conf_fpath, a_opts, b_opts, inter_opts, seed)

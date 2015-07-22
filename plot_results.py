@@ -6,16 +6,16 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import shared_functions as sf
 
-input_fpath = os.path.normpath('../Simulations/test_MN/rnd_atk/_stats.tsv')
-output_fpath = os.path.normpath('../Simulations/test_MN/rnd_atk/rnd_atks.pdf')
+input_fpath = os.path.normpath('../Simulations/MN_access_pt_diffs_synt/rnd_atk/realistic/_stats.tsv')
+output_fpath = os.path.normpath('../Simulations/MN_access_pt_diffs_synt/rnd_atk/realistic/synt_access_pt_diffs.pdf')
 
 # read values from file, by column
 values = np.genfromtxt(input_fpath, delimiter='\t', skip_header=1, dtype=None)
 
 groups = sf.get_unnamed_numpy_col(values, 0)
 X = sf.get_unnamed_numpy_col(values, 1)
-Y = sf.get_unnamed_numpy_col(values, 2)
-errors = sf.get_unnamed_numpy_col(values, 3)
+Y = sf.get_unnamed_numpy_col(values, 16)
+errors = sf.get_unnamed_numpy_col(values, 17)
 # print('\ngroups ' + str(groups) + '\nX ' + str(X) + '\nY ' + str(Y) + '\nerrors ' + str(errors))
 
 # we want to make a plot like this

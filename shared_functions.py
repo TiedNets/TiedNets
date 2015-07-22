@@ -81,7 +81,7 @@ def get_unnamed_numpy_col(numpy_struct, col_num):
     return col
 
 
-def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, clear=False):
+def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, magnification=1, clear=False):
     if clear is True:
         plt.clf()
 
@@ -129,6 +129,10 @@ def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, clea
     all_node_pos = alive_node_pos.copy()
     all_node_pos.update(dead_node_pos)
 
+    # spread all nodes over a wider area - HACK
+    for key in all_node_pos:
+        all_node_pos[key]= (all_node_pos[key][0] * magnification, all_node_pos[key][1] * magnification)
+
     # draw edges
     nx.draw_networkx_edges(G, all_node_pos, edgelist=alive_edges, edge_color=edge_col, alpha=0.7)
     # nx.draw_networkx_edges(original_G, all_node_pos, edgelist=dead_edges, edge_color='gray', alpha=0.7)
@@ -147,17 +151,17 @@ def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, clea
     # nx.draw_networkx_nodes(G, all_node_pos, nodelist=alive_nodes + dead_nodes, node_size=100,
     #                        node_color=node_cols, alpha=0.7)
     nx.draw_networkx_nodes(G, all_node_pos, nodelist=alive_nodes, node_size=5,
-                           node_color=node_cols, alpha=0.7)
+                           node_color=node_cols, alpha=0.7, linewidths=0.0)
     # nx.draw_networkx_nodes(G, all_node_pos, nodelist=dead_nodes, node_size=5,
     #                        node_color='gray', alpha=0.7)
 
     # draw node labels
-    # nx.draw_networkx_labels(original_G, all_node_pos, font_size=6)
+    nx.draw_networkx_labels(original_G, all_node_pos, font_size=1)
 
 
 # TODO: STOP READING NODE INFORMATION FROM THE INTER GRAPH AND READ FROM THE ACTUAL NET GRAPHS
 # same function as the one used in netw_export_test
-def paint_inter_graph(G, original_G, edge_col, pos_shifts_by_netw, edge_col_per_type):
+def paint_inter_graph(G, original_G, edge_col, pos_shifts_by_netw, edge_col_per_type, magnification=1):
     # categorize edges by vitality
 
     # alive_edges = list()
@@ -191,13 +195,17 @@ def paint_inter_graph(G, original_G, edge_col, pos_shifts_by_netw, edge_col_per_
                               original_G.node[node]['y']
                               + pos_shifts_by_netw[node_netw]['y'])
 
+    # spread all nodes over a wider area - HACK
+    for key in all_node_pos:
+        all_node_pos[key]= (all_node_pos[key][0] * magnification, all_node_pos[key][1] * magnification)
+
     # draw edges
     for edge_type in alive_edges_per_type:
-        nx.draw_networkx_edges(G, all_node_pos, edgelist=alive_edges_per_type[edge_type], style='dashed',
-                               edge_color=edge_col_per_type[edge_type], arrows=False, alpha=0.7)
+        nx.draw_networkx_edges(G, all_node_pos, edgelist=alive_edges_per_type[edge_type], width=0.2,
+                               edge_color=edge_col_per_type[edge_type], arrows=True, alpha=0.7)
     for edge_type in dead_edges_per_type:
-        nx.draw_networkx_edges(original_G, all_node_pos, edgelist=dead_edges_per_type[edge_type],
-                               edge_color='gray', arrows=False, alpha=0.7)
+        nx.draw_networkx_edges(original_G, all_node_pos, edgelist=dead_edges_per_type[edge_type], width=0.2,
+                               edge_color='gray', arrows=True, alpha=0.7)
 
 
 def mix(colors, markers, desired_cnt=None):
