@@ -5,8 +5,8 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
-input_fpath = os.path.normpath('../Simulations/exp_1000n_many/rnd_atk/1_cc/realistic/_stats.tsv')
-output_fpath = os.path.normpath('../Simulations/exp_1000n_many/rnd_atk/1_cc/realistic/rnd_atk_1cc_bars.pdf')
+input_fpath = os.path.normpath('../Simulations/MN_nets/1cc_2ap/rnd_atk/realistic/_stats.tsv')
+output_fpath = os.path.normpath('../Simulations/MN_nets/1cc_2ap/rnd_atk/realistic/MN_nets_reason_bars_real_2.pdf')
 instance_type = str(0)
 indep_var_val = str(40)
 val_key_name_suff = '_avg'
@@ -60,6 +60,11 @@ bar_pos = np.arange(width, bar_cnt + width)  # the x locations for the groups
 fig, ax = plt.subplots()
 bars = ax.bar(bar_pos, y_vals, width, color='r', yerr=y_errs)
 
+# dress bars in patterns
+patterns = ('-', '+', 'x', '\\', '*', 'o', 'O', '.')
+for bar, pattern in zip(bars, patterns):
+     bar.set_hatch(pattern)
+
 # add some text for labels, title and axes ticks
 ax.set_ylabel('No. final dead nodes')  # label of y axis
 ax.set_xticks(bar_pos + width / 2)
@@ -67,4 +72,5 @@ ax.set_xticklabels(x_labels, rotation=30, ha='right')
 
 plt.ylim(0.0, plt.ylim()[1])  # cap y axis at zero
 
+plt.savefig(output_fpath, bbox_inches='tight')
 plt.show()

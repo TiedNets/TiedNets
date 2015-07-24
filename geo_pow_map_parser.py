@@ -2,6 +2,8 @@ __author__ = 'Agostino Sturaro'
 
 import os
 import json
+import math
+import random
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -106,8 +108,8 @@ def add_generators(elec_gens_fpath, G):
 
 subs_G = nx.Graph()
 final_G = nx.Graph()
-subs = dict()
-lines_by_id = dict()
+sub_attrs_by_id = dict()
+line_attrs_by_id = dict()
 point_to_id = dict()
 
 elec_subs_fpath = os.path.normpath('datasets/ElecSubs_epsg_4326.geojson')
@@ -142,7 +144,7 @@ with open(elec_subs_fpath) as elec_subs_file:
             print('Missing geometry for substation {}'.format(sub_id))  # debug
             continue
 
-        if sub_id in subs:
+        if sub_id in sub_attrs_by_id:
             print('Duplicated substation {}'.format(sub_id))  # debug
             continue
 
@@ -156,7 +158,7 @@ with open(elec_subs_fpath) as elec_subs_file:
         sub_attrs['coordinates'] = point
 
         # store the properties of the substation, indexed by id
-        subs[sub_id] = sub_attrs
+        sub_attrs_by_id[sub_id] = sub_attrs
 
         # remember that this substation is found at this point
         # there may be more than 1 substation in the same point
@@ -164,12 +166,12 @@ with open(elec_subs_fpath) as elec_subs_file:
         if point not in point_to_id:
             point_id = len(point_to_id)
             point_to_id[point] = point_id
-            subs_G.add_node(point_id, attr_dict={'x': point[0], 'y': point[1], 'sub_ids': list()})
+            subs_G.add_node(point_id, attr_dict={'x': point[0], 'y': point[1], 'sub_ids': [], 'voltages': []})
 
         point_id = point_to_id[point]
         subs_G.node[point_id]['sub_ids'].append(sub_id)
 
-    print('len(subs) {}'.format(len(subs)))  # debug
+    print('len(sub_attrs_by_id) {}'.format(len(sub_attrs_by_id)))  # debug
 
     for node in subs_G.nodes():
         if len(subs_G.node[node]['sub_ids']) > 1:
@@ -188,7 +190,7 @@ with open(elec_lines_fpath) as elec_lines_file:
             print('Missing geometry for line {}'.format(line_id))  # debug
             continue
 
-        if line_id in lines_by_id:
+        if line_id in line_attrs_by_id:
             print('Duplicated line {}'.format(line_id))  # debug
             continue
 
@@ -208,18 +210,19 @@ with open(elec_lines_fpath) as elec_lines_file:
             point = tuple(coords)
             line_attrs['points'].append(point)
 
-        lines_by_id[line_id] = line_attrs
+        line_attrs_by_id[line_id] = line_attrs
 
-    print('len(lines) {}'.format(len(lines_by_id)))  # debug
+    print('len(line_attrs_by_id) {}'.format(len(line_attrs_by_id)))  # debug
 
+# TODO: repeat this for (voltage, AC/DC) tuples, but assume it's AC if the field ACDC is null
 for voltage in voltages:
 
     # make a graph consisting of the points that make up the electric lines
 
     temp_G = subs_G.copy()  # start by copying substation positions
 
-    for line_id in lines_by_id:
-        line_attrs = lines_by_id[line_id]
+    for line_id in line_attrs_by_id:
+        line_attrs = line_attrs_by_id[line_id]
 
         if line_attrs['VOLTAGE'] != voltage:
             continue
@@ -241,8 +244,8 @@ for voltage in voltages:
 
     # connect nodes that appear as consecutive points on the same transmission line
 
-    for line_id in lines_by_id:
-        line_attrs = lines_by_id[line_id]
+    for line_id in line_attrs_by_id:
+        line_attrs = line_attrs_by_id[line_id]
 
         if line_attrs['VOLTAGE'] != voltage:
             continue
@@ -273,54 +276,140 @@ for voltage in voltages:
 
     second_hits = 0
     for node in voltage_G.nodes():
+        # TODO: line ids are lost in this step, maybe return a tuple with the list of lines used to reach the neighbor
         neighboring_subs = find_neighboring_subs(temp_G, node)  # search in the other graph
         for neighbor in neighboring_subs:
             if not voltage_G.has_edge(node, neighbor):
-                voltage_G.add_edge(node, neighbor)  # TODO: think about some data for the edge (like voltage)
+                voltage_G.add_edge(node, neighbor)
             else:
                 second_hits += 1
 
     print('Voltage = {}, number of edges = {}'.format(voltage, voltage_G.number_of_edges()))  # debug
 
     # small test
-    point_sub_24 = subs[24]['coordinates']
+    point_sub_24 = sub_attrs_by_id[24]['coordinates']
     node_sub_24 = point_to_id[point_sub_24]
-    point_sub_1112 = subs[1112]['coordinates']
+    point_sub_1112 = sub_attrs_by_id[1112]['coordinates']
     node_sub_1112 = point_to_id[point_sub_1112]
 
     if node_sub_24 in voltage_G.neighbors(node_sub_1112):
         print('subs 24 and 1112 correctly connected')
 
     # another small test
-    point_sub_93 = subs[93]['coordinates']
+    point_sub_93 = sub_attrs_by_id[93]['coordinates']
     node_sub_93 = point_to_id[point_sub_93]
-    point_sub_105 = subs[105]['coordinates']
+    point_sub_105 = sub_attrs_by_id[105]['coordinates']
     node_sub_105 = point_to_id[point_sub_105]
 
     if node_sub_93 in voltage_G.neighbors(node_sub_105):
         print('subs 93 and 105 correctly connected')
 
     # copy graph edges (if they are already there, no problem)
-    final_G.add_edges_from(voltage_G.edges())  # TODO: find a way to add edge data to a list
+    # final_G.add_edges_from(voltage_G.edges())
+
+    for edge in voltage_G.edges():
+        if not final_G.has_edge(edge[0], edge[1]):
+            final_G.add_edge(edge[0], edge[1])
+        if voltage not in final_G.node[edge[0]]['voltages']:
+            final_G.node[edge[0]]['voltages'].append(voltage)
+        if voltage not in final_G.node[edge[1]]['voltages']:
+            final_G.node[edge[1]]['voltages'].append(voltage)
+
+# assign roles to substations
+
+# fraction of distribution substations, the remaining fraction is made of transmission substations
+dist_subs_fract = 0.7
+dist_voltage_thresh = 69
+total_sub_cnt = final_G.number_of_nodes()
+dist_subs_cnt = int(math.floor(total_sub_cnt * dist_subs_fract))
+transm_sub_cnt = total_sub_cnt - dist_subs_cnt
+
+candidates = list()
+dubious_nodes = list()  # nodes we have no hit on how to classify
+for sub_node in final_G.nodes():
+    sub_ids = final_G.node[sub_node]['sub_ids']
+    if len(sub_ids) > 1:
+        dubious_nodes.append(sub_node)
+    else:
+        sub_id = sub_ids[0]
+        sub_attrs = sub_attrs_by_id[sub_id]
+        if sub_attrs['SUB_TYPE'] is not None:
+            # substring checks
+            marked_as_dist = 'DIST' in sub_attrs['SUB_TYPE']
+            marked_as_trans = 'TRANS' in sub_attrs['SUB_TYPE']
+        else:
+            marked_as_dist = False
+            marked_as_trans = False
+        below_thresh = any(x <= dist_voltage_thresh for x in final_G.node[sub_node]['voltages'])
+        if marked_as_dist is False and marked_as_trans is False and below_thresh is False:
+            dubious_nodes.append(sub_node)
+        else:
+            candidates.append((marked_as_dist, below_thresh, marked_as_trans, sub_node))
+
+node_roles = dict()
+
+# the preference for distribution substation is a) marked as such, b) having lines below the distribution voltage
+# c) not marked as transmission substations; all things being equal, substations with a lower id are preferred
+dist_candidates = sorted(candidates, key=lambda x: (x[0], x[1], not x[2], -x[3]), reverse=True)
+
+# shuffle and assign the dubious nodes in the appropriate proportions
+my_random = random.Random(256)
+my_random.shuffle(dubious_nodes)
+dubious_nodes_cnt = len(dubious_nodes)
+dubious_dist_cnt = int(math.floor(dubious_nodes_cnt * dist_subs_fract))
+for i in range(0, dubious_dist_cnt):
+    node = dubious_nodes[i]
+    node_roles[node] = 'distribution_substation'
+for i in range(dubious_dist_cnt, dubious_nodes_cnt):
+    node = dubious_nodes[i]
+    node_roles[node] = 'transmission_substation'
+
+dist_to_assign_cnt = dist_subs_cnt - dubious_dist_cnt
+transm_to_assign_cnt = transm_sub_cnt - (dubious_nodes_cnt - dubious_dist_cnt)
+
+for i in range(0, dist_to_assign_cnt):
+    candidate = dist_candidates[i]
+    if candidate[2] is True:
+        raise ValueError('No more candidates for distribution. Continuing means assigning the role of distribution to '
+                         'a substation marked as transmission. Reduce the value of dist_subs_fract.')
+    node_roles[candidate[3]] = 'distribution_substation'
+    candidates.remove(candidate)
+
+# the preference for distribution substation is a) marked as such, b) having lines above the distribution voltage
+# c) not marked as transmission substations; all things being equal, substations with a higher id are preferred
+transm_candidates = sorted(candidates, key=lambda x: (x[2], not x[1], not x[0], x[3]), reverse=True)
+
+for i in range(0, transm_to_assign_cnt):
+    candidate = transm_candidates[i]
+    if candidate[0] is True:
+        raise ValueError('No more candidates for transmission. Continuing means assigning the role of transmission to '
+                         'a substation marked as distribution. Increase the value of dist_subs_fract')
+    node_roles[candidate[3]] = 'transmission_substation'
+    candidates.remove(candidate)
+
+if len(candidates) > 0:
+    raise RuntimeError('Some substations have not been assigned a role. This should not have happened.')
 
 # add generators to the graph and save their node ids in the roles file
 
 gen_ids = add_generators(elec_gens_fpath, final_G)
-roles = {'generator': gen_ids}
-
-with open(roles_fpath, 'w') as roles_file:
-    json.dump(roles, roles_file)
+for gen_id in gen_ids:
+    node_roles[gen_id] = 'generator'
 
 # since GraphML does not support attributes with list values, we convert them to strings
 for node in final_G.nodes():
     if 'sub_ids' in final_G.node[node]:
         final_G.node[node]['sub_ids'] = str(final_G.node[node]['sub_ids'])
+        final_G.node[node]['voltages'] = str(final_G.node[node]['voltages'])
 
 # throw away isolated components (this step is optional)
+removed_nodes = list()
 components = sorted(nx.connected_components(final_G), key=len, reverse=True)
 for component_idx in range(1, len(components)):
-    print('isolated component {} = {}'.format(component_idx, components[component_idx]))
-    final_G.remove_nodes_from(components[component_idx])
+    isolated_component = components[component_idx]
+    print('isolated component {} = {}'.format(component_idx, isolated_component))
+    removed_nodes.extend(isolated_component)
+    final_G.remove_nodes_from(isolated_component)
 print('node count without isolated components = {}'.format(final_G.number_of_nodes()))
 
 # export graph in GraphML format
@@ -360,15 +449,13 @@ print('x_min = {}\nx_max = {}\ny_min = {}\ny_max = {}'.format(x_min, x_max, y_mi
 # plt.xlim(y_min - margin * delta_y, y_max + margin * delta_y)
 nx.draw_networkx(final_G, pos, with_labels=False, node_color='r', node_size=8, linewidths=0.0)
 
-# debug
-# generators no longer in the graph (probably because part of isolated components)
-removed_gens = list()
-remaining_nodes = final_G.nodes()
-for gen_node in gen_ids:
-    if gen_node not in remaining_nodes:
-        removed_gens.append(gen_node)
-        gen_ids.remove(gen_node)
-        print('removed generator node {}'.format(gen_node))
+# remove nodes no longer in the graph
+for node in removed_nodes:
+    node_roles.pop(node)
+
+# save file with preassigned roles
+with open(roles_fpath, 'w') as roles_file:
+    json.dump(node_roles, roles_file)
 
 nx.draw_networkx_nodes(final_G, pos, nodelist=gen_ids, node_color='b', node_size=8, linewidths=0.0)
 plt.show()

@@ -59,7 +59,6 @@ def choose_most_inter_used_nodes(G, I, node_cnt, role):
 
     # sort the data structure by degree and node id
     nodes_with_rank.sort()
-    print('========= nodes_with_rank {}'.format(nodes_with_rank))
 
     # pick the first node_cnt nodes from the data structure
     # put them in a list and return it
@@ -81,7 +80,6 @@ def choose_most_intra_used_nodes(G, node_cnt, role):
 
     # sort the data structure by degree and node id
     nodes_with_rank.sort()
-    print('========= nodes_with_rank {}'.format(nodes_with_rank))
 
     # pick the first node_cnt nodes from the data structure
     # put them in a list and return it
@@ -501,7 +499,7 @@ def run(conf_fpath):
                 run_stats.writerow({'time': time, 'total_dead_A': total_dead_a, 'total_dead_B': total_dead_b})
             time += 1
 
-    save_state('final', A, B, I, results_dir)
+    # save_state('final', A, B, I, results_dir)
 
     # write statistics about the final result
     if os.path.isfile(end_stats_fpath) is False:

@@ -42,50 +42,49 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-base_dir = os.path.normpath('../Simulations/MN_access_pt_diffs_synt_')
+base_dir = os.path.normpath('../Simulations/MN_net/1cc_1ap')
 
 build_a_options = [{
-    'name': 'A',
-    'model': 'rt_nested_smallworld',
-    'nodes': 1000,
-    'subnets': 20,
-    'beta': 0.2,
-    'alpha': 0.2,
-    'd_0': 7,
-    'avg_k': 4,
-    'q_rw': 0.5,
-    'roles': 'subnet_gen_transm_distr',
-    'generators': 100,
-    'transmission_substations': 270,
-    'distribution_substations': 630
-}, {
-    'name': 'A',
-    'model': 'rt_nested_smallworld',
-    'nodes': 1000,
-    'subnets': 20,
-    'beta': 0.2,
-    'alpha': 0.2,
-    'd_0': 7,
-    'avg_k': 4,
-    'q_rw': 0.5,
-    'roles': 'subnet_gen_transm_distr',
-    'generators': 100,
-    'transmission_substations': 270,
-    'distribution_substations': 630
 #     'name': 'A',
-#     'model': 'user_defined_graph',
-#     'graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
-#     'file_format': 'graphml',
-#     'roles': 'random_gen_transm_distr',
-#     'preassigned_roles_fpath': '../Simulations/MN_data/MN_pow_roles.json',
-#     'generators': 0,
-#     'distribution_substations': 714,
-#     'transmission_substations': 306
+#     'model': 'rt_nested_smallworld',
+#     'nodes': 1000,
+#     'subnets': 20,
+#     'beta': 0.2,
+#     'alpha': 0.2,
+#     'd_0': 7,
+#     'avg_k': 4,
+#     'q_rw': 0.5,
+#     'roles': 'subnet_gen_transm_distr',
+#     'generators': 100,
+#     'transmission_substations': 270,
+#     'distribution_substations': 630
+# }, {
+#     'name': 'A',
+#     'model': 'rt_nested_smallworld',
+#     'nodes': 1000,
+#     'subnets': 20,
+#     'beta': 0.2,
+#     'alpha': 0.2,
+#     'd_0': 7,
+#     'avg_k': 4,
+#     'q_rw': 0.5,
+#     'roles': 'subnet_gen_transm_distr',
+#     'generators': 100,
+#     'transmission_substations': 270,
+#     'distribution_substations': 630
+
+    'name': 'A',
+    'model': 'user_defined_graph',
+    'user_graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
+    'roles': 'random_gen_transm_distr',
+    'preassigned_roles_fpath': '../Simulations/MN_data/MN_pow_roles.json',
+    'generators': 0,
+    'distribution_substations': 0,
+    'transmission_substations': 0
 # }, {
 #     'name': 'A',
 #     'model': 'user_defined_graph',
-#     'graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
-#     'file_format': 'graphml',
+#     'user_graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
 #     'roles': 'random_gen_transm_distr',
 #     'preassigned_roles_fpath': '../Simulations/MN_data/MN_pow_roles.json',
 #     'generators': 0,
@@ -94,65 +93,64 @@ build_a_options = [{
 }]
 
 build_b_options = [{
-    'name': 'B',
-    'model': 'barabasi_albert',
-    'm': 3,
-    'roles': 'relay_attached_controllers',
-    'controllers': 1,
-    'relays': 999
-}, {
-    'name': 'B',
-    'model': 'barabasi_albert',
-    'm': 3,
-    'roles': 'relay_attached_controllers',
-    'controllers': 2,
-    'relays': 999
+    # 'name': 'B',
+    # 'model': 'barabasi_albert',
+    # 'm': 3,
+    # 'roles': 'relay_attached_controllers',
+    # 'controllers': 1,
+    # 'relays': 999
+# }, {
 #     'name': 'B',
-#     'model': 'user_defined_graph',
-#     'graph_fpath': '../Simulations/MN_data/MN_com.graphml',
-#     'file_format': 'graphml',
+#     'model': 'barabasi_albert',
+#     'm': 3,
 #     'roles': 'relay_attached_controllers',
-#     'controllers': 1
-#     # 'relays': 681  # not used when the user defined graph is passed
+#     'controllers': 2,
+#     'relays': 999
+
+    'name': 'B',
+    'model': 'user_defined_graph',
+    'user_graph_fpath': '../Simulations/MN_data/MN_com.graphml',
+    'roles': 'relay_attached_controllers',
+    'controllers': 1
 # }, {
 #     'name': 'B',
 #     'model': 'user_defined_graph',
-#     'graph_fpath': '../Simulations/MN_data/MN_com.graphml',
-#     'file_format': 'graphml',
+#     'user_graph_fpath': '../Simulations/MN_data/MN_com.graphml',
 #     'roles': 'relay_attached_controllers',
 #     'controllers': 2
-#     # 'relays': 681  # not used when the user defined graph is passed
 }]
 
 build_inter_options = [{
-    'name': 'Inter',
-    'dependency_model': 'k-to-n',
-    'k': 1,
-    'n': 1000,
-    'com_access_points': 1,
-    'produce_max_matching': True,
-    'max_matching_name': 'InterMM'
-}, {
-    'name': 'Inter',
-    'dependency_model': 'k-to-n',
-    'k': 2,
-    'n': 1000,
-    'com_access_points': 2,
-    'produce_max_matching': True,
-    'max_matching_name': 'InterMM'
-#     'name': 'Inter',
-#     'dependency_model': 'k-to-n',
-#     'k': 1,
-#     'n': 1089,
-#     'com_access_points': 1,
-#     'prefer_nearest': True,  # geographical attachment
-#     'produce_max_matching': True,
-#     'max_matching_name': 'InterMM'
+    # 'name': 'Inter',
+    # 'dependency_model': 'k-to-n',
+    # 'k': 1,
+    # 'n': 1000,
+    # 'com_access_points': 2,
+    # 'prefer_nearest': False,
+    # 'produce_max_matching': True,
+    # 'max_matching_name': 'InterMM'
 # }, {
 #     'name': 'Inter',
 #     'dependency_model': 'k-to-n',
 #     'k': 2,
-#     'n': 1089,
+#     'n': 1000,
+#     'com_access_points': 2,
+#     'produce_max_matching': True,
+#     'max_matching_name': 'InterMM'
+
+    'name': 'Inter',
+    'dependency_model': 'k-to-n',
+    'k': 1,
+    'n': 1091,
+    'com_access_points': 1,
+    'prefer_nearest': True,  # geographical attachment
+    'produce_max_matching': True,
+    'max_matching_name': 'InterMM'
+# }, {
+#     'name': 'Inter',
+#     'dependency_model': 'k-to-n',
+#     'k': 2,
+#     'n': 1091,
 #     'com_access_points': 2,
 #     'prefer_nearest': True,  # geographical attachment
 #     'produce_max_matching': True,

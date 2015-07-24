@@ -466,15 +466,6 @@ def draw_node_groups(G, node_groups):
 
 
 # G is the network graph
-# nodes_by_role is a dictionary in the form {'role': list of nodes with role}
-def assign_specific_roles(G, nodes_by_role):
-    for role in nodes_by_role:
-        nodes = nodes_by_role[role]
-        for node in nodes:
-            G.node[node]['role'] = role
-
-
-# G is the network graph
 # generator_cnt is the number of generators in the network
 # distr_subst_cnt is the number of distribution substations in the network
 # only_unassigned is a boolean telling if nodes that already have a role should not be reassigned one
@@ -990,15 +981,13 @@ def run(conf_fpath):
             subnet_cnt = None
         A = RT_nested_Smallworld(node_cnt, avg_k, d_0, alpha, beta, q_rw, subnet_cnt, seed=netw_a_seed)
     elif netw_a_model == 'user_defined_graph':
-        fpath_a = config.get('build_a', 'graph_fpath')
-        if os.path.isabs(fpath_a) is False:
-            fpath_a = os.path.abspath(fpath_a)
-        fformat_a = config.get('build_a', 'file_format')
-        if fformat_a.lower() == 'GraphML'.lower():
-            # TODO: make this generic (any type of id), the ids in the preassigned roles should be compatible
-            A = nx.read_graphml(fpath_a, node_type=int)
+        user_graph_fpath_a = config.get('build_a', 'user_graph_fpath')
+        if os.path.isabs(user_graph_fpath_a) is False:
+            user_graph_fpath_a = os.path.abspath(user_graph_fpath_a)
+        if os.path.splitext(user_graph_fpath_a)[1].lower() == '.graphml':
+            A = nx.read_graphml(user_graph_fpath_a, node_type=str)
         else:
-            raise ValueError('Unsupported value for parameter "file_format" of network A: ' + fformat_a)
+            raise ValueError('Unsupported file format for "user_graph_fpath" of network A, unsupported format')
     else:
         raise ValueError('Invalid value for parameter "model" of network A: ' + netw_a_model)
 
@@ -1010,7 +999,10 @@ def run(conf_fpath):
         preassigned_roles_fpath = config.get('build_a', 'preassigned_roles_fpath')
         with open(preassigned_roles_fpath) as preassigned_roles_file:
             preassigned_roles = json.load(preassigned_roles_file)
-        assign_specific_roles(A, preassigned_roles)
+
+        # preassigned_roles is a dictionary in the form {node: role}
+        for node in preassigned_roles:
+            A.node[node]['role'] = preassigned_roles[node]
         check_preassigned = True
 
     # assign roles and relabel nodes
@@ -1063,15 +1055,13 @@ def run(conf_fpath):
         m = config.getint('build_b', 'm')
         B = nx.barabasi_albert_graph(node_cnt, m, seed=netw_b_seed)
     elif netw_b_model == 'user_defined_graph':
-        fpath_b = config.get('build_b', 'graph_fpath')
-        if os.path.isabs(fpath_b) is False:
-            fpath_b = os.path.abspath(fpath_b)
-        fformat_b = config.get('build_b', 'file_format')
-        if fformat_b.lower() == 'GraphML'.lower():
-            # TODO: make this generic (any type of id), the ids in the preassigned roles should be compatible
-            B = nx.read_graphml(fpath_b, node_type=int)
+        user_graph_fpath_b = config.get('build_b', 'user_graph_fpath')
+        if os.path.isabs(user_graph_fpath_b) is False:
+            user_graph_fpath_b = os.path.abspath(user_graph_fpath_b)
+        if os.path.splitext(user_graph_fpath_b)[1].lower() == '.graphml':
+            B = nx.read_graphml(user_graph_fpath_b, node_type=str)
         else:
-            raise ValueError('Invalid value for parameter "file_format" of network B: ' + fformat_b)
+            raise ValueError('Invalid value for parameter "user_graph_fpath" of network B, unsupported format')
     else:
         raise ValueError('Invalid value for parameter "model" of network B: ' + netw_b_model)
 
@@ -1103,13 +1093,13 @@ def run(conf_fpath):
         for node in relay_nodes:
             B.node[node]['role'] = 'relay'
 
-        # done in case IDs are not continous
-        # TODO: make this work for string IDs as well
-        highest_id = max(B.nodes())
+        # done in case IDs are not continuous
+        longest_id = max(B.nodes(), key=len) # works for strings
 
-        for i in range(highest_id, highest_id + controllers):  # add control nodes attaching them to existing relays
-            B.add_node(i, {'role': 'controller'})
-            B.add_edge(i, my_random.choice(relay_nodes))
+        for i in range(0, controllers):  # add control nodes attaching them to existing relays
+            free_id = longest_id + str(i)
+            B.add_node(free_id, {'role': 'controller'})
+            B.add_edge(free_id, my_random.choice(relay_nodes))
 
         relabel_nodes_by_role(B, role_prefixes_b)
     else:
@@ -1149,9 +1139,14 @@ def run(conf_fpath):
 
             span = max(x_max - x_min, y_max - y_min)
 
-            for node in control_nodes:
-                B.node[node]['x'] = my_random.uniform(x_min, x_max)
-                B.node[node]['y'] = my_random.uniform(y_min, y_max)
+            if len(control_nodes) == 1:
+                node = control_nodes[0]
+                B.node[node]['x'] = x_min + (x_max - x_min) / 2
+                B.node[node]['y'] = y_min + (y_max - y_min) / 2
+            else:  # TODO: more deterministic placement
+                for node in control_nodes:
+                    B.node[node]['x'] = my_random.uniform(x_min, x_max)
+                    B.node[node]['y'] = my_random.uniform(y_min, y_max)
     else:
         span = 5  # TODO: make this the bigger span of A and B
         arrange_nodes(B, span)
@@ -1237,13 +1232,16 @@ def run(conf_fpath):
         plt.ylim(-margin, span * magnification + margin)
 
     # map used to separate nodes of the 2 networks (e.g. draw A nodes on the left side and B nodes on the right)
-    # pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
-    #                       netw_b_name: {'x': span + span * dist_perc, 'y': 0}}
-    pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
-                          netw_b_name: {'x': 0, 'y': 0}}
+    if prefer_nearest is False:
+        pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
+                              netw_b_name: {'x': span + span * dist_perc, 'y': 0}}
+    else:
+        pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
+                              netw_b_name: {'x': 0, 'y': 0}}
 
     edge_col_per_type = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
-                         'distribution_substation': 'magenta', 'communication': 'b', 'controller': 'c', 'relay': 'b'}
+                         'distribution_substation': 'magenta',
+                         'communication': 'dodgerblue', 'controller': 'c', 'relay': 'dodgerblue'}
     sf.paint_netw_graph(A, A, edge_col_per_type, 'r', magnification=magnification)
     sf.paint_netw_graph(B, B, edge_col_per_type, 'b', pos_shifts_by_netw[netw_b_name], magnification=magnification)
 
