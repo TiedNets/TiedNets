@@ -5,9 +5,9 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
-input_fpath = os.path.normpath('../Simulations/MN_nets/1cc_2ap/rnd_atk/realistic/_stats.tsv')
-output_fpath = os.path.normpath('../Simulations/MN_nets/1cc_2ap/rnd_atk/realistic/MN_nets_reason_bars_real_2.pdf')
-instance_type = str(0)
+input_fpath = os.path.normpath('../Simulations/MN_nets/1cc_1ap/rnd_atk/realistic/_stats_ext.tsv')
+output_fpath = os.path.normpath('../Simulations/MN_nets/1cc_1ap/rnd_atk/realistic/MN_rnd_atk_reasons_real_1_ap.pdf')
+instance_type = str('Realistic 1')
 indep_var_val = str(40)
 val_key_name_suff = '_avg'
 err_key_name_suff = '_std'
@@ -58,10 +58,11 @@ width = 0.35  # the width of the bars
 bar_pos = np.arange(width, bar_cnt + width)  # the x locations for the groups
 
 fig, ax = plt.subplots()
-bars = ax.bar(bar_pos, y_vals, width, color='r', yerr=y_errs)
+# bars = ax.bar(bar_pos, y_vals, width, color='w', yerr=y_errs)
+bars = ax.bar(bar_pos, y_vals, width, color='w')
 
 # dress bars in patterns
-patterns = ('-', '+', 'x', '\\', '*', 'o', 'O', '.')
+patterns = ('*', '+', 'x', '\\', '-', 'o', 'O', '.')
 for bar, pattern in zip(bars, patterns):
      bar.set_hatch(pattern)
 

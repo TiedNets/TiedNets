@@ -42,7 +42,7 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-base_dir = os.path.normpath('../Simulations/MN_net/1cc_1ap')
+base_dir = os.path.normpath('../Simulations/MN_nets/1cc_2ap')
 
 build_a_options = [{
 #     'name': 'A',
@@ -142,7 +142,7 @@ build_inter_options = [{
     'dependency_model': 'k-to-n',
     'k': 1,
     'n': 1091,
-    'com_access_points': 1,
+    'com_access_points': 2,
     'prefer_nearest': True,  # geographical attachment
     'produce_max_matching': True,
     'max_matching_name': 'InterMM'

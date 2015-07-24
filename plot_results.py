@@ -6,18 +6,20 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import shared_functions as sf
 
-input_fpath = os.path.normpath('../Simulations/synthetic_nets/rnd_atk_stats.tsv')
-output_fpath = os.path.normpath('../Simulations/synthetic_nets/synth_rnd_atk_failure_cnt.pdf')
-# input_fpath = os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/deg_atks_stats.tsv')
-# output_fpath = os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/deg_atks_stats.pdf')
+# input_fpath = os.path.normpath('../Simulations/synthetic_nets/synth_rnd_atk_failure_cnt.tsv')
+# output_fpath = os.path.normpath('../Simulations/synthetic_nets/synth_rnd_atk_failure_cnt.pdf')
+# input_fpath = os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/MN_deg_atks_failure_cnt.tsv')
+# output_fpath = os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/MN_deg_atks_failure_cnt.pdf')
+input_fpath = os.path.normpath('../Simulations/MN_nets/MN_rnd_atk_stats.tsv')
+output_fpath = os.path.normpath('../Simulations/MN_nets/MN_rnd_atk_failure_cnt.pdf')
 
 # read values from file, by column
 values = np.genfromtxt(input_fpath, delimiter='\t', skip_header=1, dtype=None)
 
 groups = sf.get_unnamed_numpy_col(values, 0)
 X = sf.get_unnamed_numpy_col(values, 1)
-Y = sf.get_unnamed_numpy_col(values, 10)
-errors = sf.get_unnamed_numpy_col(values, 11)
+Y = sf.get_unnamed_numpy_col(values, 2)
+errors = sf.get_unnamed_numpy_col(values, 3)
 # print('\ngroups ' + str(groups) + '\nX ' + str(X) + '\nY ' + str(Y) + '\nerrors ' + str(errors))
 
 # we want to make a plot like this
@@ -34,10 +36,10 @@ markers = ['o', '^', 's', '*', 'x', '+', 'd']
 # linestyles = ['--', ':', '--', ':']
 col_marks = sf.mix(colors, markers)
 
-d = {}
+d = {}  # additional arguments for the plotting call of each line
 for idx, val in enumerate(set(groups)):
-    d[val] = {'label': '{}'.format(val),
-              'marker': col_marks[idx][0], 'color': col_marks[idx][1]}
+    d[val] = {'label': '{}'.format(val), 'marker': col_marks[idx][0], 'color': col_marks[idx][1],
+              'markersize': 10, 'linewidth': 1}
 
 # print(d)
 
@@ -45,7 +47,7 @@ for idx, val in enumerate(set(groups)):
 for val, kwargs in d.items():
     mask = groups == val
     y, z, e = X[mask], Y[mask], errors[mask]
-    plt.errorbar(y, z, yerr=e, **kwargs)
+    plt.errorbar(y, z, yerr=e, **kwargs)  # this is the call that actually plots the lines
 
 # label the axes of the plot
 ax = plt.axes()
@@ -67,9 +69,14 @@ handles, labels = ax.get_legend_handles_labels()
 handles, labels = zip(*sorted(zip(handles, labels), key=lambda x: x[1]))
 
 # create a legend growing it from the middle and put it on the right side of the graph
-lgd = ax.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.14), fontsize=10)
+# lgd = ax.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.14), fontsize=10)
+# lgd = ax.legend(handles, labels, loc='center', bbox_to_anchor=(0.05, 0.6), fontsize=12)
+# lgd = ax.legend(handles, labels, loc='center', bbox_to_anchor=(0.35, 0.75), fontsize=12)
+# lgd = ax.legend(handles, labels, loc=3, fontsize=12)
+lgd = ax.legend(handles, labels, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+           ncol=5, mode="expand", borderaxespad=0., fontsize=12)
 
-plt.ylim(0.0, 2100.0)  # cap y axis at zero
+plt.ylim(0.0, 1850.0)  # cap y axis at zero
 
 # save the figure so that the legend fits inside it
 plt.savefig(output_fpath, bbox_extra_artists=(lgd,), bbox_inches='tight')

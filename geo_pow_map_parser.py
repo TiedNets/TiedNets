@@ -348,7 +348,7 @@ for sub_node in final_G.nodes():
 
 node_roles = dict()
 
-# the preference for distribution substation is a) marked as such, b) having lines below the distribution voltage
+# the preference for transmission substation is a) marked as such, b) having lines below the distribution voltage
 # c) not marked as transmission substations; all things being equal, substations with a lower id are preferred
 dist_candidates = sorted(candidates, key=lambda x: (x[0], x[1], not x[2], -x[3]), reverse=True)
 
@@ -376,7 +376,7 @@ for i in range(0, dist_to_assign_cnt):
     candidates.remove(candidate)
 
 # the preference for distribution substation is a) marked as such, b) having lines above the distribution voltage
-# c) not marked as transmission substations; all things being equal, substations with a higher id are preferred
+# c) not marked as distribution substations; all things being equal, substations with a higher id are preferred
 transm_candidates = sorted(candidates, key=lambda x: (x[2], not x[1], not x[0], x[3]), reverse=True)
 
 for i in range(0, transm_to_assign_cnt):
