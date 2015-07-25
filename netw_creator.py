@@ -25,8 +25,10 @@ except ImportError:
 
 if sys.version_info[0] < 3:
     integer_types = (int, long,)
+    string_types = (basestring)
 else:
     integer_types = (int,)
+    string_types = (str,)
 
 logger = logging.getLogger(__name__)
 
@@ -1041,9 +1043,9 @@ def run(conf_fpath):
         if roles_b == 'relay_attached_controllers':
             node_cnt = config.getint('build_b', 'relays')
         else:
-            relays = config.getint('build_b', 'relays')
-            controllers = config.getint('build_b', 'controllers')
-            node_cnt = relays + controllers
+            relay_cnt = config.getint('build_b', 'relays')
+            controller_cnt = config.getint('build_b', 'controllers')
+            node_cnt = relay_cnt + controller_cnt
 
     if netw_b_model in ['rr', 'random_regular', 'random-regular']:
         degree = config.getint('build_b', 'degree')
@@ -1074,82 +1076,111 @@ def run(conf_fpath):
             B.node[node]['role'] = 'communication'
         relabel_nodes(B, netw_b_name)
     elif roles_b == 'random_relay_controller':
-        relays = config.getint('build_b', 'relays')
-        controllers = config.getint('build_b', 'controllers')
+        relay_cnt = config.getint('build_b', 'relays')
+        controller_cnt = config.getint('build_b', 'controllers')
         nodes = B.nodes()
         my_random.shuffle(nodes)
-        for i in range(0, relays):
+        for i in range(0, relay_cnt):
             candidate = nodes.pop()
             B.node[candidate]['role'] = 'relay'
-        for i in range(0, controllers):
+        for i in range(0, controller_cnt):
             candidate = nodes.pop()
             B.node[candidate]['role'] = 'controller'
         relabel_nodes_by_role(B, role_prefixes_b)
     elif roles_b == 'relay_attached_controllers':
-        controllers = config.getint('build_b', 'controllers')  # number of control nodes
-        relay_nodes = B.nodes()  # number of relay nodes
-        # TODO: rename controllers and relay_nodes to _cnt
+        controller_cnt = config.getint('build_b', 'controllers')  # number of control nodes
 
-        for node in relay_nodes:
+        # NOTE: this assumes all nodes were created new, and there are no nodes with a preassigned role
+        nodes = B.nodes()  # these are all relay nodes
+        for node in nodes:
             B.node[node]['role'] = 'relay'
 
         # done in case IDs are not continuous
-        longest_id = max(B.nodes(), key=len) # works for strings
+        if isinstance(nodes[0], string_types):
+            largest_id = max(B.nodes(), key=sf.natural_sort_key())  # works for strings
+        else:
+            largest_id = max(B.nodes())  # works for numbers
 
-        for i in range(0, controllers):  # add control nodes attaching them to existing relays
-            free_id = longest_id + str(i)
+        for i in range(0, controller_cnt):  # add control nodes attaching them to existing relays
+            if isinstance(largest_id, string_types):
+                free_id = largest_id.join('_', i)
+            else:
+                free_id = largest_id + 1 + i
             B.add_node(free_id, {'role': 'controller'})
-            B.add_edge(free_id, my_random.choice(relay_nodes))
 
         relabel_nodes_by_role(B, role_prefixes_b)
+
+        # create list of nodes by role
+        relays = list()
+        controllers = list()  # this will be used to position new controllers
+        for node in B.nodes():
+            if B.node[node]['role'] == 'relay':
+                relays.append(node)
+            elif B.node[node]['role'] == 'controller':
+                controllers.append(node)
     else:
         raise ValueError('Invalid value for parameter "roles" of network B: ' + roles_b)
 
     # assign positions to nodes
-    if netw_b_model == 'user_defined_graph':
-        if roles_b == 'relay_attached_controllers':
-            control_nodes = list()
-            first_it = True
-            for node in B.nodes():
-                node_inst = B.node[node]
-                role = node_inst['role']
 
-                if role == 'controller':
-                    control_nodes.append(node)
-                    continue
-
-                x = node_inst['x']
-                y = node_inst['y']
-
-                if first_it is True:
-                    x_min = x
-                    y_min = y
+    if netw_b_model != 'user_defined_graph':
+        span = 5  # TODO: make this the bigger span of A and B
+        x_min = 0
+        y_min = span
+        x_max = 0
+        y_max = span
+        arrange_nodes(B, span)
+    else:
+        first_it = True
+        for node in B.nodes():
+            node_inst = B.node[node]
+            x = node_inst['x']
+            y = node_inst['y']
+            if first_it is True:
+                x_min = x
+                y_min = y
+                x_max = x
+                y_max = y
+                first_it = False
+            else:
+                if x > x_max:
                     x_max = x
+                elif x < x_min:
+                    x_min = x
+                if y > y_max:
                     y_max = y
-                    first_it = False
-                else:
-                    if x > x_max:
-                        x_max = x
-                    elif x < x_min:
-                        x_min = x
-                    if y > y_max:
-                        y_max = y
-                    elif y < y_min:
-                        y_min = y
+                elif y < y_min:
+                    y_min = y
+        span = max(x_max - x_min, y_max - y_min)
 
-            span = max(x_max - x_min, y_max - y_min)
+    if roles_b == 'relay_attached_controllers':
+        # this is still half an hack
+        if config.has_option('build_b', 'special_controller_placement'):
+            special_controller_placement = config.getboolean('build_b', 'special_controller_placement')
+        else:
+            special_controller_placement = False
 
-            if len(control_nodes) == 1:
-                node = control_nodes[0]
+        if special_controller_placement is True:
+            if len(controllers) == 1:
+                node = controllers[0]
                 B.node[node]['x'] = x_min + (x_max - x_min) / 2
                 B.node[node]['y'] = y_min + (y_max - y_min) / 2
-            else:  # TODO: more deterministic placement
-                for node in control_nodes:
-                    B.node[node]['x'] = my_random.uniform(x_min, x_max)
-                    B.node[node]['y'] = my_random.uniform(y_min, y_max)
-    else:
-        span = 5  # TODO: make this the bigger span of A and B
-        arrange_nodes(B, span)
+            else:  # TODO: implement this
+                raise ValueError('special controller placement not implemented for more than 1 controller')
+
+        if config.has_option('build_b', 'controller_attachment'):
+            controller_attachment = config.get('build_b', 'controller_attachment')
+        else:
+            controller_attachment = 'random'
+
+        if controller_attachment == 'random':
+            for controller in controllers:
+                B.add_edge(controller, my_random.choice(relays))
+        elif controller_attachment == 'prefer_nearest':  # TODO: implement this
+            raise ValueError('controller option not implemented yet')
+        else:
+            raise ValueError('Invalid value for parameter "controller_attachment" of network B: {}.'.format(
+                controller_attachment))
 
     # create the interdependency network
 
