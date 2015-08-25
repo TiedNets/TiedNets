@@ -65,21 +65,18 @@ def run(index_fpath, aggregate_fpath, instance_type_names=None, cols_to_ignore=N
             aggregate.writerow(row_cells)
 
 
-# instance_type_names = {'0': 'Realistic 2'}
-# index_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_2ap/rnd_atk/realistic/_index.tsv')
-# aggregate_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_2ap/rnd_atk/realistic/_stats.tsv')
-instance_type_names = {'0': 'Realistic 1'}
-index_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_1ap/rnd_atk/realistic/_index.tsv')
-aggregate_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_1ap/rnd_atk/realistic/_stats_ext.tsv')
-# instance_type_names = {'0': 'SC th=21'}
-# index_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_1ap/rnd_atk/sc_th_21/_index.tsv')
-# aggregate_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_1ap/rnd_atk/sc_th_21/_stats.tsv')
-# instance_type_names = {'0': 'SC th=210'}
-# index_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_1ap/rnd_atk/sc_th_210/_index.tsv')
-# aggregate_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_1ap/rnd_atk/sc_th_210/_stats.tsv')
+# instance_type_names = {'0': 'Realistic'}
+# index_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/realistic/_index.tsv')
+# aggregate_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/realistic/_stats.tsv')
+# instance_type_names = {'0': r'SC $\Delta$=20'}
+# index_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/sc_th_21/_index.tsv')
+# aggregate_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/sc_th_21/_stats.tsv')
+instance_type_names = {'0': r'SC $\Delta$=200'}
+index_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/sc_th_201/_index.tsv')
+aggregate_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/sc_th_201/_stats.tsv')
 # instance_type_names = {'0': 'Uniform'}
-# index_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_1ap/rnd_atk/uniform/_index.tsv')
-# aggregate_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_1ap/rnd_atk/uniform/_stats.tsv')
+# index_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/uniform/_index.tsv')
+# aggregate_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/uniform/_stats.tsv')
 
 # index_fpath = os.path.normpath('../Simulations/MN_nets/1cc_2ap/rnd_atk/realistic/_index.tsv')
 # aggregate_fpath = os.path.normpath('../Simulations/MN_nets/1cc_2ap/rnd_atk/realistic/_stats.tsv')
@@ -113,6 +110,6 @@ aggregate_fpath = os.path.normpath('../Simulations/synthetic_nets/1cc_1ap/rnd_at
 # index_fpath = os.path.normpath('../Simulations/MN_nets/1cc_1ap/rnd_atk/uniform/_index.tsv')
 # aggregate_fpath = os.path.normpath('../Simulations/MN_nets/1cc_1ap/rnd_atk/uniform/_stats.tsv')
 
-# cols_to_ignore = ['no_sup_ccs', 'no_sup_relays', 'no_com_path']
-cols_to_ignore = None
+cols_to_ignore = ['no_sup_ccs', 'no_sup_relays', 'no_com_path']
+# cols_to_ignore = None
 run(index_fpath, aggregate_fpath, instance_type_names, cols_to_ignore)

@@ -81,7 +81,69 @@ def get_unnamed_numpy_col(numpy_struct, col_num):
     return col
 
 
-def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, magnification=1, clear=False):
+def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x_shift_a=0.0, y_shift_a=0.0,
+                      x_shift_b=0.0, y_shift_b=0.0, zoom=1.0, draw_nodes_kwargs={}, draw_edges_kwargs={}):
+    # remove the arguments we are going to override for the function draw_networkx_nodes
+    if len(draw_nodes_kwargs) > 0:
+        draw_nodes_kwargs.pop('G', None)
+        draw_nodes_kwargs.pop('pos', None)
+        draw_nodes_kwargs.pop('node_color', None)
+
+    # remove the arguments we are going to override for the function draw_networkx_edges
+    if len(draw_edges_kwargs) > 0:
+        draw_edges_kwargs.pop('G', None)
+        draw_edges_kwargs.pop('pos', None)
+        draw_edges_kwargs.pop('edge_color', None)
+
+    all_node_pos = dict()
+
+    for node_a in A.nodes():
+        all_node_pos[node_a] = (A.node[node_a]['x'] + x_shift_a, A.node[node_a]['y'] + y_shift_a)
+
+    for node_b in B.nodes():
+        all_node_pos[node_b] = (B.node[node_b]['x'] + x_shift_b, B.node[node_b]['y'] + y_shift_b)
+
+    # spread all nodes over a wider area
+    for node in all_node_pos:
+        all_node_pos[node] = (all_node_pos[node][0] * zoom, all_node_pos[node][1] * zoom)
+
+    # draw intra edges
+    nx.draw_networkx_edges(A, all_node_pos, edge_color=edges_a_col, **draw_edges_kwargs)
+    nx.draw_networkx_edges(B, all_node_pos, edge_color=edges_b_col, **draw_edges_kwargs)
+
+    # draw inter edges, their role is determined by the role of their target node
+    inter_edges_by_role = defaultdict(list)
+    for edge in Inter.edges():
+        target_node = edge[1]
+        target_node_network = Inter.node[target_node]['network']
+        if target_node_network == A.graph['name']:
+            target_node_role = A.node[target_node]['role']
+        else:
+            target_node_role = B.node[target_node]['role']
+        inter_edges_by_role[target_node_role].append(edge)
+
+    for edge_role in inter_edges_by_role:
+        nx.draw_networkx_edges(Inter, all_node_pos, edgelist=inter_edges_by_role[edge_role],
+                               edge_color=node_col_by_role[edge_role], **draw_edges_kwargs)
+
+    # draw nodes and node labels of A
+    node_cols_a = list()
+    for node_a in A.nodes():
+        node_a_role = A.node[node_a]['role']
+        node_cols_a.append(node_col_by_role[node_a_role])
+    nx.draw_networkx_nodes(A, all_node_pos, node_color=node_cols_a, **draw_nodes_kwargs)
+    nx.draw_networkx_labels(A, all_node_pos, font_size=1)
+
+    # draw nodes and node labels of B
+    node_cols_b = list()
+    for node_b in B.nodes():
+        node_b_role = B.node[node_b]['role']
+        node_cols_b.append(node_col_by_role[node_b_role])
+    nx.draw_networkx_nodes(B, all_node_pos, node_color=node_cols_b, **draw_nodes_kwargs)
+    nx.draw_networkx_labels(B, all_node_pos, font_size=1)
+
+
+def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, zoom=1, clear=False):
     if clear is True:
         plt.clf()
 
@@ -131,7 +193,7 @@ def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, magn
 
     # spread all nodes over a wider area - HACK
     for key in all_node_pos:
-        all_node_pos[key]= (all_node_pos[key][0] * magnification, all_node_pos[key][1] * magnification)
+        all_node_pos[key] = (all_node_pos[key][0] * zoom, all_node_pos[key][1] * zoom)
 
     # draw edges
     nx.draw_networkx_edges(G, all_node_pos, edgelist=alive_edges, edge_color=edge_col, alpha=0.7)
@@ -161,7 +223,7 @@ def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, magn
 
 # TODO: STOP READING NODE INFORMATION FROM THE INTER GRAPH AND READ FROM THE ACTUAL NET GRAPHS
 # same function as the one used in netw_export_test
-def paint_inter_graph(G, original_G, edge_col, pos_shifts_by_netw, edge_col_per_type, magnification=1):
+def paint_inter_graph(G, original_G, edge_col, edge_col_per_type, pos_shifts_by_netw, zoom=1.0):
     # categorize edges by vitality
 
     # alive_edges = list()
@@ -197,7 +259,7 @@ def paint_inter_graph(G, original_G, edge_col, pos_shifts_by_netw, edge_col_per_
 
     # spread all nodes over a wider area - HACK
     for key in all_node_pos:
-        all_node_pos[key]= (all_node_pos[key][0] * magnification, all_node_pos[key][1] * magnification)
+        all_node_pos[key] = (all_node_pos[key][0] * zoom, all_node_pos[key][1] * zoom)
 
     # draw edges
     for edge_type in alive_edges_per_type:

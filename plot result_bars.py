@@ -37,39 +37,45 @@ with open(input_fpath) as input_file:
 desired_line.pop('Instance_type')
 desired_line.pop('Indep_var_val')
 
-y_vals = list()
-x_labels = list()
-y_errs = list()
+bar_height = list()
+bar_names = list()
+bar_errs = list()
 
 # create lists of values and errors, iterate over field names to ensure dictionaries are read in the correct order
 for key_name in fieldnames:
     if key_name.endswith(val_key_name_suff):
-        y_vals.append(desired_line[key_name])
-        label_name = key_name[:-len(val_key_name_suff)]   # remove suffix from label names (optional)
-        x_labels.append(label_name)
+        bar_height.append(desired_line[key_name])
+        bar_name = key_name[:-len(val_key_name_suff)]   # remove suffix from label names (optional)
+        bar_names.append(bar_name)
     elif key_name.endswith(err_key_name_suff):
-        y_errs.append(desired_line[key_name])
+        bar_errs.append(desired_line[key_name])
 
-y_vals = np.array(map(float, y_vals))  # convert values to floats
-y_errs = np.array(map(float, y_errs))  # convert values to floats
+bar_height = np.array(map(float, bar_height))  # convert values to floats
+bar_errs = np.array(map(float, bar_errs))  # convert values to floats
 
-bar_cnt = len(y_vals)  # the number of bars in the graph
-width = 0.35  # the width of the bars
-bar_pos = np.arange(width, bar_cnt + width)  # the x locations for the groups
+bar_cnt = len(bar_height)  # the number of bars in the graph
+bar_width = 0.35  # the width of the bars
+bar_pos = np.arange(bar_width, bar_cnt + bar_width)  # the x locations for the groups
 
-fig, ax = plt.subplots()
-# bars = ax.bar(bar_pos, y_vals, width, color='w', yerr=y_errs)
-bars = ax.bar(bar_pos, y_vals, width, color='w')
-
-# dress bars in patterns
 patterns = ('*', '+', 'x', '\\', '-', 'o', 'O', '.')
-for bar, pattern in zip(bars, patterns):
-     bar.set_hatch(pattern)
+fig, ax = plt.subplots()
+# draw bars
+for i in range(len(bar_height)):
+    bars = ax.bar(bar_pos[i], bar_height[i], bar_width, color='w', label=bar_names[i], hatch=patterns[i])
 
 # add some text for labels, title and axes ticks
 ax.set_ylabel('No. final dead nodes')  # label of y axis
-ax.set_xticks(bar_pos + width / 2)
-ax.set_xticklabels(x_labels, rotation=30, ha='right')
+ax.set_xticks(bar_pos + bar_width / 2)
+# turn off minor and major (both) tick marks on the x axis
+plt.tick_params(axis='x', which='both', labelbottom='off')
+# ax.set_xticklabels(bar_names, rotation=30, ha='right')  # draw a label below each bar (optional)
+
+# get the labels of all the bars in the graph
+handles, labels = ax.get_legend_handles_labels()
+
+# lgd = ax.legend(handles, labels, bbox_to_anchor=(-0.11, 1., 1.11, 0.), loc=3,
+#            ncol=4, mode="expand", borderaxespad=0., fontsize=16)
+lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(0.99, 0.5), fontsize=16)
 
 plt.ylim(0.0, plt.ylim()[1])  # cap y axis at zero
 

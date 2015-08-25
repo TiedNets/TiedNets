@@ -219,8 +219,8 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
     my_random = random.Random(seed)
 
     Inter_G = nx.DiGraph()
-    Inter_G.add_nodes_from(G1.nodes(data=True))
-    Inter_G.add_nodes_from(G2.nodes(data=True))
+    Inter_G.add_nodes_from(G1.nodes())
+    Inter_G.add_nodes_from(G2.nodes())
 
     control_nodes = list()
     relay_nodes = list()
@@ -1256,27 +1256,39 @@ def run(conf_fpath):
 
     dist_perc = 0.16
     plt.figure(figsize=(15 + 1.6, 10))
-    magnification = 15
+    zoom = 15
     if netw_b_model != 'user_defined_graph':  # TODO: make this work for whatever
-        margin = span * magnification * 0.02
-        plt.xlim(-margin, span * magnification * 2 + span * magnification * dist_perc + margin)
-        plt.ylim(-margin, span * magnification + margin)
+        margin = span * zoom * 0.02
+        plt.xlim(-margin, span * zoom * 2 + span * zoom * dist_perc + margin)
+        plt.ylim(-margin, span * zoom + margin)
 
-    # map used to separate nodes of the 2 networks (e.g. draw A nodes on the left side and B nodes on the right)
+    # # map used to separate nodes of the 2 networks (e.g. draw A nodes on the left side and B nodes on the right)
+    # if prefer_nearest is False:
+    #     pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
+    #                           netw_b_name: {'x': span + span * dist_perc, 'y': 0}}
+    # else:
+    #     pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
+    #                           netw_b_name: {'x': 0, 'y': 0}}
+
+    x_shift_a = 0.0
+    y_shift_a = 0.0
     if prefer_nearest is False:
-        pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
-                              netw_b_name: {'x': span + span * dist_perc, 'y': 0}}
+        x_shift_b = span + span * dist_perc
+        y_shift_b = 0.0
     else:
-        pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
-                              netw_b_name: {'x': 0, 'y': 0}}
-
-    edge_col_per_type = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
-                         'distribution_substation': 'magenta',
-                         'communication': 'dodgerblue', 'controller': 'c', 'relay': 'dodgerblue'}
-    sf.paint_netw_graph(A, A, edge_col_per_type, 'r', magnification=magnification)
-    sf.paint_netw_graph(B, B, edge_col_per_type, 'b', pos_shifts_by_netw[netw_b_name], magnification=magnification)
-
-    sf.paint_inter_graph(I, I, 'orange', pos_shifts_by_netw, edge_col_per_type, magnification)
+        x_shift_b = 0.0
+        y_shift_b = 0.0
+    node_col_by_role = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
+                        'distribution_substation': 'magenta',
+                        'communication': 'dodgerblue', 'controller': 'c', 'relay': 'dodgerblue'}
+    draw_nodes_kwargs = {'node_size': 5, 'alpha': 0.7, 'linewidths': 0.0}
+    draw_edges_kwargs = {'width': 0.2, 'arrows': True, 'alpha': 0.7}
+    sf.paint_netw_graphs(A, B, I, node_col_by_role, 'r', 'b', x_shift_a, y_shift_a, x_shift_b, y_shift_b, zoom,
+                         draw_nodes_kwargs, draw_edges_kwargs)
+    # sf.paint_netw_graph(A, A, node_col_by_role, 'r', zoom=zoom)
+    # sf.paint_netw_graph(B, B, node_col_by_role, 'b', pos_shifts_by_netw[netw_b_name], zoom=zoom)
+    #
+    # sf.paint_inter_graph(I, I, 'orange', node_col_by_role, pos_shifts_by_netw, zoom)
 
     logger.info('output_dir = ' + output_dir)
     plt.savefig(os.path.join(output_dir, '_full.pdf'))
