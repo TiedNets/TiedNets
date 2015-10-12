@@ -82,7 +82,7 @@ def get_unnamed_numpy_col(numpy_struct, col_num):
 
 
 def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x_shift_a=0.0, y_shift_a=0.0,
-                      x_shift_b=0.0, y_shift_b=0.0, zoom=1.0, draw_nodes_kwargs={}, draw_edges_kwargs={}):
+                      x_shift_b=0.0, y_shift_b=0.0, zoom=1.0, font_size=5.0, draw_nodes_kwargs={}, draw_edges_kwargs={}):
     # remove the arguments we are going to override for the function draw_networkx_nodes
     if len(draw_nodes_kwargs) > 0:
         draw_nodes_kwargs.pop('G', None)
@@ -132,7 +132,7 @@ def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x
         node_a_role = A.node[node_a]['role']
         node_cols_a.append(node_col_by_role[node_a_role])
     nx.draw_networkx_nodes(A, all_node_pos, node_color=node_cols_a, **draw_nodes_kwargs)
-    nx.draw_networkx_labels(A, all_node_pos, font_size=1)
+    nx.draw_networkx_labels(A, all_node_pos, font_size=font_size)
 
     # draw nodes and node labels of B
     node_cols_b = list()
@@ -140,7 +140,7 @@ def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x
         node_b_role = B.node[node_b]['role']
         node_cols_b.append(node_col_by_role[node_b_role])
     nx.draw_networkx_nodes(B, all_node_pos, node_color=node_cols_b, **draw_nodes_kwargs)
-    nx.draw_networkx_labels(B, all_node_pos, font_size=1)
+    nx.draw_networkx_labels(B, all_node_pos, font_size=font_size)
 
 
 def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, zoom=1, clear=False):

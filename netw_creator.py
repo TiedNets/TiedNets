@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import shared_functions as sf
 from collections import OrderedDict
 from collections import defaultdict
+from pkg_resources import parse_version
 
 try:
     import Queue as Q  # ver. < 3.0
@@ -33,16 +34,22 @@ else:
 logger = logging.getLogger(__name__)
 
 
-# TODO: think about a better way to distribute nodes
-def arrange_nodes(G, span):
-    # for node in G.nodes():
-    #     G.node[node]['alive'] = bool(True)
-
-    # pos = nx.spring_layout(G, k=(area_size/math.sqrt(G.number_of_nodes())), scale=area_size)
-    pos = nx.spring_layout(G, scale=span)  # TODO: this is not deterministic, replace with other position assignment
-    for node, (x, y) in pos.items():
+def arrange_nodes(G, pos_by_node):
+    for node, (x, y) in pos_by_node.items():
         G.node[node]['x'] = float(x)
         G.node[node]['y'] = float(y)
+
+
+# this is a deterministic version of nx.random_layout
+def uar_layout(G, span, center, seed=None):
+    my_random = random.Random(seed)
+    pos_by_node = dict()
+    half_span = span / 2.0
+    for node in G.nodes():
+        pos_x = my_random.uniform(-half_span, half_span) + center[0]
+        pos_y = my_random.uniform(-half_span, half_span) + center[1]
+        pos_by_node[node] = np.array([pos_x, pos_y])
+    return pos_by_node
 
 
 def create_1to1_dep(G1, G2):
@@ -119,6 +126,7 @@ def create_n_to_n_dep(G1, G2, n, max_tries=10, seed=None):
     return Inter_G
 
 
+# TODO: remove the "dependeds_from" stupidity
 def create_m_to_n_dep(G1, G2, m, n, arc_dir='dependeds_from', max_tries=10, seed=None):
     if not isinstance(n, integer_types):
         raise TypeError('n is not an integer')
@@ -197,6 +205,7 @@ def create_m_to_n_dep(G1, G2, m, n, arc_dir='dependeds_from', max_tries=10, seed
 # k is the number of control centers supporting each power node
 # n is the number of power nodes that each control center supports
 # com_access_pts is the number of relays a power node uses to access the communication network
+# TODO: add an option com_roles, remove the "dependeds_from" stupidity
 def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False, prefer_nearest=False, com_access_pts=1,
                       max_tries=100, seed=None):
     if not isinstance(k, integer_types):
@@ -527,6 +536,7 @@ def assign_power_roles_to_subnets(G, generator_cnt, distr_subst_cnt, seed=None):
         nodes_by_subnet[subnet].append(node)
 
     subnet_cnt = len(nodes_by_subnet)
+    # the configuration must allow for a transmission substation in each subnet
     if generator_cnt + distr_subst_cnt + subnet_cnt > G.number_of_nodes():
         raise ValueError('generator_cnt {} + distr_subst_cnt {} + number of subnets {} must be'
                          '< total nodes {}'.format(generator_cnt, distr_subst_cnt, subnet_cnt, G.number_of_nodes()))
@@ -543,7 +553,7 @@ def assign_power_roles_to_subnets(G, generator_cnt, distr_subst_cnt, seed=None):
     # changes, so we pick them starting from the opposite ends of the list, and what's left in the middles is the
     # transmission substations
     for i in range(0, generator_cnt):
-        node = nodes_by_subnet[i % subnet_cnt].pop(0)  # pop front
+        node = nodes_by_subnet[i % subnet_cnt].pop(0)  # cycle between subnets, picking the first nodes (pop front)
         G.node[node]['role'] = 'generator'
 
     for i in range(0, distr_subst_cnt):
@@ -1028,9 +1038,52 @@ def run(conf_fpath):
     else:
         raise ValueError('Invalid value for parameter "roles" of network A: ' + roles_a)
 
-    if netw_a_model != 'user_defined_graph':
-        span = 5
-        arrange_nodes(A, span)
+    if config.has_option('build_a', 'layout'):
+        if netw_a_model == 'user_defined_graph':
+            logger.warning('Specifying a graph layout will override node positions specified in user defined graph A')
+        layout = config.get('build_a', 'layout')
+        layout = layout.lower()
+
+        if config.has_option('build_a', 'span'):
+            span = config.getfloat('build_a', 'span')
+        else:
+            span = 1.0
+
+        if config.has_option('build_a', 'center_x'):
+            center_x = config.getfloat('build_a', 'center_x')
+            center_y = config.getfloat('build_a', 'center_y')
+            center = [center_x, center_y]
+        else:
+            center = [span / 2.0, span / 2.0]
+
+        # networkx 1.10 has some bugs in its layouts, there is extra code to check against that
+        if parse_version(nx.__version__) > parse_version('1.10'):
+            raise ValueError('Check issue #1750 and see if layouts work correctly in this NetworkX version')
+
+        if layout in ['random', 'uar']:
+            pos_by_node = uar_layout(A, span, center)
+        elif layout == 'circular':
+            if parse_version(nx.__version__) == parse_version('1.10'):
+                pos_by_node = nx.circular_layout(A, dim=2, scale=span / 2.0, center=center)
+            else:
+                pos_by_node = nx.circular_layout(A, dim=2, scale=span)
+        elif layout in ['spring', 'fruchterman_reingold']:
+            logger.warning('This layout will produce a non-deterministic placement of A nodes')
+            if parse_version(nx.__version__) == parse_version('1.10'):
+                pos_by_node = nx.spring_layout(A, dim=2, scale=span / 2.0, center=center)
+            else:
+                pos_by_node = nx.spring_layout(A, dim=2, scale=span)
+        else:
+            raise ValueError('Invalid value for parameter "layout" of network A: ' + layout)
+
+        # before NetworkX 1.10, layouts were centered on 0.5, 0.5 and then scaled
+        if parse_version(nx.__version__) < parse_version('1.10'):
+            if layout not in ['random', 'uar']:
+                for node in pos_by_node:
+                    pos_by_node[node][0] += center[0] - center[0] * span
+                    pos_by_node[node][1] += center[1] - center[1] * span
+
+        arrange_nodes(A, pos_by_node)
 
     # create the communication network
 
@@ -1123,14 +1176,63 @@ def run(conf_fpath):
 
     # assign positions to nodes
 
-    if netw_b_model != 'user_defined_graph':
-        span = 5  # TODO: make this the bigger span of A and B
-        x_min = 0
-        y_min = span
-        x_max = 0
-        y_max = span
-        arrange_nodes(B, span)
-    else:
+    if config.has_option('build_b', 'layout'):
+        if netw_b_model == 'user_defined_graph':
+            logger.warning('Specifying a graph layout will override node positions specified in user defined graph B')
+        layout = config.get('build_b', 'layout')
+        layout = layout.lower()
+
+        if config.has_option('build_b', 'span'):
+            span = config.getfloat('build_b', 'span')
+        else:
+            span = 5.0
+
+        if config.has_option('build_b', 'center_x'):
+            center_x = config.getfloat('build_b', 'center_x')
+            center_y = config.getfloat('build_b', 'center_y')
+            center = [center_x, center_y]
+            half_span = span / 2.0
+            x_min = center_x - half_span
+            x_max = center_x + half_span
+            y_min = center_y - half_span
+            y_max = center_y + half_span
+        else:
+            center = [span / 2.0, span / 2.0]
+            x_min = 0
+            x_max = span
+            y_min = 0
+            y_max = span
+
+        # networkx 1.10 has some bugs in its layouts, there is extra code to check against that
+        if parse_version(nx.__version__) > parse_version('1.10'):
+            raise ValueError('Check issue #1750 and see if layouts work correctly in this NetworkX version')
+
+        if layout in ['random', 'uar']:
+            pos_by_node = uar_layout(B, span, center)
+        elif layout == 'circular':
+            if parse_version(nx.__version__) == parse_version('1.10'):
+                pos_by_node = nx.circular_layout(B, dim=2, scale=span / 2.0, center=center)
+            else:
+                pos_by_node = nx.circular_layout(B, dim=2, scale=span)
+        elif layout in ['spring', 'fruchterman_reingold']:
+            logger.warning('This layout will produce a non-deterministic placement of B nodes')
+            if parse_version(nx.__version__) == parse_version('1.10'):
+                pos_by_node = nx.spring_layout(B, dim=2, scale=span / 2.0, center=center)
+            else:
+                pos_by_node = nx.spring_layout(B, dim=2, scale=span)
+        else:
+            raise ValueError('Invalid value for parameter "layout" of network B: ' + layout)
+
+        # before NetworkX 1.10, layouts were centered on 0.5, 0.5 and then scaled
+        if parse_version(nx.__version__) < parse_version('1.10'):
+            if layout not in ['random', 'uar']:
+                for node in pos_by_node:
+                    pos_by_node[node][0] += center[0] - center[0] * span
+                    pos_by_node[node][1] += center[1] - center[1] * span
+
+        arrange_nodes(B, pos_by_node)
+
+    elif netw_b_model == 'user_defined_graph':
         first_it = True
         for node in B.nodes():
             node_inst = B.node[node]
@@ -1138,8 +1240,8 @@ def run(conf_fpath):
             y = node_inst['y']
             if first_it is True:
                 x_min = x
-                y_min = y
                 x_max = x
+                y_min = y
                 y_max = y
                 first_it = False
             else:
@@ -1167,6 +1269,10 @@ def run(conf_fpath):
                 B.node[node]['y'] = y_min + (y_max - y_min) / 2
             else:  # TODO: implement this
                 raise ValueError('special controller placement not implemented for more than 1 controller')
+        else:
+            for node in controllers:
+                B.node[node]['x'] = my_random.uniform(x_min, x_max)
+                B.node[node]['y'] = my_random.uniform(y_min, y_max)
 
         if config.has_option('build_b', 'controller_attachment'):
             controller_attachment = config.get('build_b', 'controller_attachment')
@@ -1237,7 +1343,11 @@ def run(conf_fpath):
         else:
             I.node[node]['network'] = B.graph['name']
 
-    produce_max_matching = config.getboolean('build_inter', 'produce_max_matching')
+    if config.has_option('build_inter', 'produce_max_matching'):
+        produce_max_matching = config.getboolean('build_inter', 'produce_max_matching')
+    else:
+        produce_max_matching = False
+
     if produce_max_matching is True:
         max_matching_name = config.get('build_inter', 'max_matching_name')
         mm_I = nx.Graph()
@@ -1254,13 +1364,13 @@ def run(conf_fpath):
 
     # draw networks
 
-    dist_perc = 0.16
-    plt.figure(figsize=(15 + 1.6, 10))
-    zoom = 15
+    dist_perc = 0.5
+    #plt.figure(figsize=(15 + 1.6, 10))
+    zoom = 1.0
     if netw_b_model != 'user_defined_graph':  # TODO: make this work for whatever
         margin = span * zoom * 0.02
-        plt.xlim(-margin, span * zoom * 2 + span * zoom * dist_perc + margin)
-        plt.ylim(-margin, span * zoom + margin)
+        # plt.xlim(-margin, span * zoom * 2 + span * zoom * dist_perc + margin)
+        # plt.ylim(-margin, span * zoom + margin)
 
     # # map used to separate nodes of the 2 networks (e.g. draw A nodes on the left side and B nodes on the right)
     # if prefer_nearest is False:
@@ -1270,28 +1380,33 @@ def run(conf_fpath):
     #     pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
     #                           netw_b_name: {'x': 0, 'y': 0}}
 
+    #plt.axis('off')
+    plt.tick_params(labeltop=True, labelright=True)
     x_shift_a = 0.0
     y_shift_a = 0.0
-    if prefer_nearest is False:
-        x_shift_b = span + span * dist_perc
-        y_shift_b = 0.0
-    else:
-        x_shift_b = 0.0
-        y_shift_b = 0.0
+    x_shift_b = 0.0
+    y_shift_b = 0.0
+    # if prefer_nearest is False:
+    #     x_shift_b = span + span * dist_perc
+    #     y_shift_b = 0.0
+    # else:
+    #     x_shift_b = 0.0
+    #     y_shift_b = 0.0
     node_col_by_role = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
                         'distribution_substation': 'magenta',
                         'communication': 'dodgerblue', 'controller': 'c', 'relay': 'dodgerblue'}
-    draw_nodes_kwargs = {'node_size': 5, 'alpha': 0.7, 'linewidths': 0.0}
-    draw_edges_kwargs = {'width': 0.2, 'arrows': True, 'alpha': 0.7}
+    font_size = 15.0
+    draw_nodes_kwargs = {'node_size': 70, 'alpha': 0.7, 'linewidths': 0.0}
+    draw_edges_kwargs = {'width': 1.0, 'arrows': True, 'alpha': 0.7}
     sf.paint_netw_graphs(A, B, I, node_col_by_role, 'r', 'b', x_shift_a, y_shift_a, x_shift_b, y_shift_b, zoom,
-                         draw_nodes_kwargs, draw_edges_kwargs)
+                         font_size, draw_nodes_kwargs, draw_edges_kwargs)
     # sf.paint_netw_graph(A, A, node_col_by_role, 'r', zoom=zoom)
     # sf.paint_netw_graph(B, B, node_col_by_role, 'b', pos_shifts_by_netw[netw_b_name], zoom=zoom)
     #
     # sf.paint_inter_graph(I, I, 'orange', node_col_by_role, pos_shifts_by_netw, zoom)
 
     logger.info('output_dir = ' + output_dir)
-    plt.savefig(os.path.join(output_dir, '_full.pdf'))
+    plt.savefig(os.path.join(output_dir, '_full.pdf'), bbox_inches="tight")
     # plt.show()
     plt.close()  # free memory
 
