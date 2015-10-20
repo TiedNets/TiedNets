@@ -8,13 +8,13 @@ It is composed of a set of packages to:
 * **gather** the results of multiple simulations and combine them
 
 ## Documentation
-The [Wiki](https://github.com/AgostinoSturaro/TiedNets/wiki) contains the overview of the tools and general information you'll need to work with it. There is also a user guide.
+The [Wiki](https://github.com/AgostinoSturaro/TiedNets/wiki) contains the overview of the tools and general information you'll need to work with it.
 
 ## Reporting Issues
 Use the [issue tracker](https://github.com/AgostinoSturaro/TiedNets/issues) here on GitHub to report issues.
 
 ## License
-TiedNets is free to use and modify. It is distributed under the terms of the [GPL-3.0 license](https://www.tldrlegal.com/l/gpl-3.0).
+TiedNets is free to use and modify.
 
 If you use TiedNets for your research, please cite this article
 
@@ -28,4 +28,20 @@ If you use TiedNets for your research, please cite this article
     month = feb,
     year = 2016,
 }
+```
+
+TiedNets is distributed under the terms of the [GPL-3.0 license](https://www.tldrlegal.com/l/gpl-3.0).
+
+```Txt
+Copyright 2015 Agostino Sturaro
+
+TiedNets is free software: you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option)
+any later version.                                                          
+
+TiedNets is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+details.
 ```
