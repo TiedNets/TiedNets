@@ -7,6 +7,12 @@ It is composed of a set of packages to:
 * **simulate** attacks on networks and examine cascading failures
 * **gather** the results of multiple simulations and combine them
 
+## Documentation
+The [Wiki](https://github.com/AgostinoSturaro/TiedNets/wiki) contains the overview of the tools and general information you'll need to work with it. There is also a user guide.
+
+## Reporting Issues
+Use the [issue tracker](https://github.com/AgostinoSturaro/TiedNets/issues) here on GitHub to report issues.
+
 ## License
 TiedNets is free to use and modify. It is distributed under the terms of the [GPL-3.0 license](https://www.tldrlegal.com/l/gpl-3.0).
 
