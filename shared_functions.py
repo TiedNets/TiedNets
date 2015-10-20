@@ -82,7 +82,8 @@ def get_unnamed_numpy_col(numpy_struct, col_num):
 
 
 def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x_shift_a=0.0, y_shift_a=0.0,
-                      x_shift_b=0.0, y_shift_b=0.0, zoom=1.0, font_size=5.0, draw_nodes_kwargs={}, draw_edges_kwargs={}):
+                      x_shift_b=0.0, y_shift_b=0.0, stretch=1.0, font_size=5.0, draw_nodes_kwargs={},
+                      draw_edges_kwargs={}):
     # remove the arguments we are going to override for the function draw_networkx_nodes
     if len(draw_nodes_kwargs) > 0:
         draw_nodes_kwargs.pop('G', None)
@@ -105,7 +106,7 @@ def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x
 
     # spread all nodes over a wider area
     for node in all_node_pos:
-        all_node_pos[node] = (all_node_pos[node][0] * zoom, all_node_pos[node][1] * zoom)
+        all_node_pos[node] = (all_node_pos[node][0] * stretch, all_node_pos[node][1] * stretch)
 
     # draw intra edges
     nx.draw_networkx_edges(A, all_node_pos, edge_color=edges_a_col, **draw_edges_kwargs)

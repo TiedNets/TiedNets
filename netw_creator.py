@@ -1364,46 +1364,25 @@ def run(conf_fpath):
 
     # draw networks
 
-    dist_perc = 0.5
-    #plt.figure(figsize=(15 + 1.6, 10))
-    zoom = 1.0
-    if netw_b_model != 'user_defined_graph':  # TODO: make this work for whatever
-        margin = span * zoom * 0.02
-        # plt.xlim(-margin, span * zoom * 2 + span * zoom * dist_perc + margin)
-        # plt.ylim(-margin, span * zoom + margin)
-
-    # # map used to separate nodes of the 2 networks (e.g. draw A nodes on the left side and B nodes on the right)
-    # if prefer_nearest is False:
-    #     pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
-    #                           netw_b_name: {'x': span + span * dist_perc, 'y': 0}}
-    # else:
-    #     pos_shifts_by_netw = {netw_a_name: {'x': 0, 'y': 0},
-    #                           netw_b_name: {'x': 0, 'y': 0}}
-
     #plt.axis('off')
     plt.tick_params(labeltop=True, labelright=True)
+    # shifts used to position the drawings of the network graphs respective to the plot
     x_shift_a = 0.0
     y_shift_a = 0.0
     x_shift_b = 0.0
     y_shift_b = 0.0
-    # if prefer_nearest is False:
-    #     x_shift_b = span + span * dist_perc
-    #     y_shift_b = 0.0
-    # else:
-    #     x_shift_b = 0.0
-    #     y_shift_b = 0.0
+
+    stretch = 1.0  # multiplier used to stretch the plot over a wider area (useful for dense graphs)
+    font_size = 15.0  # value for the parameter of networkx.networkx_draw_labels
     node_col_by_role = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
                         'distribution_substation': 'magenta',
                         'communication': 'dodgerblue', 'controller': 'c', 'relay': 'dodgerblue'}
-    font_size = 15.0
+    # value for the parameters of networkx.networkx_draw_nodes
     draw_nodes_kwargs = {'node_size': 70, 'alpha': 0.7, 'linewidths': 0.0}
+    # value for the parameters of networkx.networkx_draw_edges
     draw_edges_kwargs = {'width': 1.0, 'arrows': True, 'alpha': 0.7}
-    sf.paint_netw_graphs(A, B, I, node_col_by_role, 'r', 'b', x_shift_a, y_shift_a, x_shift_b, y_shift_b, zoom,
+    sf.paint_netw_graphs(A, B, I, node_col_by_role, 'r', 'b', x_shift_a, y_shift_a, x_shift_b, y_shift_b, stretch,
                          font_size, draw_nodes_kwargs, draw_edges_kwargs)
-    # sf.paint_netw_graph(A, A, node_col_by_role, 'r', zoom=zoom)
-    # sf.paint_netw_graph(B, B, node_col_by_role, 'b', pos_shifts_by_netw[netw_b_name], zoom=zoom)
-    #
-    # sf.paint_inter_graph(I, I, 'orange', node_col_by_role, pos_shifts_by_netw, zoom)
 
     logger.info('output_dir = ' + output_dir)
     plt.savefig(os.path.join(output_dir, '_full.pdf'), bbox_inches="tight")
