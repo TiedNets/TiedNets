@@ -1,5 +1,5 @@
 conf_fpath = test_sets/ex_unstable_2/run_uniform.ini
 Time 0) 2 nodes unstable before the initial attack: ['D3', 'R4']
-Time 1) 0 nodes of network A failed because of initial attack: []
+Time 1) No nodes were attacked
 Time 2) 1 nodes of network A failed for lack of inter support: ['D3']
 Time 4) 1 nodes of network B failed for lack of inter support: ['R4']

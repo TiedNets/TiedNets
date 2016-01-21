@@ -6,22 +6,29 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import shared_functions as sf
 
-input_fpath = os.path.normpath('../Simulations/synthetic/synth_rnd_atk_failure_cnt.tsv')
-output_fpath = os.path.normpath('../Simulations/synthetic/synth_rnd_atk_failure_cnt.pdf')
+# input_fpath = os.path.normpath('../Simulations/synthetic/synth_rnd_atk_failure_cnt.tsv')
+# output_fpath = os.path.normpath('../Simulations/synthetic/synth_rnd_atk_failure_cnt.pdf')
 # input_fpath = os.path.normpath('../Simulations/MN_nets/MN_deg_atks_failure_cnt.tsv')
 # output_fpath = os.path.normpath('../Simulations/MN_nets/MN_deg_atks_failure_cnt.pdf')
 # input_fpath = os.path.normpath('../Simulations/MN_nets/MN_rnd_atk_stats.tsv')
 # output_fpath = os.path.normpath('../Simulations/MN_nets/MN_rnd_atk_failure_cnt.pdf')
 
-# read values from file, by column
-values = np.genfromtxt(input_fpath, delimiter='\t', skip_header=1, dtype=None)
+# each row in the input file is meant to be a point in the graph
+input_fpath = os.path.normpath('../Simulations/centrality/1cc_1ap/betw_c/realistic/_stats.tsv')
+output_fpath = os.path.normpath('../Simulations/centrality/1cc_1ap/betw_c/realistic/betw_c_graph.pdf')
 
-# each row is a data point
-groups = sf.get_unnamed_numpy_col(values, 0)  # the first cell of each line specifies which data group of the point
-X = sf.get_unnamed_numpy_col(values, 1)
-Y = sf.get_unnamed_numpy_col(values, 2)
-errors = sf.get_unnamed_numpy_col(values, 3)
-# print('\ngroups ' + str(groups) + '\nX ' + str(X) + '\nY ' + str(Y) + '\nerrors ' + str(errors))
+# the input file structured like a table, we read it all into an array-like structure using Numpy
+values = np.genfromtxt(input_fpath, delimiter='\t', skip_header=1, dtype=None)
+# print(values)  # debug
+
+# we separate the array by columns, the user should know what column represents what
+# remember to correctly specify the number of these columns!
+# cells of the first column indicate what instance group (line) the ith row (point) belongs to
+group_col = sf.get_unnamed_numpy_col_as_list(values, 0)
+x_col = sf.get_unnamed_numpy_col_as_list(values, 1)
+y_col = sf.get_unnamed_numpy_col_as_list(values, 2)
+error_col = sf.get_unnamed_numpy_col_as_list(values, 3)  # get the column representing the error measure (std dev)
+print('\ngroups {}\nX {}\nY {}\nerrors {}'.format(group_col, x_col, y_col, error_col))  # debug
 
 # we want to make a plot like this
 # draw a line for all points with x=x0, label it x0
@@ -37,19 +44,43 @@ markers = ['o', '^', 's', '*', 'x', '+', 'd']
 # linestyles = ['--', ':', '--', ':']
 col_marks = sf.mix(colors, markers)
 
-d = {}  # additional arguments for the plotting call of each line
-# idx and val are, respectively, the number and name of a line (group of data)
-for idx, val in enumerate(set(groups)):
+groups = set(group_col)  # get the names of the different groups
+d = {}  # will contain additional arguments for the plotting call of each line
+# idx and val are, respectively, the index and name of a group (line)
+for idx, val in enumerate(groups):
     d[val] = {'label': '{}'.format(val), 'marker': col_marks[idx][0], 'color': col_marks[idx][1],
               'markersize': 10, 'linewidth': 1}
 
-# print(d)
-
 # draw a different line for each of the unique values in X
-for val, kwargs in d.items():
-    mask = groups == val
-    y, z, e = X[mask], Y[mask], errors[mask]
-    plt.errorbar(y, z, yerr=e, **kwargs)  # this is the call that actually plots the lines
+# only works with NumPy arrays
+# for val, kwargs in d.items():
+#     mask = group_col == val  # create a mask to filter the lists, it's a vector of 0/1 values, 1 if ith cell == val
+#     line_x, line_y, line_err = x_col[mask], y_col[mask], error_col[mask]  # use the mask to filter the lists
+#     plt.errorbar(line_x, line_y, yerr=line_err, **kwargs)  # this is the call that actually plots the lines
+
+# dictionaries of lists, they will contain the coordinates of the points belonging to each line
+x_vals_by_line = {}
+y_vals_by_line = {}
+errors_by_line = {}
+# initialize lists for each line
+for line in groups:
+    x_vals_by_line[line] = []
+    y_vals_by_line[line] = []
+    errors_by_line[line] = []
+
+# separate data belonging to each line, look at the cells of the column "group", remember each row looked like this
+# group x y err
+for idx, line in enumerate(group_col):
+    x_vals_by_line[line].append(x_col[idx])
+    y_vals_by_line[line].append(y_col[idx])
+    errors_by_line[line].append(error_col[idx])
+
+# plot the different lines
+for line, kwargs in d.items():
+    line_x = x_vals_by_line[line]
+    line_y = y_vals_by_line[line]
+    line_err = errors_by_line[line]
+    plt.errorbar(line_x, line_y, yerr=line_err, **kwargs)  # this is the call that actually plots each line
 
 # label the axes of the plot
 ax = plt.axes()

@@ -35,8 +35,9 @@ logger = logging.getLogger(__name__)
 
 # begin of user defined variables
 index_fname = '_index.tsv'
-instances_dir = os.path.normpath('../Simulations/MN_nets/1cc_1ap')
+# instances_dir = os.path.normpath('../Simulations/MN_nets/1cc_1ap')
 # instances_dir = os.path.normpath('../Simulations/synthetic_nets/1cc_1ap')
+instances_dir = os.path.normpath('../Simulations/centrality/1cc_1ap')
 
 group_results_dirs = [
     # os.path.normpath('../Simulations/MN_nets/1cc_1ap/rnd_atk/realistic'),
@@ -54,7 +55,9 @@ group_results_dirs = [
     # os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/intra_subst_atk/realistic'),
     # os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/intra_tran_atk/realistic')
 
-    os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/intra_gen_atk/realistic')
+    # os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/intra_gen_atk/realistic')
+
+    os.path.normpath('../Simulations/centrality/1cc_1ap/betw_c/realistic')
 ]
 
 diff_paths = [
@@ -117,29 +120,57 @@ diff_run_options = [
     #     'inter_support_type': 'realistic',
     #     'save_death_cause': True
     # }, {
+    #     'attacked_netw': 'A',
+    #     'attack_tactic': 'most_intra_used_generators',
+    #     'intra_support_type': 'realistic',
+    #     'inter_support_type': 'realistic',
+    #     'save_death_cause': True
+    # }
         'attacked_netw': 'A',
-        'attack_tactic': 'most_intra_used_generators',
+        'attack_tactic': 'betweenness_centrality_rank',
         'intra_support_type': 'realistic',
         'inter_support_type': 'realistic',
-        'save_death_cause': True
+        'save_death_cause': True,
+        'attacks': 1
     }
 ]
 
 if len(group_results_dirs) != len(diff_paths) != len(diff_run_options):
     raise ValueError('group_output_dirs, diff_paths and diff_run_options lists should have the same length')
 
-instances_per_type = 1  # used to group instances, must have the same value used for network creation
-first_instance_num = 0
-last_instance_num = 0
+# TODO: fix description
+# This script is used to run multiple simulations on multiple groups of instances, at its core is a loop that
+# generates a configuration file with a different combination of parameters and executes a simulation based on it
+# It is meant to facilitate the creation of 2D plots with multiple lines, by saving data in a predictable order.
+# - each line represents a different set of simulation options
+# - each point in a line is a set of simulations executed on the same instance, changing the random seed
+# We need to specify what is the name of the independent variable in the simulation, and the values we want it to assume
+#
+# Of the axis of the graph, we only need to specify
+# each point in the graph is a
+# the same simulation can
+
+# simulations can be done on groups of instances, and each
+# here's how to use these parameters, if there is a single group of 3 similar instances
+# first_instance_num = 0, instances_per_type = 2, last_instance_num = 3
+# the parameters used for the simulation on
+# if there are two groups of instances to be tested with different parameters,
+instances_per_type = 5  # used to group instances, must have the same value used for network creation
+first_instance_num = 0  # usually 0, unless you want to skip a group, then it should be divisible by instances_per_type
+last_instance_num = 4  # inclusive,
 
 if (1 + last_instance_num - first_instance_num) % instances_per_type:
-    raise ValueError('The number of instances is not such that there cannot be the same number of instances for each'
-                     'type. Check parameters last_instance_num, first_instance_num, instances_per_type')
+    raise ValueError('Incoherent values for parameters  first_instance_num, last_instance_num and instances_per_type'
+                     'Make it so that ')
 
-seeds = list(range(128, 138, 1))  # used to execute multiple tests on the same network instance
+# seeds = list(range(128, 138, 1))  # used to execute multiple tests on the same network instance
+seeds = [1]
 
 # attack_counts = list(range(0, 151, 5))  # values of the independent value of the simulation
-attack_counts = list(range(0, 61, 5)) + [69]  # values of the independent value of the simulation
+# attack_counts = list(range(0, 61, 5)) + [69]  # values of the independent value of the simulation
+# indep_var_name = 'attacks'  # name of the independent variable of the simulation
+indep_var_name = 'min_rank'  # name of the independent variable of the simulation
+indep_var_vals = list(range(0, 10, 1))  # values of the independent variable of the simulation
 # end of user defined variables
 
 for i in range(0, len(diff_paths)):
@@ -153,12 +184,12 @@ for i in range(0, len(diff_paths)):
     index_fpath = os.path.join(group_results_dir, index_fname)
 
     # write file used to index statistics files with the final result
-    with open(index_fpath, 'ab') as index_file:
+    with open(index_fpath, 'wb') as index_file:
         index = csv.writer(index_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
         index.writerow(['Instance_type', 'Indep_var_val', 'Results_file'])
         instance_types = (1 + last_instance_num - first_instance_num) / instances_per_type
         for instance_type in range(0, instance_types):
-            for point_num, attack_cnt in enumerate(attack_counts):
+            for point_num, attack_cnt in enumerate(indep_var_vals):
                 end_stats_fpath = os.path.join(group_results_dir,
                                                'group_{}_stats_{}.tsv'.format(instance_type, point_num))
                 index.writerow([instance_type, attack_cnt, end_stats_fpath])
@@ -171,8 +202,8 @@ for i in range(0, len(diff_paths)):
         paths['netw_dir'] = os.path.join(instances_dir, 'instance_{}'.format(instance_num))
 
         # inner cycle ranging over values of the independent variable
-        for point_num, attack_cnt in enumerate(attack_counts):
-            run_options['attacks'] = attack_cnt
+        for point_num, attack_cnt in enumerate(indep_var_vals):
+            run_options[indep_var_name] = attack_cnt
             paths['end_stats_fpath'] = os.path.join(group_results_dir,
                                                     'group_{}_stats_{}.tsv'.format(instance_type, point_num))
 

@@ -3,7 +3,6 @@ __author__ = 'Agostino Sturaro'
 import os
 import filecmp
 import shutil
-from itertools import izip
 import cascades_sim as cs
 import shared_functions as sf
 import networkx as nx
@@ -38,7 +37,7 @@ def test_run_ex_1_realistic():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/res_realistic')))
@@ -57,7 +56,7 @@ def test_run_ex_1_kngc():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/res_kngc')))
@@ -76,7 +75,7 @@ def test_run_ex_1_sc_th_3():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/res_sc_th_3')))
@@ -95,7 +94,7 @@ def test_run_ex_1_sc_th_4():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/res_sc_th_4')))
@@ -114,7 +113,7 @@ def test_run_ex_1_uniform():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_max_matching/res_uniform')))
@@ -135,7 +134,7 @@ def test_run_ex_2a_realistic():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_full/res_realistic')))
@@ -154,7 +153,7 @@ def test_run_ex_2a_kngc():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_full/res_kngc')))
@@ -173,7 +172,7 @@ def test_run_ex_2a_sc_th_3():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_full/res_sc_th_3')))
@@ -192,7 +191,7 @@ def test_run_ex_2a_sc_th_4():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_full/res_sc_th_4')))
@@ -211,7 +210,7 @@ def test_run_ex_2a_uniform():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_max_matching/res_uniform')))
@@ -232,7 +231,7 @@ def test_run_ex_2b_realistic():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2b_full/res_realistic')))
@@ -251,7 +250,7 @@ def test_run_ex_2b_kngc():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2b_full/res_kngc')))
@@ -270,7 +269,7 @@ def test_run_ex_2b_sc_th_3():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2b_full/res_sc_th_3')))
@@ -289,7 +288,7 @@ def test_run_ex_2b_sc_th_4():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2b_full/res_sc_th_4')))
@@ -308,7 +307,7 @@ def test_run_ex_2b_uniform():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2b_max_matching/res_uniform')))
@@ -331,12 +330,8 @@ def test_run_ex_3_realistic():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
-
-    # confront the 2 files line by line, without caring about different line endings
-    with open(exp_end_stats_fpath, 'r') as exp_file, open(res_end_stats_fpath, 'r') as res_file:
-        lines_match = all(a == b for a, b in izip(exp_file, res_file))
-    assert lines_match is True
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
+    assert sf.compare_files_by_line(res_end_stats_fpath, exp_end_stats_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_full/res_realistic')))
@@ -355,7 +350,7 @@ def test_run_ex_3_kngc():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_full/res_kngc')))
@@ -374,7 +369,7 @@ def test_run_ex_3_sc_th_3():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_full/res_sc_th_3')))
@@ -393,7 +388,7 @@ def test_run_ex_3_sc_th_4():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_full/res_sc_th_4')))
@@ -412,7 +407,7 @@ def test_run_ex_3_uniform():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_3_max_matching/res_uniform')))
@@ -433,7 +428,7 @@ def test_run_ex_unstable_1():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_2a_full/res_sc_th_5')))
@@ -452,7 +447,7 @@ def test_run_ex_unstable_2():
     cs.run(sim_conf_fpath)
 
     # then
-    assert filecmp.cmp('log.txt', exp_log_fpath, False)  # assuming UNIX EOLs are used
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
 
     # tear down
     shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_unstable_2/res_uniform')))

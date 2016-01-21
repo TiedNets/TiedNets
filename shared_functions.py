@@ -68,17 +68,54 @@ def setup_logging(
 
 
 # access the ith column of whatever data structure numpy created
-def get_unnamed_numpy_col(numpy_struct, col_num):
+def get_unnamed_numpy_col_as_list(numpy_struct, col_num):
     if numpy_struct.dtype.fields is not None:
         col_name = 'f' + str(col_num)
         col = numpy_struct[col_name]  # access structured array
+        col = col.tolist()
     else:
         if numpy_struct.ndim <= 1:
             col = numpy_struct  # direct access (single number o uniform 1D array)
         else:
             col = numpy_struct[:, col_num]  # access uniform multi-dimensional array
-
+            col = col.tolist()
+    # NumPy .tolist() might have returned a single element instead of a list, fix this
+    if not isinstance(col, list):
+        col = [col]
     return col
+
+
+# confront two text files line by line, ignoring different line endings and whites at the end of the files
+def compare_files_by_line(fpath1, fpath2, silent=True):
+    # all line endings in UNIX style when opening the files
+    with open(fpath1, 'r') as file1, open(fpath2, 'r') as file2:
+        # lines_match = all(a == b for a, b in izip(exp_file, res_file))
+        file1_end = False
+        file2_end = False
+        found_diff = False
+        while not file1_end and not file2_end and not found_diff:
+            try:
+                f1_line = next(file1).rstrip('\n')
+            except StopIteration:
+                f1_line = None
+                file1_end = True
+            try:
+                f2_line = next(file2).rstrip('\n')
+            except StopIteration:
+                f2_line = None
+                file2_end = True
+
+            if f1_line != f2_line:
+                if file1_end or file2_end:
+                    if not (f1_line == '' or f2_line == ''):
+                        found_diff = True
+                        break
+                else:
+                    found_diff = True
+                    break
+    if found_diff is True and silent is False:
+        print('Found difference in files, file 1 line:\n{}\nFile 2 line:\n{}'.format(f1_line, f2_line))
+    return not found_diff
 
 
 def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x_shift_a=0.0, y_shift_a=0.0,

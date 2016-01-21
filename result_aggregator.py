@@ -15,10 +15,14 @@ logger = logging.getLogger(__name__)
 def run(index_fpath, aggregate_fpath, instance_type_names=None, cols_to_ignore=None):
     with open(index_fpath, 'r') as index_file, open(aggregate_fpath, 'wb') as aggregate_file:
         first_it = True
+        # the index file contains the paths of the files with the actual statistics
+        # open the index file as a list of dictionaries (kinda, each file line can be accessed as a dictionary)
         index = csv.DictReader(index_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
 
         for line in index:
             stats_fpath = line['Results_file']
+            # using NumPy, open a statistics file as a dictionary of vectors (kinda, it's indexed by column)
+            # NumPy guesses the type of the cells
             stats = np.genfromtxt(stats_fpath, delimiter='\t', names=True, dtype=None)
             stat_names = stats.dtype.names
             avgs = dict()
@@ -71,15 +75,16 @@ def run(index_fpath, aggregate_fpath, instance_type_names=None, cols_to_ignore=N
 # instance_type_names = {'0': r'SC $\Delta$=20'}
 # index_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/sc_th_21/_index.tsv')
 # aggregate_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/sc_th_21/_stats.tsv')
-instance_type_names = {'0': r'SC $\Delta$=200'}
-index_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/sc_th_201/_index.tsv')
-aggregate_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/sc_th_201/_stats.tsv')
+# instance_type_names = {'0': r'SC $\Delta$=200'}
+# index_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/sc_th_201/_index.tsv')
+# aggregate_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/sc_th_201/_stats.tsv')
 # instance_type_names = {'0': 'Uniform'}
 # index_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/uniform/_index.tsv')
 # aggregate_fpath = os.path.normpath('../Simulations/synthetic/1cc_1ap/rnd_atk/uniform/_stats.tsv')
 
-# index_fpath = os.path.normpath('../Simulations/MN_nets/1cc_2ap/rnd_atk/realistic/_index.tsv')
-# aggregate_fpath = os.path.normpath('../Simulations/MN_nets/1cc_2ap/rnd_atk/realistic/_stats.tsv')
+instance_type_names = {'0': 'Betweenness c.'}
+index_fpath = os.path.normpath('../Simulations/centrality/1cc_1ap/betw_c/realistic/_index.tsv')
+aggregate_fpath = os.path.normpath('../Simulations/centrality/1cc_1ap/betw_c/realistic/_stats.tsv')
 
 # instance_type_names = {'0': 'Inter-degree distribution'}
 # index_fpath = os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/inter_subst_atk/realistic/_index.tsv')

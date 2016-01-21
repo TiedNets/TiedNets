@@ -30,15 +30,62 @@ def choose_random_nodes(G, node_cnt, seed=None):
     return chosen_nodes
 
 
-def choose_nodes_by_betweenness_centrality(G, node_cnt, seed=None):
-    nodes_with_rank = nx.betweenness_centrality(G, seed=seed)
+def pick_nodes_by_betw_centr(G, node_cnt, seed=None):
+    nodes_with_centr = nx.betweenness_centrality(G, seed=seed)
     # sort the dictionary by value first and then by key (so we have a deterministic sorting)
-    nodes_with_rank = OrderedDict(sorted(nodes_with_rank.items(), key=lambda (k, v): (v, k)))
+    nodes_with_rank = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
     chosen_nodes = list()
     # choose the first nodes from the ordered dictionary
     for i, node in enumerate(nodes_with_rank):
         if i >= node_cnt:
             break
+        chosen_nodes.append(node)
+    return chosen_nodes, nodes_with_centr
+
+
+def pick_nodes_by_betw_centr_rank(G, node_cnt, min_rank, seed=None):
+    nodes_with_centr = nx.betweenness_centrality(G, seed=seed)
+    # sort the dictionary by value first and then by key (so we have a deterministic sorting)
+    # we get a dictionary of node: centrality
+    nodes_with_rank = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
+    # create a list of nodes rank by their centrality, we get a list
+    # [node with lowest centrality, ..., node with highest centrality]
+    ranked_nodes = list(nodes_with_rank.keys())
+    chosen_nodes = list()
+    for i in range(min_rank, min_rank + node_cnt):
+        node = ranked_nodes[i]
+        chosen_nodes.append(node)
+    return chosen_nodes
+
+
+def pick_nodes_by_closeness_centr_rank(G, node_cnt, min_rank):
+    nodes_with_centr = nx.closeness_centrality(G)
+    # sort the dictionary by value first and then by key (so we have a deterministic sorting)
+    # we get a dictionary of node: centrality
+    nodes_with_rank = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
+    # create a list of nodes rank by their centrality, we get a list
+    # [node with lowest centrality, ..., node with highest centrality]
+    ranked_nodes = list(nodes_with_rank.keys())
+    chosen_nodes = list()
+    for i in range(min_rank, min_rank + node_cnt):
+        node = ranked_nodes[i]
+        chosen_nodes.append(node)
+    return chosen_nodes
+
+
+# nodes_with_centr is a dictionary {'node': centrality measure}
+# node_cnt is the number of nodes to pick
+# min_rank is the rank of the first node to pick (they get sorted by centrality measure and id)
+def pick_nodes_by_centrality_rank(nodes_with_centr, node_cnt, min_rank):
+    # sort the dictionary by value first and then by key (so we have a deterministic sorting)
+    # we get a dictionary of node: centrality
+    nodes_with_rank = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
+    # create a list of nodes rank by their centrality, we get a list
+    # [node with lowest centrality, ..., node with highest centrality]
+    ranked_nodes = list(nodes_with_rank.keys())
+    chosen_nodes = list()
+    for i in range(min_rank, min_rank + node_cnt):
+        node = ranked_nodes[i]
         chosen_nodes.append(node)
     return chosen_nodes
 
@@ -285,14 +332,25 @@ def run(conf_fpath):
 
     # read output paths
 
+    # run_stats is a file used to save step-by-step details about this run
     results_dir = os.path.normpath(config.get('paths', 'results_dir'))
     if os.path.isabs(results_dir) is False:
         results_dir = os.path.abspath(results_dir)
     run_stats_fname = config.get('paths', 'run_stats_fname')
     run_stats_fpath = os.path.join(results_dir, run_stats_fname)
+
+    # end_stats is a file used to save a single line (row) of statistics at the end of the simulation
     end_stats_fpath = os.path.normpath(config.get('paths', 'end_stats_fpath'))
     if os.path.isabs(end_stats_fpath) is False:
         end_stats_fpath = os.path.abspath(end_stats_fpath)
+
+    # ml_stats is similar to end_stats as it is used to write a line at the end of the simulation,
+    # but it gathers statistics used for machine learning
+    ml_stats_fpath = ''
+    if config.has_option('paths', 'ml_stats_fpath'):
+        ml_stats_fpath = os.path.normpath(config.get('paths', 'ml_stats_fpath'))
+        if os.path.isabs(ml_stats_fpath) is False:
+            ml_stats_fpath = os.path.abspath(ml_stats_fpath)
 
     # ensure output directories exist and are empty
     sf.ensure_dir_exists(results_dir)
@@ -351,54 +409,93 @@ def run(conf_fpath):
     # execute simulation of failure propagation
     with open(run_stats_fpath, 'wb') as run_stats_file:
 
-        run_stats = csv.DictWriter(run_stats_file, ['time', 'total_dead_A', 'total_dead_B'], delimiter='\t',
-                                   quoting=csv.QUOTE_MINIMAL)
+        run_stats = csv.DictWriter(run_stats_file, ['time', 'dead'], delimiter='\t', quoting=csv.QUOTE_MINIMAL)
         run_stats.writeheader()
         time += 1
 
         # perform initial attack
         if attacked_netw == A.graph['name']:
-            if attack_tactic == 'random':
-                attacked_nodes = choose_random_nodes(A, attack_cnt, seed)
-            elif attack_tactic == 'targeted':
-                target_nodes = config.get('run_opts', 'target_nodes')
-                attacked_nodes = [node for node in target_nodes.split()]  # split list on space
-            elif attack_tactic == 'betweenness_centrality':
-                attacked_nodes = choose_nodes_by_betweenness_centrality(A, attack_cnt, seed)
-            elif attack_tactic == 'most_inter_used_distr_subs':
-                attacked_nodes = choose_most_inter_used_nodes(A, I, attack_cnt, 'distribution_substation')
-            elif attack_tactic == 'most_intra_used_distr_subs':
-                attacked_nodes = choose_most_intra_used_nodes(A, attack_cnt, 'distribution_substation')
-            elif attack_tactic == 'most_intra_used_transm_subs':
-                attacked_nodes = choose_most_intra_used_nodes(A, attack_cnt, 'transmission_substation')
-            elif attack_tactic == 'most_intra_used_generators':
-                attacked_nodes = choose_most_intra_used_nodes(A, attack_cnt, 'generator')
-            else:
-                raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
-            total_dead_a = len(attacked_nodes)
-            logger.info('Time {}) {} nodes of network {} failed because of initial attack: {}'.format(
-                time, total_dead_a, A.graph['name'], sorted(attacked_nodes, key=sf.natural_sort_key)))
-            A.remove_nodes_from(attacked_nodes)
+            attacked_G = A
         elif attacked_netw == B.graph['name']:
-            if attack_tactic == 'random':
-                attacked_nodes = choose_random_nodes(B, attack_cnt, seed)
-            elif attack_tactic == 'targeted':
-                target_nodes = config.get('run_opts', 'target_nodes')
-                attacked_nodes = [node for node in target_nodes.split()]
-            elif attack_tactic == 'betweenness_centrality':
-                attacked_nodes = choose_nodes_by_betweenness_centrality(B, attack_cnt, seed)
-            else:
-                raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
-            total_dead_b = len(attacked_nodes)
-            logger.info('Time {}) {} nodes of network {} failed because of initial attack: {}'.format(
-                time, total_dead_b, B.graph['name'], sorted(attacked_nodes, key=sf.natural_sort_key)))
-            B.remove_nodes_from(attacked_nodes)
+            attacked_G = B
+        elif attacked_netw == "both":
+            attacked_G = nx.compose(nx.compose(A, I), B, "both")
         else:
             raise ValueError('Invalid value for parameter "attacked_netw": ' + attacked_netw)
+
+        attacks_for_A_only = ['most_inter_used_distr_subs', 'most_intra_used_distr_subs', 'most_intra_used_transm_subs',
+                              'most_intra_used_generators']
+        if attack_tactic in attacks_for_A_only and attacked_netw != A.graph['name']:
+            raise ValueError('Attack {} can only be used on the power network A'.format(attack_tactic))
+
+        betw_c_by_node = None
+        clos_c_by_node = None
+        indeg_c_by_node = None
+
+        if attack_tactic == 'random':
+            attacked_nodes = choose_random_nodes(attacked_G, attack_cnt, seed)
+        elif attack_tactic == 'targeted':
+            target_nodes = config.get('run_opts', 'target_nodes')
+            attacked_nodes = [node for node in target_nodes.split()]  # split list on space
+        # elif attack_tactic == 'betweenness_centrality':
+        #     attacked_nodes, betw_c_by_node = pick_nodes_by_betw_centr(attacked_G, attack_cnt, seed)
+        #     clos_c_by_node = nx.closeness_centrality(attacked_G)
+        elif attack_tactic == 'betweenness_centrality_rank':
+            betw_c_by_node = nx.betweenness_centrality(attacked_G, seed=seed)
+            min_rank = config.getint('run_opts', 'min_rank')
+            attacked_nodes = pick_nodes_by_centrality_rank(betw_c_by_node, attack_cnt, min_rank)
+        elif attack_tactic == 'closeness_centrality_rank':
+            clos_c_by_node = nx.closeness_centrality(attacked_G)
+            min_rank = config.getint('run_opts', 'min_rank')
+            attacked_nodes = pick_nodes_by_centrality_rank(clos_c_by_node, attack_cnt, min_rank)
+        elif attack_tactic == 'most_inter_used_distr_subs':
+            attacked_nodes = choose_most_inter_used_nodes(attacked_G, I, attack_cnt, 'distribution_substation')
+        elif attack_tactic == 'most_intra_used_distr_subs':
+            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'distribution_substation')
+        elif attack_tactic == 'most_intra_used_transm_subs':
+            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'transmission_substation')
+        elif attack_tactic == 'most_intra_used_generators':
+            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'generator')
+        else:
+            raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
+
+        # calculate additional centrality measures only if we need to fill ML stats
+        if ml_stats_fpath:
+            if betw_c_by_node is None:
+                betw_c_by_node = nx.betweenness_centrality(attacked_G, seed=seed)
+            if clos_c_by_node is None:
+                clos_c_by_node = nx.closeness_centrality(attacked_G)
+            if indeg_c_by_node is None:
+                indeg_c_by_node = nx.in_degree_centrality(attacked_G)
+
+            # small hack, we have only 1 node attacked
+            atkd_clos_c = clos_c_by_node(attacked_nodes[0])
+            atkd_betw_c = betw_c_by_node(attacked_nodes[0])
+            atkd_indeg_c = indeg_c_by_node(attacked_nodes[0])
+            atkd_role = attacked_nodes[0][0]  # the first character in the name of the node is its role
+
+        attacked_nodes_a = set(attacked_nodes).intersection(A.nodes())
+        attacked_nodes_b = set(attacked_nodes).intersection(B.nodes())
+
+        total_dead_a = len(attacked_nodes_a)
+        if total_dead_a > 0:
+            A.remove_nodes_from(attacked_nodes_a)
+            logger.info('Time {}) {} nodes of network {} failed because of initial attack: {}'.format(
+                time, total_dead_a, A.graph['name'], sorted(attacked_nodes_a, key=sf.natural_sort_key)))
+
+        total_dead_b = len(attacked_nodes_b)
+        if total_dead_b > 0:
+            B.remove_nodes_from(attacked_nodes_b)
+            logger.info('Time {}) {} nodes of network {} failed because of initial attack: {}'.format(
+                time, total_dead_b, B.graph['name'], sorted(attacked_nodes_b, key=sf.natural_sort_key)))
+
+        if total_dead_a == total_dead_b == 0:
+            logger.info('Time {}) No nodes were attacked'.format(time))
+
         I.remove_nodes_from(attacked_nodes)
 
         # save_state(time, A, B, I, results_dir)
-        run_stats.writerow({'time': time, 'total_dead_A': total_dead_a, 'total_dead_B': total_dead_b})
+        run_stats.writerow({'time': time, 'dead': attacked_nodes})
         updated = True
         time += 1
 
@@ -436,7 +533,7 @@ def run(conf_fpath):
                 I.remove_nodes_from(unsupported_nodes_a)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                run_stats.writerow({'time': time, 'total_dead_A': total_dead_a, 'total_dead_B': total_dead_b})
+                run_stats.writerow({'time': time, 'dead': unsupported_nodes_a})
             time += 1
 
             # intra checks for network A
@@ -456,7 +553,7 @@ def run(conf_fpath):
                 I.remove_nodes_from(unsupported_nodes_a)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                run_stats.writerow({'time': time, 'total_dead_A': total_dead_a, 'total_dead_B': total_dead_b})
+                run_stats.writerow({'time': time, 'dead': unsupported_nodes_a})
             time += 1
 
             # inter checks for network B
@@ -476,7 +573,7 @@ def run(conf_fpath):
                 I.remove_nodes_from(unsupported_nodes_b)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                run_stats.writerow({'time': time, 'total_dead_A': total_dead_a, 'total_dead_B': total_dead_b})
+                run_stats.writerow({'time': time, 'dead': unsupported_nodes_b})
             time += 1
 
             # intra checks for network B
@@ -496,14 +593,14 @@ def run(conf_fpath):
                 I.remove_nodes_from(unsupported_nodes_b)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                run_stats.writerow({'time': time, 'total_dead_A': total_dead_a, 'total_dead_B': total_dead_b})
+                run_stats.writerow({'time': time, 'dead': unsupported_nodes_b})
             time += 1
 
     # save_state('final', A, B, I, results_dir)
 
     # write statistics about the final result
     if os.path.isfile(end_stats_fpath) is False:
-        write_header = True
+        write_header = True  # if we are going to create a new file, then add the header
     else:
         write_header = False
     with open(end_stats_fpath, 'ab') as end_stats_file:
@@ -524,3 +621,21 @@ def run(conf_fpath):
                 end_stats_row.update({'no_sup_ccs': no_sup_ccs_deaths, 'no_sup_relays': no_sup_relays_deaths,
                                       'no_com_path': no_com_path_deaths})
         end_stats.writerow(end_stats_row)
+
+    if ml_stats_fpath:  # if this string is not empty
+        if os.path.isfile(end_stats_fpath) is False:
+            write_header = True  # if we are going to create a new file, then add the header
+        else:
+            write_header = False
+        with open(ml_stats_fpath, 'ab') as ml_stats_file:
+            # later we can add features about the whole network, like the median centrality
+            # ml_stats_header = ['atkd_G', 'atkd_T', 'atkd_D', 'atkd_R', 'atkd_C', 'betw_c', ...]
+
+            ml_stats_header = ['atkd_role', 'betw_c', 'clos_c', 'indeg_c', 'tot_dead']
+            ml_stats = csv.DictWriter(ml_stats_file, ml_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+            if write_header is True:
+                ml_stats.writeheader()
+
+            ml_stats_row = {'atkd_role': atkd_role, 'betw_c': atkd_betw_c, 'clos_c': atkd_clos_c,
+                            'indeg_c': atkd_indeg_c, 'tot_dead': total_dead_a + total_dead_b}
+            ml_stats.writerow(ml_stats_row)

@@ -1176,9 +1176,11 @@ def run(conf_fpath):
 
     # assign positions to nodes
 
+    undefined_pos = True
     if config.has_option('build_b', 'layout'):
         if netw_b_model == 'user_defined_graph':
             logger.warning('Specifying a graph layout will override node positions specified in user defined graph B')
+        undefined_pos = False
         layout = config.get('build_b', 'layout')
         layout = layout.lower()
 
@@ -1233,6 +1235,7 @@ def run(conf_fpath):
         arrange_nodes(B, pos_by_node)
 
     elif netw_b_model == 'user_defined_graph':
+        undefined_pos = False
         first_it = True
         for node in B.nodes():
             node_inst = B.node[node]
@@ -1269,7 +1272,7 @@ def run(conf_fpath):
                 B.node[node]['y'] = y_min + (y_max - y_min) / 2
             else:  # TODO: implement this
                 raise ValueError('special controller placement not implemented for more than 1 controller')
-        else:
+        elif undefined_pos is False:
             for node in controllers:
                 B.node[node]['x'] = my_random.uniform(x_min, x_max)
                 B.node[node]['y'] = my_random.uniform(y_min, y_max)
@@ -1364,30 +1367,33 @@ def run(conf_fpath):
 
     # draw networks
 
-    #plt.axis('off')
-    plt.tick_params(labeltop=True, labelright=True)
-    # shifts used to position the drawings of the network graphs respective to the plot
-    x_shift_a = 0.0
-    y_shift_a = 0.0
-    x_shift_b = 0.0
-    y_shift_b = 0.0
+    if undefined_pos is True:
+        logger.warning('No layout or positions specified for nodes. Graph will not be draw')
+    else:
+        #plt.axis('off')
+        plt.tick_params(labeltop=True, labelright=True)
+        # shifts used to position the drawings of the network graphs respective to the plot
+        x_shift_a = 0.0
+        y_shift_a = 0.0
+        x_shift_b = 0.0
+        y_shift_b = 0.0
 
-    stretch = 1.0  # multiplier used to stretch the plot over a wider area (useful for dense graphs)
-    font_size = 15.0  # value for the parameter of networkx.networkx_draw_labels
-    node_col_by_role = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
-                        'distribution_substation': 'magenta',
-                        'communication': 'dodgerblue', 'controller': 'c', 'relay': 'dodgerblue'}
-    # value for the parameters of networkx.networkx_draw_nodes
-    draw_nodes_kwargs = {'node_size': 70, 'alpha': 0.7, 'linewidths': 0.0}
-    # value for the parameters of networkx.networkx_draw_edges
-    draw_edges_kwargs = {'width': 1.0, 'arrows': True, 'alpha': 0.7}
-    sf.paint_netw_graphs(A, B, I, node_col_by_role, 'r', 'b', x_shift_a, y_shift_a, x_shift_b, y_shift_b, stretch,
-                         font_size, draw_nodes_kwargs, draw_edges_kwargs)
+        stretch = 1.0  # multiplier used to stretch the plot over a wider area (useful for dense graphs)
+        font_size = 15.0  # value for the parameter of networkx.networkx_draw_labels
+        node_col_by_role = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
+                            'distribution_substation': 'magenta',
+                            'communication': 'dodgerblue', 'controller': 'c', 'relay': 'dodgerblue'}
+        # value for the parameters of networkx.networkx_draw_nodes
+        draw_nodes_kwargs = {'node_size': 70, 'alpha': 0.7, 'linewidths': 0.0}
+        # value for the parameters of networkx.networkx_draw_edges
+        draw_edges_kwargs = {'width': 1.0, 'arrows': True, 'alpha': 0.7}
+        sf.paint_netw_graphs(A, B, I, node_col_by_role, 'r', 'b', x_shift_a, y_shift_a, x_shift_b, y_shift_b, stretch,
+                             font_size, draw_nodes_kwargs, draw_edges_kwargs)
 
-    logger.info('output_dir = ' + output_dir)
-    plt.savefig(os.path.join(output_dir, '_full.pdf'), bbox_inches="tight")
-    # plt.show()
-    plt.close()  # free memory
+        logger.info('output_dir = ' + output_dir)
+        plt.savefig(os.path.join(output_dir, '_full.pdf'), bbox_inches="tight")
+        # plt.show()
+        plt.close()  # free memory
 
     # export networks
 
