@@ -1,10 +1,11 @@
-__author__ = 'Agostino Sturaro'
-
 import os
 import csv
 import logging
+import file_loader as fl
 import shared_functions as sf
 import cascades_sim as sim
+
+__author__ = 'Agostino Sturaro'
 
 try:
     from configparser import ConfigParser
@@ -57,7 +58,7 @@ group_results_dirs = [
 
     # os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/intra_gen_atk/realistic')
 
-    os.path.normpath('../Simulations/centrality/1cc_1ap/betw_c/realistic')
+    os.path.normpath('../Simulations/centrality/1cc_1ap/3/realistic')
 ]
 
 diff_paths = [
@@ -126,7 +127,7 @@ diff_run_options = [
     #     'inter_support_type': 'realistic',
     #     'save_death_cause': True
     # }
-        'attacked_netw': 'A',
+        'attacked_netw': 'both',
         'attack_tactic': 'betweenness_centrality_rank',
         'intra_support_type': 'realistic',
         'inter_support_type': 'realistic',
@@ -155,9 +156,9 @@ if len(group_results_dirs) != len(diff_paths) != len(diff_run_options):
 # first_instance_num = 0, instances_per_type = 2, last_instance_num = 3
 # the parameters used for the simulation on
 # if there are two groups of instances to be tested with different parameters,
-instances_per_type = 5  # used to group instances, must have the same value used for network creation
-first_instance_num = 0  # usually 0, unless you want to skip a group, then it should be divisible by instances_per_type
-last_instance_num = 4  # inclusive,
+instances_per_type = 1  # used to group instances, must have the same value used for network creation
+first_instance_num = 1  # usually 0, unless you want to skip a group, then it should be divisible by instances_per_type
+last_instance_num = 1  # inclusive,
 
 if (1 + last_instance_num - first_instance_num) % instances_per_type:
     raise ValueError('Incoherent values for parameters  first_instance_num, last_instance_num and instances_per_type'
@@ -170,13 +171,16 @@ seeds = [1]
 # attack_counts = list(range(0, 61, 5)) + [69]  # values of the independent value of the simulation
 # indep_var_name = 'attacks'  # name of the independent variable of the simulation
 indep_var_name = 'min_rank'  # name of the independent variable of the simulation
-indep_var_vals = list(range(0, 10, 1))  # values of the independent variable of the simulation
+indep_var_vals = list(range(0, 30, 1))  # values of the independent variable of the simulation
 # end of user defined variables
+
+floader = fl.FileLoader()
 
 for i in range(0, len(diff_paths)):
     paths = diff_paths[i]
-    paths['netw_a_fname'] = 'A.graphml'
+    paths['netw_a_fname'] = 'A.graphml'  # TODO: move above among user-configurable vars
     paths['netw_b_fname'] = 'B.graphml'
+    paths['ml_stats_fpath'] = '../Simulations/centrality/1cc_1ap/3/realistic/ml_stats.tsv'
     run_options = diff_run_options[i]
     group_results_dir = group_results_dirs[i]
     sf.ensure_dir_exists(group_results_dir)
@@ -223,5 +227,5 @@ for i in range(0, len(diff_paths)):
                     group_index = csv.writer(group_index_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
                     group_index.writerow([os.path.join(paths['results_dir'], paths['run_stats_fname'])])
 
-                sim.run(conf_fpath)
+                sim.run(conf_fpath, floader)
                 run_num += 1

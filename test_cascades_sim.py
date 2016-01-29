@@ -1,11 +1,11 @@
-__author__ = 'Agostino Sturaro'
-
 import os
-import filecmp
 import shutil
+import file_loader as fl
 import cascades_sim as cs
 import shared_functions as sf
 import networkx as nx
+
+__author__ = 'Agostino Sturaro'
 
 this_dir = os.path.normpath(os.path.dirname(__file__))
 logging_conf_fpath = os.path.join(this_dir, 'logging_base_conf.json')
@@ -30,11 +30,43 @@ def test_run_ex_1_realistic():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_1_full/run_realistic.ini'
     exp_log_fpath = 'test_sets/ex_1_full/exp_log_realistic.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
+
+    # then
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
+
+    # tear down
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/res_realistic')))
+    os.remove(os.path.join(this_dir, os.path.normpath('test_sets/useless/useless_1.tsv')))
+
+
+def test_run_ex_1_caching():
+    # given
+    global this_dir, logging_conf_fpath
+    sim_conf_fpath = 'test_sets/ex_1_full/run_realistic.ini'
+    exp_log_fpath = 'test_sets/ex_1_full/exp_log_realistic.txt'
+    floader = fl.FileLoader()
+
+    # when
+    os.chdir(this_dir)
+    sf.setup_logging(logging_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
+
+    # then
+    assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
+
+    # tear down
+    shutil.rmtree(os.path.join(this_dir, os.path.normpath('test_sets/ex_1_full/res_realistic')))
+    os.remove(os.path.join(this_dir, os.path.normpath('test_sets/useless/useless_1.tsv')))
+
+    # when
+    sf.setup_logging(logging_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -49,11 +81,12 @@ def test_run_ex_1_kngc():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_1_full/run_kngc.ini'
     exp_log_fpath = 'test_sets/ex_1_full/exp_log_kngc.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -68,11 +101,12 @@ def test_run_ex_1_sc_th_3():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_1_full/run_sc_th_3.ini'
     exp_log_fpath = 'test_sets/ex_1_full/exp_log_sc_th_3.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -87,11 +121,12 @@ def test_run_ex_1_sc_th_4():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_1_full/run_sc_th_4.ini'
     exp_log_fpath = 'test_sets/ex_1_full/exp_log_sc_th_4.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -106,11 +141,12 @@ def test_run_ex_1_uniform():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_1_max_matching/run_uniform.ini'
     exp_log_fpath = 'test_sets/ex_1_max_matching/exp_log_uniform.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -127,11 +163,12 @@ def test_run_ex_2a_realistic():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2a_full/run_realistic.ini'
     exp_log_fpath = 'test_sets/ex_2a_full/exp_log_realistic.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -146,11 +183,12 @@ def test_run_ex_2a_kngc():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2a_full/run_kngc.ini'
     exp_log_fpath = 'test_sets/ex_2a_full/exp_log_kngc.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -165,11 +203,12 @@ def test_run_ex_2a_sc_th_3():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2a_full/run_sc_th_3.ini'
     exp_log_fpath = 'test_sets/ex_2a_full/exp_log_sc_th_3.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -184,11 +223,12 @@ def test_run_ex_2a_sc_th_4():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2a_full/run_sc_th_4.ini'
     exp_log_fpath = 'test_sets/ex_2a_full/exp_log_sc_th_4.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -203,11 +243,12 @@ def test_run_ex_2a_uniform():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2a_max_matching/run_uniform.ini'
     exp_log_fpath = 'test_sets/ex_2a_max_matching/exp_log_uniform.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -224,11 +265,12 @@ def test_run_ex_2b_realistic():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2b_full/run_realistic.ini'
     exp_log_fpath = 'test_sets/ex_2b_full/exp_log_realistic.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -243,11 +285,12 @@ def test_run_ex_2b_kngc():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2b_full/run_kngc.ini'
     exp_log_fpath = 'test_sets/ex_2b_full/exp_log_kngc.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -262,11 +305,12 @@ def test_run_ex_2b_sc_th_3():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2b_full/run_sc_th_3.ini'
     exp_log_fpath = 'test_sets/ex_2b_full/exp_log_sc_th_3.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -281,11 +325,12 @@ def test_run_ex_2b_sc_th_4():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2b_full/run_sc_th_4.ini'
     exp_log_fpath = 'test_sets/ex_2b_full/exp_log_sc_th_4.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -300,11 +345,12 @@ def test_run_ex_2b_uniform():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2b_max_matching/run_uniform.ini'
     exp_log_fpath = 'test_sets/ex_2b_max_matching/exp_log_uniform.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -323,11 +369,12 @@ def test_run_ex_3_realistic():
     exp_log_fpath = 'test_sets/ex_3_full/exp_log_realistic.txt'
     exp_end_stats_fpath = os.path.normpath('test_sets/ex_3_full/exp_end_stats_realistic.tsv')
     res_end_stats_fpath = os.path.normpath('test_sets/useless/useless_3.tsv')
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -343,11 +390,12 @@ def test_run_ex_3_kngc():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_3_full/run_kngc.ini'
     exp_log_fpath = 'test_sets/ex_3_full/exp_log_kngc.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -362,11 +410,12 @@ def test_run_ex_3_sc_th_3():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_3_full/run_sc_th_3.ini'
     exp_log_fpath = 'test_sets/ex_3_full/exp_log_sc_th_3.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -381,11 +430,12 @@ def test_run_ex_3_sc_th_4():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_3_full/run_sc_th_4.ini'
     exp_log_fpath = 'test_sets/ex_3_full/exp_log_sc_th_4.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -400,11 +450,12 @@ def test_run_ex_3_uniform():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_3_max_matching/run_uniform.ini'
     exp_log_fpath = 'test_sets/ex_3_max_matching/exp_log_uniform.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -421,11 +472,12 @@ def test_run_ex_unstable_1():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_2a_full/run_sc_th_5.ini'
     exp_log_fpath = 'test_sets/ex_2a_full/exp_log_sc_th_5.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)
@@ -440,11 +492,12 @@ def test_run_ex_unstable_2():
     global this_dir, logging_conf_fpath
     sim_conf_fpath = 'test_sets/ex_unstable_2/run_uniform.ini'
     exp_log_fpath = 'test_sets/ex_unstable_2/exp_log_uniform.txt'
+    floader = fl.FileLoader()
 
     # when
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-    cs.run(sim_conf_fpath)
+    cs.run(sim_conf_fpath, floader)
 
     # then
     assert sf.compare_files_by_line('log.txt', exp_log_fpath, False)

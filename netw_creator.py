@@ -1346,6 +1346,14 @@ def run(conf_fpath):
         else:
             I.node[node]['network'] = B.graph['name']
 
+    # export network graphs
+
+    nx.write_graphml(A, os.path.join(output_dir, netw_a_name + '.graphml'))
+    nx.write_graphml(B, os.path.join(output_dir, netw_b_name + '.graphml'))
+    nx.write_graphml(I, os.path.join(output_dir, netw_inter_name + '.graphml'))
+
+    # produce and export additional network graphs (maximum matching, union, etc.)
+
     if config.has_option('build_inter', 'produce_max_matching'):
         produce_max_matching = config.getboolean('build_inter', 'produce_max_matching')
     else:
@@ -1365,12 +1373,24 @@ def run(conf_fpath):
             else:
                 mm_I.node[node]['network'] = B.graph['name']
 
+        nx.write_graphml(mm_I, os.path.join(output_dir, max_matching_name + '.graphml'))
+
+    if config.has_option('build_inter', 'produce_ab_union'):
+        produce_union = config.getboolean('build_inter', 'produce_ab_union')
+    else:
+        produce_union = False
+
+    if produce_union is True:
+        ab_union_name = config.get('build_inter', 'ab_union_name')
+        ab_union = nx.compose(nx.compose(I, A), B, "both")  # this returns a directed graph if I is directed
+        nx.write_graphml(ab_union, os.path.join(output_dir, ab_union_name + '.graphml'))
+
     # draw networks
 
     if undefined_pos is True:
         logger.warning('No layout or positions specified for nodes. Graph will not be draw')
     else:
-        #plt.axis('off')
+        # plt.axis('off')
         plt.tick_params(labeltop=True, labelright=True)
         # shifts used to position the drawings of the network graphs respective to the plot
         x_shift_a = 0.0
@@ -1394,12 +1414,3 @@ def run(conf_fpath):
         plt.savefig(os.path.join(output_dir, '_full.pdf'), bbox_inches="tight")
         # plt.show()
         plt.close()  # free memory
-
-    # export networks
-
-    nx.write_graphml(A, os.path.join(output_dir, netw_a_name + '.graphml'))
-    nx.write_graphml(B, os.path.join(output_dir, netw_b_name + '.graphml'))
-    nx.write_graphml(I, os.path.join(output_dir, netw_inter_name + '.graphml'))
-
-    if produce_max_matching is True:
-        nx.write_graphml(mm_I, os.path.join(output_dir, max_matching_name + '.graphml'))

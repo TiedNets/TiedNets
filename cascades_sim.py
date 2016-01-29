@@ -5,6 +5,7 @@ import logging
 import networkx as nx
 import random
 import csv
+import json
 from collections import OrderedDict
 import shared_functions as sf
 
@@ -30,59 +31,35 @@ def choose_random_nodes(G, node_cnt, seed=None):
     return chosen_nodes
 
 
-def pick_nodes_by_betw_centr(G, node_cnt, seed=None):
-    nodes_with_centr = nx.betweenness_centrality(G, seed=seed)
-    # sort the dictionary by value first and then by key (so we have a deterministic sorting)
-    nodes_with_rank = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
-    chosen_nodes = list()
-    # choose the first nodes from the ordered dictionary
-    for i, node in enumerate(nodes_with_rank):
-        if i >= node_cnt:
-            break
-        chosen_nodes.append(node)
-    return chosen_nodes, nodes_with_centr
-
-
-def pick_nodes_by_betw_centr_rank(G, node_cnt, min_rank, seed=None):
-    nodes_with_centr = nx.betweenness_centrality(G, seed=seed)
-    # sort the dictionary by value first and then by key (so we have a deterministic sorting)
-    # we get a dictionary of node: centrality
-    nodes_with_rank = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
-    # create a list of nodes rank by their centrality, we get a list
-    # [node with lowest centrality, ..., node with highest centrality]
-    ranked_nodes = list(nodes_with_rank.keys())
-    chosen_nodes = list()
-    for i in range(min_rank, min_rank + node_cnt):
-        node = ranked_nodes[i]
-        chosen_nodes.append(node)
-    return chosen_nodes
-
-
-def pick_nodes_by_closeness_centr_rank(G, node_cnt, min_rank):
-    nodes_with_centr = nx.closeness_centrality(G)
-    # sort the dictionary by value first and then by key (so we have a deterministic sorting)
-    # we get a dictionary of node: centrality
-    nodes_with_rank = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
-    # create a list of nodes rank by their centrality, we get a list
-    # [node with lowest centrality, ..., node with highest centrality]
-    ranked_nodes = list(nodes_with_rank.keys())
-    chosen_nodes = list()
-    for i in range(min_rank, min_rank + node_cnt):
-        node = ranked_nodes[i]
-        chosen_nodes.append(node)
-    return chosen_nodes
-
-
 # nodes_with_centr is a dictionary {'node': centrality measure}
 # node_cnt is the number of nodes to pick
 # min_rank is the rank of the first node to pick (they get sorted by centrality measure and id)
-def pick_nodes_by_centrality_rank(nodes_with_centr, node_cnt, min_rank):
-    # sort the dictionary by value first and then by key (so we have a deterministic sorting)
-    # we get a dictionary of node: centrality
-    nodes_with_rank = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
-    # create a list of nodes rank by their centrality, we get a list
-    # [node with lowest centrality, ..., node with highest centrality]
-    ranked_nodes = list(nodes_with_rank.keys())
+# def pick_nodes_by_centrality_rank(nodes_with_centr, node_cnt, min_rank):
+#     # sort the dictionary by value first and then by key (so we have a deterministic sorting)
+#     # we get a dictionary of node: centrality
+#     nodes_with_centr = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
+#     # create a list of nodes rank by their centrality, we get a list
+#     # [node with lowest centrality, ..., node with highest centrality]
+#     ranked_nodes = list(nodes_with_centr.keys())
+#     chosen_nodes = list()
+#     for i in range(min_rank, min_rank + node_cnt):
+#         node = ranked_nodes[i]
+#         chosen_nodes.append(node)
+#     return chosen_nodes
+
+
+# nodes_with_centr is a dictionary {'node': centrality measure}
+def calc_centrality_rank(nodes_with_centr):
+    nodes_with_centr = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
+    ranked_nodes = list(nodes_with_centr.keys())
+    return ranked_nodes
+
+
+# ranked_nodes is a list of nodes pre-sorted by their centrality metric
+# [node with lowest centrality, ..., node with highest centrality]
+# node_cnt is the number of nodes to pick
+# min_rank is the rank of the first node to pick (they get sorted by centrality measure and id)
+def pick_nodes_by_centrality_rank(ranked_nodes, node_cnt, min_rank):
     chosen_nodes = list()
     for i in range(min_rank, min_rank + node_cnt):
         node = ranked_nodes[i]
@@ -279,7 +256,7 @@ def save_state(time, A, B, I, results_dir):
 
 
 # this function will be called from another script, each time with a different configuration fpath
-def run(conf_fpath):
+def run(conf_fpath, floader):
     global logger
     logger = logging.getLogger(__name__)
     logger.info('conf_fpath = {}'.format(conf_fpath))
@@ -309,15 +286,83 @@ def run(conf_fpath):
         netw_dir = os.path.abspath(netw_dir)
     netw_a_fname = config.get('paths', 'netw_a_fname')
     netw_a_fpath_in = os.path.join(netw_dir, netw_a_fname)
-    A = nx.read_graphml(netw_a_fpath_in, node_type=str)
+    # A = nx.read_graphml(netw_a_fpath_in, node_type=str)
+    A = floader.read_graphml(netw_a_fpath_in, str)
 
     netw_b_fname = config.get('paths', 'netw_b_fname')
     netw_b_fpath_in = os.path.join(netw_dir, netw_b_fname)
-    B = nx.read_graphml(netw_b_fpath_in, node_type=str)
+    # B = nx.read_graphml(netw_b_fpath_in, node_type=str)
+    B = floader.read_graphml(netw_b_fpath_in, str)
 
     netw_inter_fname = config.get('paths', 'netw_inter_fname')
     netw_inter_fpath_in = os.path.join(netw_dir, netw_inter_fname)
-    I = nx.read_graphml(netw_inter_fpath_in, node_type=str)
+    # I = nx.read_graphml(netw_inter_fpath_in, node_type=str)
+    I = floader.read_graphml(netw_inter_fpath_in, str)
+
+    # if the union graph is needed for this simulation, it's better to have it created in advance and just load it
+    if config.has_option('paths', 'netw_union_fname'):
+        netw_union_fname = config.get('paths', 'netw_union_fname')
+        netw_union_fpath_in = os.path.join(netw_dir, netw_union_fname)
+        # ab_union = nx.read_graphml(netw_union_fpath_in, node_type=str)
+        ab_union = floader.read_graphml(netw_union_fpath_in, str)
+    else:
+        ab_union = None
+
+    # TODO: read this fname from the config file, checking if the option exists
+    betw_c_fname = 'betw_c_measures.json'
+    betw_c_fpath = os.path.join(netw_dir, betw_c_fname)
+    # if os.path.isfile(betw_c_fpath):
+    #     with open(betw_c_fpath, 'r') as betw_c_file:
+    #         centrality_info = floader.read_json(betw_c_file)
+    centrality_info = floader.read_json(betw_c_fpath)
+    if centrality_info is not None:
+        betw_c_by_node = centrality_info['measures']
+        betw_c_rank = centrality_info['rank']
+    else:
+        betw_c_by_node = None
+        betw_c_rank = None
+
+    # TODO: read this fname from the config file, checking if the option exists
+    clos_c_fname = 'clos_c_measures.json'
+    clos_c_fpath = os.path.join(netw_dir, clos_c_fname)
+    # if os.path.isfile(clos_c_fpath):
+    #     with open(clos_c_fpath, 'r') as clos_c_file:
+    #         centrality_info = json.load(clos_c_file)
+    centrality_info = floader.read_json(clos_c_fpath)
+    if centrality_info is not None:
+        clos_c_by_node = centrality_info['measures']
+        clos_c_rank = centrality_info['rank']
+    else:
+        clos_c_by_node = None
+        clos_c_rank = None
+
+    # TODO: read this fname from the config file, checking if the option exists
+    indeg_c_fname = 'indeg_c_measures.json'
+    indeg_c_fpath = os.path.join(netw_dir, indeg_c_fname)
+    # if os.path.isfile(indeg_c_fpath):
+    #     with open(indeg_c_fpath, 'r') as indeg_c_file:
+    #         centrality_info = json.load(indeg_c_file)
+    centrality_info = floader.read_json(indeg_c_fpath)
+    if centrality_info is not None:
+        indeg_c_by_node = centrality_info['measures']
+        indeg_c_rank = centrality_info['rank']
+    else:
+        indeg_c_by_node = None
+        indeg_c_rank = None
+
+    # TODO: read this fname from the config file, checking if the option exists
+    eigen_c_fname = 'eigen_c_measures.json'
+    eigen_c_fpath = os.path.join(netw_dir, eigen_c_fname)
+    # if os.path.isfile(eigen_c_fpath):
+    #     with open(eigen_c_fpath, 'r') as eigen_c_file:
+    #         centrality_info = json.load(eigen_c_file)
+    centrality_info = floader.read_json(eigen_c_fpath)
+    if centrality_info is not None:
+        eigen_c_by_node = centrality_info['measures']
+        eigen_c_rank = centrality_info['rank']
+    else:
+        eigen_c_by_node = None
+        eigen_c_rank = None
 
     # read run options
 
@@ -419,7 +464,9 @@ def run(conf_fpath):
         elif attacked_netw == B.graph['name']:
             attacked_G = B
         elif attacked_netw == "both":
-            attacked_G = nx.compose(nx.compose(A, I), B, "both")
+            if ab_union is None:
+                ab_union = nx.compose(nx.compose(I, A), B, "both")  # this returns a directed graph if I is directed
+            attacked_G = ab_union
         else:
             raise ValueError('Invalid value for parameter "attacked_netw": ' + attacked_netw)
 
@@ -428,26 +475,63 @@ def run(conf_fpath):
         if attack_tactic in attacks_for_A_only and attacked_netw != A.graph['name']:
             raise ValueError('Attack {} can only be used on the power network A'.format(attack_tactic))
 
-        betw_c_by_node = None
-        clos_c_by_node = None
-        indeg_c_by_node = None
+        if ml_stats_fpath or attack_tactic == 'betweenness_centrality_rank':
+            if betw_c_by_node is None:
+                betw_c_by_node = nx.betweenness_centrality(attacked_G, seed=seed)
+                betw_c_rank = calc_centrality_rank(betw_c_by_node)
+
+        if ml_stats_fpath or attack_tactic == 'closeness_centrality_rank':
+            if clos_c_by_node is None:
+                clos_c_by_node = nx.closeness_centrality(attacked_G)
+                clos_c_rank = calc_centrality_rank(clos_c_by_node)
+
+        if ml_stats_fpath or attack_tactic == 'indegree_centrality_rank':
+            if indeg_c_by_node is None:
+                if nx.is_directed(attacked_G):
+                    indeg_c_by_node = nx.in_degree_centrality(attacked_G)
+                    indeg_c_rank = calc_centrality_rank(indeg_c_by_node)
+
+        if ml_stats_fpath or attack_tactic == 'eigenvector_centrality_rank':
+            if eigen_c_by_node is None:
+                if nx.is_directed(attacked_G):
+                    eigen_c_by_node = nx.eigenvector_centrality(attacked_G)
+                    eigen_c_rank = calc_centrality_rank(eigen_c_by_node)
+
+        centrality_attacks = ['betweenness_centrality_rank', 'closeness_centrality_rank', 'indegree_centrality_rank',
+                              'eigenvector_centrality_rank']
+
+        if attack_tactic in centrality_attacks:
+            min_rank = config.getint('run_opts', 'min_rank')
+
+        if ml_stats_fpath or attack_tactic in centrality_attacks:
+            # another slew of hacks done for paths (that should be read)
+            # save measures into cache files
+            with open(betw_c_fpath, 'wb') as betw_c_file:
+                centr_info = {'measures': betw_c_by_node, 'rank': betw_c_rank}
+                json.dump(centr_info, betw_c_file)
+            with open(clos_c_fpath, 'wb') as clos_c_file:
+                centr_info = {'measures': clos_c_by_node, 'rank': clos_c_rank}
+                json.dump(centr_info, clos_c_file)
+            with open(indeg_c_fpath, 'wb') as indeg_c_file:
+                centr_info = {'measures': indeg_c_by_node, 'rank': indeg_c_rank}
+                json.dump(centr_info, indeg_c_file)
+            with open(eigen_c_fpath, 'wb') as eigen_c_file:
+                centr_info = {'measures': eigen_c_by_node, 'rank': eigen_c_rank}
+                json.dump(centr_info, eigen_c_file)
 
         if attack_tactic == 'random':
             attacked_nodes = choose_random_nodes(attacked_G, attack_cnt, seed)
         elif attack_tactic == 'targeted':
             target_nodes = config.get('run_opts', 'target_nodes')
             attacked_nodes = [node for node in target_nodes.split()]  # split list on space
-        # elif attack_tactic == 'betweenness_centrality':
-        #     attacked_nodes, betw_c_by_node = pick_nodes_by_betw_centr(attacked_G, attack_cnt, seed)
-        #     clos_c_by_node = nx.closeness_centrality(attacked_G)
         elif attack_tactic == 'betweenness_centrality_rank':
-            betw_c_by_node = nx.betweenness_centrality(attacked_G, seed=seed)
-            min_rank = config.getint('run_opts', 'min_rank')
-            attacked_nodes = pick_nodes_by_centrality_rank(betw_c_by_node, attack_cnt, min_rank)
+            attacked_nodes = pick_nodes_by_centrality_rank(betw_c_rank, attack_cnt, min_rank)
         elif attack_tactic == 'closeness_centrality_rank':
-            clos_c_by_node = nx.closeness_centrality(attacked_G)
-            min_rank = config.getint('run_opts', 'min_rank')
-            attacked_nodes = pick_nodes_by_centrality_rank(clos_c_by_node, attack_cnt, min_rank)
+            attacked_nodes = pick_nodes_by_centrality_rank(clos_c_rank, attack_cnt, min_rank)
+        elif attack_tactic == 'indegree_centrality_rank':
+            attacked_nodes = pick_nodes_by_centrality_rank(indeg_c_rank, attack_cnt, min_rank)
+        elif attack_tactic == 'eigenvector_centrality_rank':
+            attacked_nodes = pick_nodes_by_centrality_rank(eigen_c_rank, attack_cnt, min_rank)
         elif attack_tactic == 'most_inter_used_distr_subs':
             attacked_nodes = choose_most_inter_used_nodes(attacked_G, I, attack_cnt, 'distribution_substation')
         elif attack_tactic == 'most_intra_used_distr_subs':
@@ -459,23 +543,20 @@ def run(conf_fpath):
         else:
             raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
 
-        # calculate additional centrality measures only if we need to fill ML stats
-        if ml_stats_fpath:
-            if betw_c_by_node is None:
-                betw_c_by_node = nx.betweenness_centrality(attacked_G, seed=seed)
-            if clos_c_by_node is None:
-                clos_c_by_node = nx.closeness_centrality(attacked_G)
-            if indeg_c_by_node is None:
-                indeg_c_by_node = nx.in_degree_centrality(attacked_G)
+        # attacked_nodes_a = set(attacked_nodes).intersection(A.nodes())
+        # attacked_nodes_b = set(attacked_nodes).intersection(B.nodes())
 
-            # small hack, we have only 1 node attacked
-            atkd_clos_c = clos_c_by_node(attacked_nodes[0])
-            atkd_betw_c = betw_c_by_node(attacked_nodes[0])
-            atkd_indeg_c = indeg_c_by_node(attacked_nodes[0])
-            atkd_role = attacked_nodes[0][0]  # the first character in the name of the node is its role
-
-        attacked_nodes_a = set(attacked_nodes).intersection(A.nodes())
-        attacked_nodes_b = set(attacked_nodes).intersection(B.nodes())
+        attacked_nodes_a = []
+        attacked_nodes_b = []
+        for node in attacked_nodes:
+            node_netw = I.node[node]['network']
+            if node_netw == A.graph['name']:
+                attacked_nodes_a.append(node)
+            elif node_netw == B.graph['name']:
+                attacked_nodes_b.append(node)
+            else:
+                raise RuntimeError('Node {} network "{}" marked in inter graph is neither A nor B'.format(
+                    node, node_netw))
 
         total_dead_a = len(attacked_nodes_a)
         if total_dead_a > 0:
@@ -623,19 +704,35 @@ def run(conf_fpath):
         end_stats.writerow(end_stats_row)
 
     if ml_stats_fpath:  # if this string is not empty
-        if os.path.isfile(end_stats_fpath) is False:
+        if os.path.isfile(ml_stats_fpath) is False:
             write_header = True  # if we are going to create a new file, then add the header
         else:
             write_header = False
+
+        # small hack, we have only 1 node attacked
+        atkd_node = attacked_nodes[0]
+        atkd_betw_c = betw_c_by_node[atkd_node]
+        atkd_betw_r = betw_c_rank.index(atkd_node)
+        atkd_clos_c = clos_c_by_node[atkd_node]
+        atkd_clos_r = clos_c_rank.index(atkd_node)
+        atkd_indeg_c = indeg_c_by_node[atkd_node]
+        atkd_indeg_r = indeg_c_rank.index(atkd_node)
+        atkd_eigen_c = eigen_c_by_node[atkd_node]
+        atkd_eigen_r = eigen_c_rank.index(atkd_node)
+        atkd_role = atkd_node[0]  # the first character in the name of the node is its role
+
         with open(ml_stats_fpath, 'ab') as ml_stats_file:
             # later we can add features about the whole network, like the median centrality
             # ml_stats_header = ['atkd_G', 'atkd_T', 'atkd_D', 'atkd_R', 'atkd_C', 'betw_c', ...]
 
-            ml_stats_header = ['atkd_role', 'betw_c', 'clos_c', 'indeg_c', 'tot_dead']
+            ml_stats_header = ['atkd_role', 'betw_c', 'betw_r', 'clos_c', 'clos_r', 'indeg_c', 'indeg_r',
+                               'eigen_c', 'eigen_r', 'tot_dead']
             ml_stats = csv.DictWriter(ml_stats_file, ml_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
             if write_header is True:
                 ml_stats.writeheader()
 
-            ml_stats_row = {'atkd_role': atkd_role, 'betw_c': atkd_betw_c, 'clos_c': atkd_clos_c,
-                            'indeg_c': atkd_indeg_c, 'tot_dead': total_dead_a + total_dead_b}
+            ml_stats_row = {'atkd_role': atkd_role, 'betw_c': atkd_betw_c, 'betw_r': atkd_betw_r,
+                            'clos_c': atkd_clos_c, 'clos_r': atkd_clos_r, 'indeg_c': atkd_indeg_c,
+                            'indeg_r': atkd_indeg_r, 'eigen_c': atkd_eigen_c, 'eigen_r': atkd_eigen_r,
+                            'tot_dead': total_dead_a + total_dead_b}
             ml_stats.writerow(ml_stats_row)

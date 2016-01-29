@@ -5,6 +5,11 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import shared_functions as sf
 
+def arrange_nodes(G, pos_by_node):
+    for node, (x, y) in pos_by_node.items():
+        G.node[node]['x'] = float(x)
+        G.node[node]['y'] = float(y)
+
 output_dir = 'C:/Users/Agostino/Documents/Simulations/MN/rnd_atk/uniform/instance_0/run_1/'
 
 original_A = nx.read_graphml('C:/Users/Agostino/Documents/Simulations/MN/instance_0/A.graphml',
@@ -17,6 +22,14 @@ B = nx.read_graphml('C:/Users/Agostino/Documents/Simulations/MN/rnd_atk/uniform/
                     node_type=str)
 # I = nx.read_graphml('C:/Users/Agostino/Documents/Simulations/MN/rnd_atk/uniform/instance_0/run_0/22_InterMM.graphml',
 #                     node_type=str)
+
+# hack, use only if nodes do not have x,y
+# hack, assuming a lot of values are the same
+span = 1.0
+pos_by_node = nx.spring_layout(A, dim=2, scale=span)
+arrange_nodes(A, pos_by_node)
+pos_by_node = nx.spring_layout(B, dim=2, scale=span)
+arrange_nodes(B, pos_by_node)
 
 netw_a_name = A.graph['name']
 netw_b_name = B.graph['name']

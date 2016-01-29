@@ -129,7 +129,9 @@ build_inter_options = [{
     'com_access_points': 1,
     'prefer_nearest': False,
     'produce_max_matching': True,
-    'max_matching_name': 'InterMM'
+    'max_matching_name': 'InterMM',
+    'produce_ab_union': True,
+    'ab_union_name': 'UnionAB'
 # }, {
 #     'name': 'Inter',
 #     'dependency_model': 'k-to-n',
