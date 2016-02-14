@@ -4,7 +4,7 @@ import time
 import copy
 import networkx as nx
 
-__author__ = 'Agostino'
+__author__ = 'Agostino Sturaro'
 
 
 class FileLoader:
@@ -14,7 +14,7 @@ class FileLoader:
         self.return_copy = return_copy
         self.cache_size = cache_size
 
-    def read_graphml(self, fpath, node_type):
+    def fetch_graphml(self, fpath, node_type):
         fpath = os.path.abspath(fpath)
         if not os.path.isfile(fpath):
             return None
@@ -36,21 +36,18 @@ class FileLoader:
         return graph
 
     # TODO: share code with previous function
-    def read_json(self, fpath, **kwargs):
+    def fetch_json(self, fpath, **kwargs):
         fpath = os.path.abspath(fpath)
         if not os.path.isfile(fpath):
             return None
         if fpath in self.loaded:
             json_dict = self.loaded[fpath]
-            print('found fpath {}'.format(fpath))  # debug
         else:
             if len(self.loaded) > self.cache_size:
                 stalest = min(self.last_hit.iterkeys(), key=(lambda key: self.last_hit[key]))
-                print('replacing stalest {}'.format(stalest))  # debug
                 del self.loaded[stalest]
                 del self.last_hit[stalest]
             with open(fpath, 'r') as json_file:
-                print('loading fpath {}'.format(fpath))  # debug
                 json_dict = json.load(json_file, **kwargs)
                 self.loaded[fpath] = json_dict
         self.last_hit[fpath] = time.clock()

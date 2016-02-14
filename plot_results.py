@@ -1,10 +1,11 @@
-__author__ = 'Agostino Sturaro'
-
 import os
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import shared_functions as sf
+
+__author__ = 'Agostino Sturaro'
 
 # input_fpath = os.path.normpath('../Simulations/synthetic/synth_rnd_atk_failure_cnt.tsv')
 # output_fpath = os.path.normpath('../Simulations/synthetic/synth_rnd_atk_failure_cnt.pdf')
@@ -15,8 +16,8 @@ import shared_functions as sf
 
 # each row in the input file is meant to be a point in the graph
 # input_fpath = os.path.normpath('../Simulations/centrality/1cc_1ap/betw_c/realistic/_stats.tsv')
-input_fpath = os.path.normpath('../Simulations/centrality/1cc_1ap/ml_stats_0_rel.tsv')
-output_fpath = os.path.normpath('../Simulations/centrality/1cc_1ap/indeg_0_rel.pdf')
+input_fpath = os.path.normpath('../Simulations/centrality/1cc_1ap/ml_stats_0.tsv')
+# output_fpath = os.path.normpath('../Simulations/centrality/1cc_1ap/betw_0.pdf')
 
 # the input file structured like a table, we read it all into an array-like structure using Numpy
 values = np.genfromtxt(input_fpath, delimiter='\t', skip_header=1, dtype=None)
@@ -27,7 +28,7 @@ values = np.genfromtxt(input_fpath, delimiter='\t', skip_header=1, dtype=None)
 # cells of the first column indicate what instance group (line) the ith row (point) belongs to
 group_col = sf.get_unnamed_numpy_col_as_list(values, 0)
 # betw centr rank is col 2; clos centr rank is col 4; indeg centr is col 6; eigen centr is col 8
-x_col = sf.get_unnamed_numpy_col_as_list(values, 6)
+x_col = sf.get_unnamed_numpy_col_as_list(values, 1)
 y_col = sf.get_unnamed_numpy_col_as_list(values, 9)
 # error_col = sf.get_unnamed_numpy_col_as_list(values, 3)  # get the column representing the error measure (std dev)
 error_col = [None] * len(x_col)  # filler to avoid branching code
@@ -72,61 +73,128 @@ for result in results:
     result = result[1], result[2], result[3]  # create a tuple for each result
     results_by_group[group].append(result)
 
+# bin_width = .01
+# bottom = 0.
+# top = 1.
+# n_bins = int(math.ceil(((top - bottom) / bin_width)))
+
 # sort each group of results on their x (first element of their tuples)
 # divide tuples (x, y, err) in 3 lists [x], [y], [err] and plot each group as a line
 for group in results_by_group:
     results_by_group[group] = sorted(results_by_group[group])  # this sorting can be optional
     group_x, group_y, group_err = zip(*results_by_group[group])
     kwargs = group_plot_conf[group]
-    if group_err[0] is None:
-        plt.errorbar(group_x, group_y, **kwargs)  # this is the call that actually plots each line
+    # if group_err[0] is None:
+    #     plt.errorbar(group_x, group_y, **kwargs)  # this is the call that actually plots each line
+    # else:
+    #     plt.errorbar(group_x, group_y, yerr=group_err, **kwargs)  # this is the call that actually plots each line
+
+    epsilon = 0.000001  # arbitrary minimum precision
+    bottom = min(group_x)
+    top = max(group_x) + epsilon
+    if top - bottom <= epsilon:
+        bottom = 0.0
+        top = 1.0
+        n_bins = 1
     else:
-        plt.errorbar(group_x, group_y, yerr=group_err, **kwargs)  # this is the call that actually plots each line
+        n_bins = 50
+    bin_width = ((top - bottom) / n_bins)
+    print('bottom {} top {} bin_width {}'.format(bottom, top, bin_width))
 
-ax = plt.axes()
-ax.set_yscale('log')  # make the y axis use a logarithmic scale
-ax.set_xlabel('Centrality rank of attacked node', fontsize=20)  # label the x axis of the plot
-ax.set_ylabel('No. total failures after cascades', fontsize=20)  # label the y axis of the plot
+    # separate data into bins
+    binned_data = [[] for i in range(n_bins)]
+    for i in range(0, len(group_x)):
+        pt_x = group_x[i]
+        if pt_x < bottom or pt_x >= top:
+            print 'out of range'
+            continue
+        bin_id = int(math.floor(n_bins * (pt_x - bottom) / (top - bottom)))
+        pt_y = group_y[i]
+        # if bin_id == n_bins:
+        #     print('pt_x {}, pty {}, top {}'.format(pt_x, pt_y, top))
+        binned_data[bin_id].append(pt_y)
 
-# majorFormatter = FormatStrFormatter('%d')
+    # print(binned_data)
 
-# set the frequency of the ticks on the x axis
-x_min_loc = MultipleLocator(50)
-ax.xaxis.set_minor_locator(x_min_loc)
-x_maj_loc = MultipleLocator(250)
-ax.xaxis.set_major_locator(x_maj_loc)
+    # calculate the average and the standard deviation of data in each bin
+    bin_avgs = []
+    bin_stdevs = []
+    for bin in binned_data:
+        if len(bin) > 0:
+            avg = sum(bin)/len(bin)
+            stdev = np.std(bin)
+        else:
+            avg = 0
+            stdev = 0
+        bin_avgs.append(avg)
+        bin_stdevs.append(stdev)
 
-# set the frequency of the ticks on the y axis
-y_min_loc = MultipleLocator(50)
-ax.yaxis.set_minor_locator(y_min_loc)
-y_maj_loc = MultipleLocator(250)
-ax.yaxis.set_major_locator(y_maj_loc)
-ax.yaxis.grid(True, 'major')  # show grid grid (dashed lines crossing the graph where major ticks are)
+    # position bins and plot them
+    bin_edges = [bottom + j * bin_width for j in range(len(binned_data))]
 
-plt.tick_params(axis='both', which='major', labelsize=18)
-plt.tick_params(axis='both', which='minor', labelsize=8)
+    ax = plt.axes()
+    ax.set_xlabel('Centrality of attacked {}'.format(group), fontsize=20)
+    plt.bar(bin_edges, bin_avgs, width=bin_width, yerr=bin_stdevs, ecolor='r')
 
-# get the labels of all the lines in the graph
-handles, labels = ax.get_legend_handles_labels()
+    # calculate label names and place them rotated
+    x_labels = np.arange(bottom, top, bin_width * 3)
+    x_maj_loc = MultipleLocator(bin_width * 10)
+    ax.xaxis.set_major_locator(x_maj_loc)
+    locs, labels = plt.xticks()
+    plt.setp(labels, rotation=30, ha='right')
 
-# sort labels to be used for creating the legend
-handles, labels = zip(*sorted(zip(handles, labels), key=lambda x: x[1]))
+    plt.ylim(0.0, 2100.0)  # cap y axis at zero
+    plt.tight_layout()  # make sure everything is showing
+    plt.show()
 
-# create a legend growing it from the middle and put it on the right side of the graph
-# lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(0.99, 0.5), fontsize=16)
 
-# lgd = ax.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.14), fontsize=10)
-# lgd = ax.legend(handles, labels, loc='center', bbox_to_anchor=(0.05, 0.6), fontsize=12)
-# lgd = ax.legend(handles, labels, loc='center', bbox_to_anchor=(0.35, 0.70), fontsize=12)
-# lgd = ax.legend(handles, labels, loc=4, fontsize=12)
-# lgd = ax.legend(handles, labels, bbox_to_anchor=(-0.11, 1., 1.11, 0.), loc=3,
-#            ncol=4, mode="expand", borderaxespad=0., fontsize=16)
-lgd = ax.legend(handles, labels, bbox_to_anchor=(0., 1., 1., 0.), loc=3,
-           ncol=5, mode="expand", borderaxespad=0., fontsize=18)
-
-plt.ylim(0.0, 2100.0)  # cap y axis at zero
-
-# save the figure so that the legend fits inside it
-plt.savefig(output_fpath, bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-plt.show()
+# ax = plt.axes()
+# ax.set_yscale('log')  # make the y axis use a logarithmic scale
+# ax.set_xlabel('Centrality rank of attacked node', fontsize=20)  # label the x axis of the plot
+# ax.set_ylabel('No. total failures after cascades', fontsize=20)  # label the y axis of the plot
+#
+# # majorFormatter = FormatStrFormatter('%d')
+#
+# # set the frequency of the ticks on the x axis
+# x_min_loc = MultipleLocator(50)
+# ax.xaxis.set_minor_locator(x_min_loc)
+# x_maj_loc = MultipleLocator(250)
+# ax.xaxis.set_major_locator(x_maj_loc)
+#
+# # set the frequency of the ticks on the y axis
+# y_min_loc = MultipleLocator(50)
+# ax.yaxis.set_minor_locator(y_min_loc)
+# y_maj_loc = MultipleLocator(250)
+# ax.yaxis.set_major_locator(y_maj_loc)
+# ax.yaxis.grid(True, 'major')  # show grid grid (dashed lines crossing the graph where major ticks are)
+#
+# plt.tick_params(axis='both', which='major', labelsize=18)
+# plt.tick_params(axis='both', which='minor', labelsize=8)
+#
+# # get the labels of all the lines in the graph
+# handles, labels = ax.get_legend_handles_labels()
+#
+# # sort labels to be used for creating the legend
+# handles, labels = zip(*sorted(zip(handles, labels), key=lambda x: x[1]))
+#
+# # create a legend growing it from the middle and put it on the right side of the graph
+# # lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(0.99, 0.5), fontsize=16)
+#
+# # lgd = ax.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.14), fontsize=10)
+# # lgd = ax.legend(handles, labels, loc='center', bbox_to_anchor=(0.05, 0.6), fontsize=12)
+# # lgd = ax.legend(handles, labels, loc='center', bbox_to_anchor=(0.35, 0.70), fontsize=12)
+# # lgd = ax.legend(handles, labels, loc=4, fontsize=12)
+# # lgd = ax.legend(handles, labels, bbox_to_anchor=(-0.11, 1., 1.11, 0.), loc=3,
+# #            ncol=4, mode="expand", borderaxespad=0., fontsize=16)
+# lgd = ax.legend(handles, labels, bbox_to_anchor=(0., 1., 1., 0.), loc=3,
+#            ncol=5, mode="expand", borderaxespad=0., fontsize=18)
+#
+# plt.ylim(0.0, 2100.0)  # cap y axis at zero
+#
+# fig = plt.gcf()  # get the figure
+# fig.set_size_inches(18, 16)  # change the size of the figure
+#
+# # save the figure so that the legend fits inside it
+# plt.savefig(output_fpath, dpi=100, bbox_extra_artists=(lgd,), bbox_inches='tight')
+#
+# plt.show()

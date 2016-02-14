@@ -5,12 +5,12 @@ import file_loader as fl
 import shared_functions as sf
 import cascades_sim as sim
 
-__author__ = 'Agostino Sturaro'
-
 try:
     from configparser import ConfigParser
 except ImportError:
     from ConfigParser import ConfigParser  # ver. < 3.0
+
+__author__ = 'Agostino Sturaro'
 
 
 def write_conf(conf_fpath, paths, run_options):
@@ -28,6 +28,7 @@ def write_conf(conf_fpath, paths, run_options):
 
     with open(conf_fpath, 'w') as conf_file:
         config.write(conf_file)
+
 
 this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
@@ -58,18 +59,22 @@ group_results_dirs = [
 
     # os.path.normpath('../Simulations/MN_nets/1cc_1ap/deg_atks/intra_gen_atk/realistic')
 
-    os.path.normpath('../Simulations/centrality/1cc_1ap/3/realistic')
+    os.path.normpath('../Simulations/centrality/1cc_1ap/1_at_once/realistic_inter')
 ]
 
 diff_paths = [
     {
-    #     'netw_inter_fname': 'Inter.graphml'
-    # }, {
-    #     'netw_inter_fname': 'Inter.graphml',
-    # }, {
+        #     'netw_inter_fname': 'Inter.graphml'
+        # }, {
+        #     'netw_inter_fname': 'Inter.graphml',
+        # }, {
+        'netw_a_fname': 'A.graphml',
+        'netw_b_fname': 'B.graphml',
         'netw_inter_fname': 'Inter.graphml',
-    # }, {
-    #     'netw_inter_fname': 'InterMM.graphml'
+        'netw_union_fname': 'UnionAB.graphml',
+        'ml_stats_fpath': '../Simulations/centrality/1cc_1ap/1_at_once/realistic/ml_stats_0_inter.tsv'
+        # }, {
+        #     'netw_inter_fname': 'InterMM.graphml'
     }
 ]
 
@@ -102,7 +107,7 @@ diff_run_options = [
     #     'save_death_cause': True
     # }
     # the part below is used for another kind of plot
-    {
+    # {
     #     'attacked_netw': 'A',
     #     'attack_tactic': 'most_inter_used_distr_subs',
     #     'intra_support_type': 'realistic',
@@ -127,8 +132,10 @@ diff_run_options = [
     #     'inter_support_type': 'realistic',
     #     'save_death_cause': True
     # }
-        'attacked_netw': 'both',
-        'attack_tactic': 'betweenness_centrality_rank',
+    {
+        'attacked_netw': 'Both',
+        'attack_tactic': 'indegree_centrality_rank',
+        'calc_centrality_on': 'netw_inter',
         'intra_support_type': 'realistic',
         'inter_support_type': 'realistic',
         'save_death_cause': True,
@@ -140,25 +147,14 @@ if len(group_results_dirs) != len(diff_paths) != len(diff_run_options):
     raise ValueError('group_output_dirs, diff_paths and diff_run_options lists should have the same length')
 
 # TODO: fix description
-# This script is used to run multiple simulations on multiple groups of instances, at its core is a loop that
-# generates a configuration file with a different combination of parameters and executes a simulation based on it
-# It is meant to facilitate the creation of 2D plots with multiple lines, by saving data in a predictable order.
-# - each line represents a different set of simulation options
-# - each point in a line is a set of simulations executed on the same instance, changing the random seed
-# We need to specify what is the name of the independent variable in the simulation, and the values we want it to assume
-#
-# Of the axis of the graph, we only need to specify
-# each point in the graph is a
-# the same simulation can
+# this is the older batch runner that combined 4 sets of parameters instead of 3, and organized files differently
 
 # simulations can be done on groups of instances, and each
 # here's how to use these parameters, if there is a single group of 3 similar instances
 # first_instance_num = 0, instances_per_type = 2, last_instance_num = 3
-# the parameters used for the simulation on
-# if there are two groups of instances to be tested with different parameters,
 instances_per_type = 1  # used to group instances, must have the same value used for network creation
-first_instance_num = 1  # usually 0, unless you want to skip a group, then it should be divisible by instances_per_type
-last_instance_num = 1  # inclusive,
+first_instance_num = 0  # usually 0, unless you want to skip a group, then it should be divisible by instances_per_type
+last_instance_num = 0  # inclusive,
 
 if (1 + last_instance_num - first_instance_num) % instances_per_type:
     raise ValueError('Incoherent values for parameters  first_instance_num, last_instance_num and instances_per_type'
@@ -171,16 +167,13 @@ seeds = [1]
 # attack_counts = list(range(0, 61, 5)) + [69]  # values of the independent value of the simulation
 # indep_var_name = 'attacks'  # name of the independent variable of the simulation
 indep_var_name = 'min_rank'  # name of the independent variable of the simulation
-indep_var_vals = list(range(0, 30, 1))  # values of the independent variable of the simulation
+indep_var_vals = list(range(0, 2000, 1))  # values of the independent variable of the simulation
 # end of user defined variables
 
 floader = fl.FileLoader()
 
 for i in range(0, len(diff_paths)):
     paths = diff_paths[i]
-    paths['netw_a_fname'] = 'A.graphml'  # TODO: move above among user-configurable vars
-    paths['netw_b_fname'] = 'B.graphml'
-    paths['ml_stats_fpath'] = '../Simulations/centrality/1cc_1ap/3/realistic/ml_stats.tsv'
     run_options = diff_run_options[i]
     group_results_dir = group_results_dirs[i]
     sf.ensure_dir_exists(group_results_dir)

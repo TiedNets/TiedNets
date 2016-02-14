@@ -1,11 +1,8 @@
-__author__ = 'Agostino Sturaro'
-
 import os
 import logging
 import networkx as nx
 import random
 import csv
-import json
 from collections import OrderedDict
 import shared_functions as sf
 
@@ -14,6 +11,7 @@ try:
 except ImportError:
     from ConfigParser import ConfigParser  # ver. < 3.0
 
+__author__ = 'Agostino Sturaro'
 
 # global variables
 logger = None
@@ -31,39 +29,30 @@ def choose_random_nodes(G, node_cnt, seed=None):
     return chosen_nodes
 
 
-# nodes_with_centr is a dictionary {'node': centrality measure}
+# ranked_nodes is a list of nodes, sorted in a deterministic way
+# [node with lowest rank, ..., node with highest rank]
 # node_cnt is the number of nodes to pick
-# min_rank is the rank of the first node to pick (they get sorted by centrality measure and id)
-# def pick_nodes_by_centrality_rank(nodes_with_centr, node_cnt, min_rank):
-#     # sort the dictionary by value first and then by key (so we have a deterministic sorting)
-#     # we get a dictionary of node: centrality
-#     nodes_with_centr = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
-#     # create a list of nodes rank by their centrality, we get a list
-#     # [node with lowest centrality, ..., node with highest centrality]
-#     ranked_nodes = list(nodes_with_centr.keys())
-#     chosen_nodes = list()
-#     for i in range(min_rank, min_rank + node_cnt):
-#         node = ranked_nodes[i]
-#         chosen_nodes.append(node)
-#     return chosen_nodes
-
-
-# nodes_with_centr is a dictionary {'node': centrality measure}
-def calc_centrality_rank(nodes_with_centr):
-    nodes_with_centr = OrderedDict(sorted(nodes_with_centr.items(), key=lambda (k, v): (v, k)))
-    ranked_nodes = list(nodes_with_centr.keys())
-    return ranked_nodes
-
-
-# ranked_nodes is a list of nodes pre-sorted by their centrality metric
-# [node with lowest centrality, ..., node with highest centrality]
-# node_cnt is the number of nodes to pick
-# min_rank is the rank of the first node to pick (they get sorted by centrality measure and id)
-def pick_nodes_by_centrality_rank(ranked_nodes, node_cnt, min_rank):
+# min_rank is the rank of the first node to pick
+def pick_nodes_by_rank(ranked_nodes, node_cnt, min_rank):
     chosen_nodes = list()
     for i in range(min_rank, min_rank + node_cnt):
         node = ranked_nodes[i]
         chosen_nodes.append(node)
+    return chosen_nodes
+
+
+def pick_nodes_by_role(G, role, only_nodes_in=None):
+    chosen_nodes = list()
+    if only_nodes_in is None:
+        for node in G.nodes():
+            node_role = G.node[node]['role']
+            if node_role == role:
+                chosen_nodes.append(node)
+    else:
+        for node in only_nodes_in:
+            node_role = G.node[node]['role']
+            if node_role == role:
+                chosen_nodes.append(node)
     return chosen_nodes
 
 
@@ -255,6 +244,18 @@ def save_state(time, A, B, I, results_dir):
     nx.write_graphml(I, netw_inter_fpath_out)
 
 
+def sum_node_centrality(G, nodes, centrality_name, file_loader, file_dir):
+    # load file with precalculated centrality metrics
+    centr_file_name = 'node_centrality_{}.json'.format(G.graph['name'])
+    centr_fpath = os.path.join(file_dir, centr_file_name)
+    centrality_info = file_loader.fetch_json(centr_fpath)
+    centr_by_node = centrality_info[centrality_name]
+    centr_sum = 0.0
+    for node in nodes:
+        centr_sum += centr_by_node[node]
+    return centr_sum
+
+
 # this function will be called from another script, each time with a different configuration fpath
 def run(conf_fpath, floader):
     global logger
@@ -287,82 +288,26 @@ def run(conf_fpath, floader):
     netw_a_fname = config.get('paths', 'netw_a_fname')
     netw_a_fpath_in = os.path.join(netw_dir, netw_a_fname)
     # A = nx.read_graphml(netw_a_fpath_in, node_type=str)
-    A = floader.read_graphml(netw_a_fpath_in, str)
+    A = floader.fetch_graphml(netw_a_fpath_in, str)
 
     netw_b_fname = config.get('paths', 'netw_b_fname')
     netw_b_fpath_in = os.path.join(netw_dir, netw_b_fname)
     # B = nx.read_graphml(netw_b_fpath_in, node_type=str)
-    B = floader.read_graphml(netw_b_fpath_in, str)
+    B = floader.fetch_graphml(netw_b_fpath_in, str)
 
     netw_inter_fname = config.get('paths', 'netw_inter_fname')
     netw_inter_fpath_in = os.path.join(netw_dir, netw_inter_fname)
     # I = nx.read_graphml(netw_inter_fpath_in, node_type=str)
-    I = floader.read_graphml(netw_inter_fpath_in, str)
+    I = floader.fetch_graphml(netw_inter_fpath_in, str)
 
     # if the union graph is needed for this simulation, it's better to have it created in advance and just load it
     if config.has_option('paths', 'netw_union_fname'):
         netw_union_fname = config.get('paths', 'netw_union_fname')
         netw_union_fpath_in = os.path.join(netw_dir, netw_union_fname)
         # ab_union = nx.read_graphml(netw_union_fpath_in, node_type=str)
-        ab_union = floader.read_graphml(netw_union_fpath_in, str)
+        ab_union = floader.fetch_graphml(netw_union_fpath_in, str)
     else:
         ab_union = None
-
-    # TODO: read this fname from the config file, checking if the option exists
-    betw_c_fname = 'betw_c_measures.json'
-    betw_c_fpath = os.path.join(netw_dir, betw_c_fname)
-    # if os.path.isfile(betw_c_fpath):
-    #     with open(betw_c_fpath, 'r') as betw_c_file:
-    #         centrality_info = floader.read_json(betw_c_file)
-    centrality_info = floader.read_json(betw_c_fpath)
-    if centrality_info is not None:
-        betw_c_by_node = centrality_info['measures']
-        betw_c_rank = centrality_info['rank']
-    else:
-        betw_c_by_node = None
-        betw_c_rank = None
-
-    # TODO: read this fname from the config file, checking if the option exists
-    clos_c_fname = 'clos_c_measures.json'
-    clos_c_fpath = os.path.join(netw_dir, clos_c_fname)
-    # if os.path.isfile(clos_c_fpath):
-    #     with open(clos_c_fpath, 'r') as clos_c_file:
-    #         centrality_info = json.load(clos_c_file)
-    centrality_info = floader.read_json(clos_c_fpath)
-    if centrality_info is not None:
-        clos_c_by_node = centrality_info['measures']
-        clos_c_rank = centrality_info['rank']
-    else:
-        clos_c_by_node = None
-        clos_c_rank = None
-
-    # TODO: read this fname from the config file, checking if the option exists
-    indeg_c_fname = 'indeg_c_measures.json'
-    indeg_c_fpath = os.path.join(netw_dir, indeg_c_fname)
-    # if os.path.isfile(indeg_c_fpath):
-    #     with open(indeg_c_fpath, 'r') as indeg_c_file:
-    #         centrality_info = json.load(indeg_c_file)
-    centrality_info = floader.read_json(indeg_c_fpath)
-    if centrality_info is not None:
-        indeg_c_by_node = centrality_info['measures']
-        indeg_c_rank = centrality_info['rank']
-    else:
-        indeg_c_by_node = None
-        indeg_c_rank = None
-
-    # TODO: read this fname from the config file, checking if the option exists
-    eigen_c_fname = 'eigen_c_measures.json'
-    eigen_c_fpath = os.path.join(netw_dir, eigen_c_fname)
-    # if os.path.isfile(eigen_c_fpath):
-    #     with open(eigen_c_fpath, 'r') as eigen_c_file:
-    #         centrality_info = json.load(eigen_c_file)
-    centrality_info = floader.read_json(eigen_c_fpath)
-    if centrality_info is not None:
-        eigen_c_by_node = centrality_info['measures']
-        eigen_c_rank = centrality_info['rank']
-    else:
-        eigen_c_by_node = None
-        eigen_c_rank = None
 
     # read run options
 
@@ -374,6 +319,41 @@ def run(conf_fpath, floader):
     if intra_support_type == 'cluster_size':
         min_cluster_size = config.getint('run_opts', 'min_cluster_size')
     inter_support_type = config.get('run_opts', 'inter_support_type')
+
+    if attacked_netw == A.graph['name']:
+        attacked_G = A
+    elif attacked_netw == B.graph['name']:
+        attacked_G = B
+    elif attacked_netw.lower() == 'both':
+        if ab_union is None:
+            raise ValueError('A union graph is needed, specify "netw_union_fname" and make sure the file exists')
+        attacked_G = ab_union
+    else:
+        raise ValueError('Invalid value for parameter "attacked_netw": ' + attacked_netw)
+
+    attacks_for_A_only = ['most_inter_used_distr_subs', 'most_intra_used_distr_subs', 'most_intra_used_transm_subs',
+                          'most_intra_used_generators']
+    if attack_tactic in attacks_for_A_only and attacked_netw != A.graph['name']:
+        raise ValueError('Attack {} can only be used on the power network A'.format(attack_tactic))
+
+    centrality_attacks = ['betweenness_centrality_rank', 'closeness_centrality_rank', 'indegree_centrality_rank',
+                          'katz_centrality_rank']
+
+    if attack_tactic in centrality_attacks:
+        min_rank = config.getint('run_opts', 'min_rank')
+        calc_centr_on = config.get('run_opts', 'calc_centrality_on')
+        if calc_centr_on.lower() == 'attacked_netw':
+            G_for_centr = attacked_G
+        elif calc_centr_on.lower() == 'netw_inter':
+            # note that calculating centrality on the inter graph is not the same as calculating it on the union graph
+            G_for_centr = I
+        else:
+            raise ValueError('Invalid value for parameter "calc_centr_on": ' + calc_centr_on)
+
+        # load file with precalculated centrality metrics
+        centr_fname = 'node_centrality_{}.json'.format(G_for_centr.graph['name'])
+        centr_fpath = os.path.joing(netw_dir, centr_fname)
+        centrality_info = floader.fetch_json(centr_fpath)
 
     # read output paths
 
@@ -396,10 +376,17 @@ def run(conf_fpath, floader):
         ml_stats_fpath = os.path.normpath(config.get('paths', 'ml_stats_fpath'))
         if os.path.isabs(ml_stats_fpath) is False:
             ml_stats_fpath = os.path.abspath(ml_stats_fpath)
+        save_attacked_roles = config.get('run_opts', 'save_attacked_roles')
+    else:
+        save_attacked_roles = False
 
     # ensure output directories exist and are empty
     sf.ensure_dir_exists(results_dir)
     sf.ensure_dir_exists(os.path.dirname(end_stats_fpath))
+
+    # read information used to identify this simulation run
+    sim_group = config.get('misc', 'sim_group')
+    instance = config.get('misc', 'instance')
 
     # stability check
     unstable_nodes = set()
@@ -459,65 +446,6 @@ def run(conf_fpath, floader):
         time += 1
 
         # perform initial attack
-        if attacked_netw == A.graph['name']:
-            attacked_G = A
-        elif attacked_netw == B.graph['name']:
-            attacked_G = B
-        elif attacked_netw == "both":
-            if ab_union is None:
-                ab_union = nx.compose(nx.compose(I, A), B, "both")  # this returns a directed graph if I is directed
-            attacked_G = ab_union
-        else:
-            raise ValueError('Invalid value for parameter "attacked_netw": ' + attacked_netw)
-
-        attacks_for_A_only = ['most_inter_used_distr_subs', 'most_intra_used_distr_subs', 'most_intra_used_transm_subs',
-                              'most_intra_used_generators']
-        if attack_tactic in attacks_for_A_only and attacked_netw != A.graph['name']:
-            raise ValueError('Attack {} can only be used on the power network A'.format(attack_tactic))
-
-        if ml_stats_fpath or attack_tactic == 'betweenness_centrality_rank':
-            if betw_c_by_node is None:
-                betw_c_by_node = nx.betweenness_centrality(attacked_G, seed=seed)
-                betw_c_rank = calc_centrality_rank(betw_c_by_node)
-
-        if ml_stats_fpath or attack_tactic == 'closeness_centrality_rank':
-            if clos_c_by_node is None:
-                clos_c_by_node = nx.closeness_centrality(attacked_G)
-                clos_c_rank = calc_centrality_rank(clos_c_by_node)
-
-        if ml_stats_fpath or attack_tactic == 'indegree_centrality_rank':
-            if indeg_c_by_node is None:
-                if nx.is_directed(attacked_G):
-                    indeg_c_by_node = nx.in_degree_centrality(attacked_G)
-                    indeg_c_rank = calc_centrality_rank(indeg_c_by_node)
-
-        if ml_stats_fpath or attack_tactic == 'eigenvector_centrality_rank':
-            if eigen_c_by_node is None:
-                if nx.is_directed(attacked_G):
-                    eigen_c_by_node = nx.eigenvector_centrality(attacked_G)
-                    eigen_c_rank = calc_centrality_rank(eigen_c_by_node)
-
-        centrality_attacks = ['betweenness_centrality_rank', 'closeness_centrality_rank', 'indegree_centrality_rank',
-                              'eigenvector_centrality_rank']
-
-        if attack_tactic in centrality_attacks:
-            min_rank = config.getint('run_opts', 'min_rank')
-
-        if ml_stats_fpath or attack_tactic in centrality_attacks:
-            # another slew of hacks done for paths (that should be read)
-            # save measures into cache files
-            with open(betw_c_fpath, 'wb') as betw_c_file:
-                centr_info = {'measures': betw_c_by_node, 'rank': betw_c_rank}
-                json.dump(centr_info, betw_c_file)
-            with open(clos_c_fpath, 'wb') as clos_c_file:
-                centr_info = {'measures': clos_c_by_node, 'rank': clos_c_rank}
-                json.dump(centr_info, clos_c_file)
-            with open(indeg_c_fpath, 'wb') as indeg_c_file:
-                centr_info = {'measures': indeg_c_by_node, 'rank': indeg_c_rank}
-                json.dump(centr_info, indeg_c_file)
-            with open(eigen_c_fpath, 'wb') as eigen_c_file:
-                centr_info = {'measures': eigen_c_by_node, 'rank': eigen_c_rank}
-                json.dump(centr_info, eigen_c_file)
 
         if attack_tactic == 'random':
             attacked_nodes = choose_random_nodes(attacked_G, attack_cnt, seed)
@@ -525,13 +453,17 @@ def run(conf_fpath, floader):
             target_nodes = config.get('run_opts', 'target_nodes')
             attacked_nodes = [node for node in target_nodes.split()]  # split list on space
         elif attack_tactic == 'betweenness_centrality_rank':
-            attacked_nodes = pick_nodes_by_centrality_rank(betw_c_rank, attack_cnt, min_rank)
+            ranked_nodes = centrality_info['betweenness_centrality_rank']
+            attacked_nodes = pick_nodes_by_rank(ranked_nodes, attack_cnt, min_rank)
         elif attack_tactic == 'closeness_centrality_rank':
-            attacked_nodes = pick_nodes_by_centrality_rank(clos_c_rank, attack_cnt, min_rank)
+            ranked_nodes = centrality_info['closeness_centrality_rank']
+            attacked_nodes = pick_nodes_by_rank(ranked_nodes, attack_cnt, min_rank)
         elif attack_tactic == 'indegree_centrality_rank':
-            attacked_nodes = pick_nodes_by_centrality_rank(indeg_c_rank, attack_cnt, min_rank)
-        elif attack_tactic == 'eigenvector_centrality_rank':
-            attacked_nodes = pick_nodes_by_centrality_rank(eigen_c_rank, attack_cnt, min_rank)
+            ranked_nodes = centrality_info['indegree_centrality_rank']
+            attacked_nodes = pick_nodes_by_rank(ranked_nodes, attack_cnt, min_rank)
+        elif attack_tactic == 'katz_centrality_rank':
+            ranked_nodes = centrality_info['katz_centrality_rank']
+            attacked_nodes = pick_nodes_by_rank(ranked_nodes, attack_cnt, min_rank)
         elif attack_tactic == 'most_inter_used_distr_subs':
             attacked_nodes = choose_most_inter_used_nodes(attacked_G, I, attack_cnt, 'distribution_substation')
         elif attack_tactic == 'most_intra_used_distr_subs':
@@ -542,9 +474,6 @@ def run(conf_fpath, floader):
             attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'generator')
         else:
             raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
-
-        # attacked_nodes_a = set(attacked_nodes).intersection(A.nodes())
-        # attacked_nodes_b = set(attacked_nodes).intersection(B.nodes())
 
         attacked_nodes_a = []
         attacked_nodes_b = []
@@ -557,6 +486,59 @@ def run(conf_fpath, floader):
             else:
                 raise RuntimeError('Node {} network "{}" marked in inter graph is neither A nor B'.format(
                     node, node_netw))
+
+        node_cnt_a = A.number_of_nodes()
+        edge_cnt_a = A.number_of_edges()
+        p_atkd_a = len(attacked_nodes_a) / node_cnt_a
+
+        node_cnt_b = B.number_of_nodes()
+        edge_cnt_b = B.number_of_edges()
+        p_atkd_b = len(attacked_nodes_b) / node_cnt_b
+
+        if ml_stats_fpath:  # if this string is not empty
+
+            # Please note that this section only works for nodes created using realistic roles
+            if save_attacked_roles is True:
+                # count how many nodes there are for each role in the power network
+                nodes_a_by_role = {'generator': 0, 'transmission_substation': 0, 'distribution_substation': 0}
+                try:
+                    for node in A.nodes():
+                        node_role = A.node[node]['role']
+                        nodes_a_by_role[node_role] += 1
+                except KeyError:
+                    raise RuntimeError('Unrecognized node role {} in graph {}'.format(node_role, A.graph['name']))
+
+                # count how many nodes were attacked for each power role
+                atkd_nodes_a_by_role = {'generator': 0, 'transmission_substation': 0, 'distribution_substation': 0}
+                for node in attacked_nodes_a:
+                    node_role = A.node[node]['role']
+                    atkd_nodes_a_by_role[node_role] += 1
+
+                # calculate the percentage of nodes attacked for each power role
+                p_atkd_gen = sf.percent_of_part(atkd_nodes_a_by_role['generator'], nodes_a_by_role['generator'])
+                p_atkd_ts = sf.percent_of_part(atkd_nodes_a_by_role['transmission_substation'],
+                                               nodes_a_by_role['transmission_substation'])
+                p_atkd_ds = sf.percent_of_part(atkd_nodes_a_by_role['distribution_substation'],
+                                               nodes_a_by_role['distribution_substation'])
+
+                # count how many nodes there are for each role in the telecom network
+                nodes_b_by_role = {'relay': 0, 'controller': 0}
+                try:
+                    for node in B.nodes():
+                        node_role = B.node[node]['role']
+                        nodes_b_by_role[node_role] += 1
+                except KeyError:
+                    raise RuntimeError('Unrecognized node role {} in graph {}'.format(node_role, B.graph['name']))
+
+                # count how many nodes were attacked for each telecom role
+                atkd_nodes_b_by_role = {'relay': 0, 'controller': 0}
+                for node in attacked_nodes_b:
+                    node_role = B.node[node]['role']
+                    atkd_nodes_b_by_role[node_role] += 1
+
+                # calculate the percentage of nodes attacked for each telecom role
+                p_atkd_rel = sf.percent_of_part(atkd_nodes_b_by_role['relay'], nodes_b_by_role['relay'])
+                p_atkd_cc = sf.percent_of_part(atkd_nodes_b_by_role['controller'], nodes_b_by_role['controller'])
 
         total_dead_a = len(attacked_nodes_a)
         if total_dead_a > 0:
@@ -685,16 +667,27 @@ def run(conf_fpath, floader):
     else:
         write_header = False
     with open(end_stats_fpath, 'ab') as end_stats_file:
-        end_stats_header = ['total_dead']
+        end_stats_header = ['sim_group', 'instance', '#dead', '#dead_a', '#dead_b']
+        if save_attacked_roles is True:
+            end_stats_header.extend(['#atkd_gen', '#atkd_ts', '#atkd_ds', '#atkd_rel', '#atkd_cc'])
         if save_death_cause is True:
             end_stats_header.extend(['no_intra_sup_a', 'no_inter_sup_a',
                                      'no_intra_sup_b', 'no_inter_sup_b'])
             if inter_support_type == 'realistic':
                 end_stats_header.extend(['no_sup_ccs', 'no_sup_relays', 'no_com_path'])
+
         end_stats = csv.DictWriter(end_stats_file, end_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
         if write_header is True:
             end_stats.writeheader()
-        end_stats_row = {'total_dead': total_dead_a + total_dead_b}
+
+        end_stats_row = {'sim_group': sim_group, 'instance': instance, '#dead': total_dead_a + total_dead_b,
+                         '#dead_a': total_dead_a, '#dead_b': total_dead_b}
+        if save_attacked_roles is True:
+            end_stats_row.update({'#atkd_gen': atkd_nodes_a_by_role['generator'],
+                                  '#atkd_ts': atkd_nodes_a_by_role['transmission_substation'],
+                                  '#atkd_ds': atkd_nodes_a_by_role['distribution_substation'],
+                                  '#atkd_rel': atkd_nodes_b_by_role['relay'],
+                                  '#atkd_cc': atkd_nodes_b_by_role['controller']})
         if save_death_cause is True:
             end_stats_row.update({'no_intra_sup_a': intra_sup_deaths_a, 'no_inter_sup_a': inter_sup_deaths_a,
                                   'no_intra_sup_b': intra_sup_deaths_b, 'no_inter_sup_b': inter_sup_deaths_b})
@@ -704,35 +697,87 @@ def run(conf_fpath, floader):
         end_stats.writerow(end_stats_row)
 
     if ml_stats_fpath:  # if this string is not empty
+
+        # percentages of dead nodes over the initial number of nodes in the graph
+        p_dead_a = total_dead_a / node_cnt_a
+        p_dead_b = total_dead_b / node_cnt_b
+        p_dead = (total_dead_a + total_dead_b) / (node_cnt_a + node_cnt_b)
+
+        # calculate the overall centrality of the attacked nodes
+
+        centrality_name = 'betweenness_centrality'
+        betw_c_a = sum_node_centrality(A, attacked_nodes_a, centrality_name, floader, netw_dir)
+        betw_c_b = sum_node_centrality(B, attacked_nodes_b, centrality_name, floader, netw_dir)
+        betw_c_ab = sum_node_centrality(ab_union, attacked_nodes, centrality_name, floader, netw_dir)
+        betw_c_i = sum_node_centrality(I, attacked_nodes, centrality_name, floader, netw_dir)
+
+        centrality_name = 'closeness_centrality'
+        clos_c_a = sum_node_centrality(A, attacked_nodes_a, centrality_name, floader, netw_dir)
+        clos_c_b = sum_node_centrality(B, attacked_nodes_b, centrality_name, floader, netw_dir)
+        clos_c_ab = sum_node_centrality(ab_union, attacked_nodes, centrality_name, floader, netw_dir)
+        clos_c_i = sum_node_centrality(I, attacked_nodes, centrality_name, floader, netw_dir)
+
+        centrality_name = 'indegree_centrality'
+        indeg_c_ab = sum_node_centrality(ab_union, attacked_nodes, centrality_name, floader, netw_dir)
+        indeg_c_i = sum_node_centrality(I, attacked_nodes, centrality_name, floader, netw_dir)
+
+        centrality_name = 'katz_centrality'
+        katz_c_ab = sum_node_centrality(ab_union, attacked_nodes, centrality_name, floader, netw_dir)
+        katz_c_i = sum_node_centrality(I, attacked_nodes, centrality_name, floader, netw_dir)
+
+        # if we need to create a new file, then remember to add the header
         if os.path.isfile(ml_stats_fpath) is False:
-            write_header = True  # if we are going to create a new file, then add the header
+            write_header = True
         else:
             write_header = False
 
-        # small hack, we have only 1 node attacked
-        atkd_node = attacked_nodes[0]
-        atkd_betw_c = betw_c_by_node[atkd_node]
-        atkd_betw_r = betw_c_rank.index(atkd_node)
-        atkd_clos_c = clos_c_by_node[atkd_node]
-        atkd_clos_r = clos_c_rank.index(atkd_node)
-        atkd_indeg_c = indeg_c_by_node[atkd_node]
-        atkd_indeg_r = indeg_c_rank.index(atkd_node)
-        atkd_eigen_c = eigen_c_by_node[atkd_node]
-        atkd_eigen_r = eigen_c_rank.index(atkd_node)
-        atkd_role = atkd_node[0]  # the first character in the name of the node is its role
-
         with open(ml_stats_fpath, 'ab') as ml_stats_file:
-            # later we can add features about the whole network, like the median centrality
-            # ml_stats_header = ['atkd_G', 'atkd_T', 'atkd_D', 'atkd_R', 'atkd_C', 'betw_c', ...]
+            ml_stats_header = ['sim_group', 'instance', '#nodes_a', '#edges_a', '#nodes_b', '#edges_b',
+                               'p_atkd_a', 'p_atkd_b', 'p_dead_a', 'p_dead_b', 'p_dead',
+                               'betw_c_a', 'betw_c_b', 'betw_c_ab', 'betw_c_i',
+                               'clos_c_a', 'clos_c_b', 'clos_c_ab', 'clos_c_i',
+                               'indeg_c_ab', 'indeg_c_i', 'katz_c_ab', 'katz_c_i']
 
-            ml_stats_header = ['atkd_role', 'betw_c', 'betw_r', 'clos_c', 'clos_r', 'indeg_c', 'indeg_r',
-                               'eigen_c', 'eigen_r', 'tot_dead']
+            if save_attacked_roles is True:
+                ml_stats_header.extend(['p_atkd_gen', 'p_atkd_ts', 'p_atkd_ds', 'p_atkd_rel', 'p_atkd_cc'])
+
+            if save_death_cause is True:
+                ml_stats_header.extend(['p_no_intra_sup_a', 'p_no_inter_sup_a',
+                                        'p_no_intra_sup_b', 'p_no_inter_sup_b'])
+                if inter_support_type == 'realistic':
+                    ml_stats_header.extend(['p_no_sup_ccs', 'p_no_sup_relays', 'p_no_com_path'])
+
             ml_stats = csv.DictWriter(ml_stats_file, ml_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
             if write_header is True:
                 ml_stats.writeheader()
 
-            ml_stats_row = {'atkd_role': atkd_role, 'betw_c': atkd_betw_c, 'betw_r': atkd_betw_r,
-                            'clos_c': atkd_clos_c, 'clos_r': atkd_clos_r, 'indeg_c': atkd_indeg_c,
-                            'indeg_r': atkd_indeg_r, 'eigen_c': atkd_eigen_c, 'eigen_r': atkd_eigen_r,
-                            'tot_dead': total_dead_a + total_dead_b}
+            ml_stats_row = {'sim_group': sim_group, 'instance': instance,
+                            '#nodes_a': node_cnt_a, '#edges_a': edge_cnt_a,
+                            '#nodes_b': node_cnt_b, '#edges_b': edge_cnt_b,
+                            'p_atkd_a': p_atkd_a, 'p_atkd_b': p_atkd_b,
+                            'p_dead_a': p_dead_a, 'p_dead_b': p_dead_b, 'p_dead': p_dead,
+                            'betw_c_a': betw_c_a, 'betw_c_b': betw_c_b, 'betw_c_ab': betw_c_ab, 'betw_c_i': betw_c_i,
+                            'clos_c_a': clos_c_a, 'clos_c_b': clos_c_b, 'clos_c_ab': clos_c_ab, 'clos_c_i': clos_c_i,
+                            'indeg_c_ab': indeg_c_ab, 'indeg_c_i': indeg_c_i,
+                            'katz_c_ab': katz_c_ab, 'katz_c_i': katz_c_i}
+
+            if save_attacked_roles is True:
+                ml_stats_row.update({'p_atkd_gen': p_atkd_gen, 'p_atkd_ts': p_atkd_ts, 'p_atkd_ds': p_atkd_ds,
+                                     'p_atkd_rel': p_atkd_rel, 'p_atkd_cc': p_atkd_cc, })
+
+            if save_death_cause is True:
+                p_no_intra_sup_a = sf.percent_of_part(intra_sup_deaths_a, total_dead_a)
+                p_no_inter_sup_a = sf.percent_of_part(inter_sup_deaths_a, total_dead_a)
+                p_no_intra_sup_b = sf.percent_of_part(intra_sup_deaths_b, total_dead_b)
+                p_no_inter_sup_b = sf.percent_of_part(inter_sup_deaths_b, total_dead_b)
+                ml_stats_row.update({'p_no_intra_sup_a': p_no_intra_sup_a, 'p_no_inter_sup_a': p_no_inter_sup_a,
+                                     'p_no_intra_sup_b': p_no_intra_sup_b, 'p_no_inter_sup_b': p_no_inter_sup_b})
+
+                if inter_support_type == 'realistic':
+                    p_no_sup_ccs = sf.percent_of_part(no_sup_ccs_deaths, total_dead_a)
+                    p_no_sup_relays = sf.percent_of_part(no_sup_relays_deaths, total_dead_a)
+                    p_no_com_path = sf.percent_of_part(no_com_path_deaths, total_dead_a)
+                    ml_stats_row.update({'p_no_sup_ccs': p_no_sup_ccs, 'p_no_sup_relays': p_no_sup_relays,
+                                         'p_no_com_path': p_no_com_path})
+
             ml_stats.writerow(ml_stats_row)

@@ -1,5 +1,3 @@
-__author__ = 'Agostino Sturaro'
-
 import os
 import sys
 import json
@@ -23,6 +21,8 @@ try:
     from configparser import ConfigParser
 except ImportError:
     from ConfigParser import ConfigParser  # ver. < 3.0
+
+__author__ = 'Agostino Sturaro'
 
 if sys.version_info[0] < 3:
     integer_types = (int, long,)
@@ -920,6 +920,44 @@ def RT_nested_Smallworld(n, avg_k, d_0, alpha, beta, q_rw, subnet_cnt=None, max_
     return G
 
 
+# nodes_with_centr is a dictionary {'node': score}
+# this function is used to rank nodes in a deterministic way, that is, if 2 nodes have the same score,
+# their IDs are compared and the one with the lowest ID comes first
+def rank_nodes_by_score(centr_by_node):
+    centr_by_node = OrderedDict(sorted(centr_by_node.items(), key=lambda (k, v): (v, k)))
+    ranked_nodes = list(centr_by_node.keys())
+    return ranked_nodes
+
+
+def save_centrality_file(file_dir, G):
+    centrality_info = {}
+    centr_by_node = nx.betweenness_centrality(G)
+    centrality_info['betweenness_centrality'] = centr_by_node
+    centr_rank = rank_nodes_by_score(centr_by_node)
+    centrality_info['betweenness_centrality_rank'] = centr_rank
+
+    centr_by_node = nx.closeness_centrality(G)
+    centrality_info['closeness_centrality'] = centr_by_node
+    centr_rank = rank_nodes_by_score(centr_by_node)
+    centrality_info['closeness_centrality_rank'] = centr_rank
+
+    if G.is_directed():
+        centr_by_node = nx.in_degree_centrality(G)
+        centrality_info['indegree_centrality'] = centr_by_node
+        centr_rank = rank_nodes_by_score(centr_by_node)
+        centrality_info['indegree_centrality_rank'] = centr_rank
+
+        centr_by_node = nx.katz_centrality_numpy(G)
+        centrality_info['katz_centrality'] = centr_by_node
+        centr_rank = rank_nodes_by_score(centr_by_node)
+        centrality_info['katz_centrality_rank'] = centr_rank
+
+    file_name = 'node_centrality_{}.json'.format(G.graph['name'])
+    file_path = os.path.join(file_dir, file_name)
+    with open(file_path, 'wb') as centr_file:
+        json.dump(centrality_info, centr_file)
+
+
 def run(conf_fpath):
     global logger
     logger.info('conf_fpath = ' + conf_fpath)
@@ -1375,15 +1413,31 @@ def run(conf_fpath):
 
         nx.write_graphml(mm_I, os.path.join(output_dir, max_matching_name + '.graphml'))
 
-    if config.has_option('build_inter', 'produce_ab_union'):
-        produce_union = config.getboolean('build_inter', 'produce_ab_union')
+    if config.has_option('misc', 'produce_ab_union'):
+        produce_union = config.getboolean('misc', 'produce_ab_union')
     else:
         produce_union = False
 
     if produce_union is True:
-        ab_union_name = config.get('build_inter', 'ab_union_name')
-        ab_union = nx.compose(nx.compose(I, A), B, "both")  # this returns a directed graph if I is directed
+        ab_union_name = config.get('misc', 'ab_union_name')
+        ab_union = nx.compose(nx.compose(I, A), B, "Union")  # this returns a directed graph if I is directed
         nx.write_graphml(ab_union, os.path.join(output_dir, ab_union_name + '.graphml'))
+
+    # precalculate various centrality metrics for nodes in the graph
+
+    if config.has_option('misc', 'calc_node_centrality'):
+        calc_node_centrality = config.getboolean('misc', 'calc_node_centrality')
+    else:
+        calc_node_centrality = False
+
+    if calc_node_centrality is True:
+        save_centrality_file(output_dir, A)
+        save_centrality_file(output_dir, B)
+        save_centrality_file(output_dir, I)
+        if produce_max_matching is True:
+            save_centrality_file(output_dir, mm_I)
+        if produce_union is True:
+            save_centrality_file(output_dir, ab_union)
 
     # draw networks
 

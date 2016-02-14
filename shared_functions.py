@@ -1,5 +1,3 @@
-__author__ = 'Agostino Sturaro'
-
 import os
 import re
 import sys
@@ -10,10 +8,19 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
+__author__ = 'Agostino Sturaro'
+
 
 def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
     return [int(text) if text.isdigit() else text.lower()
             for text in re.split(_nsre, s)]
+
+
+# returns percentage value in [0.0, 1.0]
+def percent_of_part(part, whole):
+    if whole == 0:
+        return 0.0
+    return (1.0 * part) / whole
 
 
 # Taken from http://stackoverflow.com/a/3041990

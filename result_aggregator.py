@@ -1,10 +1,10 @@
-__author__ = 'Agostino Sturaro'
-
 import os
 import csv
 import logging
 import numpy as np
 import shared_functions as sf
+
+__author__ = 'Agostino Sturaro'
 
 this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
