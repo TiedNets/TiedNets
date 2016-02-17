@@ -43,8 +43,8 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-# base_dir = os.path.normpath('../Simulations/MN_nets/1cc_2ap')
 base_dir = os.path.normpath('../Simulations/centrality/1cc_1ap')
+# base_dir = os.path.normpath('../Simulations/centrality/1cc_1ap')
 
 build_a_options = [{
     'name': 'A',

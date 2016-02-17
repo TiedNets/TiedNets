@@ -352,7 +352,7 @@ def run(conf_fpath, floader):
 
         # load file with precalculated centrality metrics
         centr_fname = 'node_centrality_{}.json'.format(G_for_centr.graph['name'])
-        centr_fpath = os.path.joing(netw_dir, centr_fname)
+        centr_fpath = os.path.join(netw_dir, centr_fname)
         centrality_info = floader.fetch_json(centr_fpath)
 
     # read output paths
@@ -489,11 +489,13 @@ def run(conf_fpath, floader):
 
         node_cnt_a = A.number_of_nodes()
         edge_cnt_a = A.number_of_edges()
-        p_atkd_a = len(attacked_nodes_a) / node_cnt_a
+        p_atkd_a = sf.percent_of_part(len(attacked_nodes_a), node_cnt_a)
 
         node_cnt_b = B.number_of_nodes()
         edge_cnt_b = B.number_of_edges()
-        p_atkd_b = len(attacked_nodes_b) / node_cnt_b
+        p_atkd_b = sf.percent_of_part(len(attacked_nodes_b), node_cnt_b)
+
+        p_atkd = sf.percent_of_part(len(attacked_nodes_a) + len(attacked_nodes_b), node_cnt_a + node_cnt_b)
 
         if ml_stats_fpath:  # if this string is not empty
 
@@ -699,9 +701,9 @@ def run(conf_fpath, floader):
     if ml_stats_fpath:  # if this string is not empty
 
         # percentages of dead nodes over the initial number of nodes in the graph
-        p_dead_a = total_dead_a / node_cnt_a
-        p_dead_b = total_dead_b / node_cnt_b
-        p_dead = (total_dead_a + total_dead_b) / (node_cnt_a + node_cnt_b)
+        p_dead_a = sf.percent_of_part(total_dead_a, node_cnt_a)
+        p_dead_b = sf.percent_of_part(total_dead_b, node_cnt_b)
+        p_dead = sf.percent_of_part(total_dead_a + total_dead_b, node_cnt_a + node_cnt_b)
 
         # calculate the overall centrality of the attacked nodes
 
@@ -733,7 +735,7 @@ def run(conf_fpath, floader):
 
         with open(ml_stats_fpath, 'ab') as ml_stats_file:
             ml_stats_header = ['sim_group', 'instance', '#nodes_a', '#edges_a', '#nodes_b', '#edges_b',
-                               'p_atkd_a', 'p_atkd_b', 'p_dead_a', 'p_dead_b', 'p_dead',
+                               'p_atkd', 'p_dead', 'p_atkd_a', 'p_dead_a', 'p_atkd_b', 'p_dead_b',
                                'betw_c_a', 'betw_c_b', 'betw_c_ab', 'betw_c_i',
                                'clos_c_a', 'clos_c_b', 'clos_c_ab', 'clos_c_i',
                                'indeg_c_ab', 'indeg_c_i', 'katz_c_ab', 'katz_c_i']
@@ -754,8 +756,8 @@ def run(conf_fpath, floader):
             ml_stats_row = {'sim_group': sim_group, 'instance': instance,
                             '#nodes_a': node_cnt_a, '#edges_a': edge_cnt_a,
                             '#nodes_b': node_cnt_b, '#edges_b': edge_cnt_b,
-                            'p_atkd_a': p_atkd_a, 'p_atkd_b': p_atkd_b,
-                            'p_dead_a': p_dead_a, 'p_dead_b': p_dead_b, 'p_dead': p_dead,
+                            'p_atkd': p_atkd, 'p_atkd_a': p_atkd_a, 'p_atkd_b': p_atkd_b,
+                            'p_dead': p_dead, 'p_dead_a': p_dead_a, 'p_dead_b': p_dead_b,
                             'betw_c_a': betw_c_a, 'betw_c_b': betw_c_b, 'betw_c_ab': betw_c_ab, 'betw_c_i': betw_c_i,
                             'clos_c_a': clos_c_a, 'clos_c_b': clos_c_b, 'clos_c_ab': clos_c_ab, 'clos_c_i': clos_c_i,
                             'indeg_c_ab': indeg_c_ab, 'indeg_c_i': indeg_c_i,

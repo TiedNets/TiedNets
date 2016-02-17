@@ -1,6 +1,7 @@
 import os
 import csv
 import logging
+import random
 import file_loader as fl
 import shared_functions as sf
 import cascades_sim as sim
@@ -88,7 +89,7 @@ base_configs = [{
 }]
 
 first_instance = 0  # usually 0, unless you want to skip a group, then it should be divisible by sim_group_size
-last_instance = 1  # exclusive, should be divisible by sim_group_size
+last_instance = 5  # exclusive, should be divisible by sim_group_size
 
 # This script is used to run multiple simulations on a set of instances. At its core is a loop that generates a
 # configuration file with a different combination of parameters and executes a simulation based on it.
@@ -96,12 +97,14 @@ last_instance = 1  # exclusive, should be divisible by sim_group_size
 # we need to specify the name of the independent variable and the values we want it to assume.
 
 indep_var_name = 'attacks'  # name of the independent variable of the simulation
-indep_var_vals = list(range(0, 3, 1))  # values of the independent value of the simulation
+# indep_var_vals = list(range(0, 3, 1))  # values of the independent value of the simulation
+indep_var_vals = sorted(random.sample(range(1, 200), 50))
+print('indep_var_vals = {}'.format(indep_var_vals))
 # indep_var_vals = list(range(0, 61, 5)) + [69]  # values of the independent value of the simulation
 # indep_var_name = 'min_rank'  # name of the independent variable of the simulation, in the run_opts section
 # indep_var_vals = list(range(0, 2000, 1))  # values of the independent variable of the simulation
 
-seeds = list(range(100, 102, 1))  # used to execute multiple tests on the same network instance
+seeds = list(range(100, 120, 1))  # used to execute multiple tests on the same network instance
 # seeds = [1]
 # end of user defined variables
 
