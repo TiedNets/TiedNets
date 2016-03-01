@@ -10,6 +10,12 @@ It is composed of a set of packages to:
 ## Documentation
 The [Wiki](https://github.com/TiedNets/TiedNets/wiki) contains the overview of the tools and general information you'll need to work with it.
 
+## Getting it to work
+The recommended Python version is 2.7, but most things should work fine with newer 3.2+ versions.  
+The easiest way to install Python and all the needed packages is probably using the [Anaconda installer](https://www.continuum.io/downloads).
+
+If you want to use an IDE, you can this project with [PyCharm](https://www.jetbrains.com/pycharm/download/).
+
 ## Reporting Issues
 Use the [issue tracker](https://github.com/TiedNets/TiedNets/issues) here on GitHub to report issues.
 
