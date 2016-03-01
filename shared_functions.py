@@ -11,6 +11,8 @@ from collections import defaultdict
 __author__ = 'Agostino Sturaro'
 
 
+# to perform a natural sort, pass this function as the key to the sort functions
+# sorted(list_of_strings, key=natural_sort_key)
 def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
     return [int(text) if text.isdigit() else text.lower()
             for text in re.split(_nsre, s)]

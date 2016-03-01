@@ -30,6 +30,7 @@ def test_assign_power_roles():
     assert set.issuperset(nodes_by_role_H['distribution_substation'], nodes_by_role_G['distribution_substation'])
 
 
+# TODO: this test fails, missing function, probably outdated
 def test_assign_power_roles_bis():
     G = nx.Graph()
     G.add_nodes_from(list(range(0, 15)))

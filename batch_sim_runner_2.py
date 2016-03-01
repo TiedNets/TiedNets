@@ -64,10 +64,10 @@ base_configs = [{
         'netw_a_fname': 'A.graphml',
         'netw_inter_fname': 'Inter.graphml',
         'netw_union_fname': 'UnionAB.graphml',
-        'results_dir': '../Simulations/centrality/1cc_1ap/random/realistic',  # group_results_dir
+        'results_dir': '../Simulations/centrality/1cc_1ap/results_0',  # group_results_dir
         'run_stats_fname': None,
         'end_stats_fpath': None,
-        'ml_stats_fpath': '../Simulations/centrality/1cc_1ap/random/realistic/ml_stats_0.tsv'
+        'ml_stats_fpath': '../Simulations/centrality/1cc_1ap/results_0/ml_stats_0_a.tsv'
     },
 
     'run_opts': {
@@ -89,23 +89,25 @@ base_configs = [{
 }]
 
 first_instance = 0  # usually 0, unless you want to skip a group, then it should be divisible by sim_group_size
-last_instance = 5  # exclusive, should be divisible by sim_group_size
+last_instance = 2  # exclusive, should be divisible by sim_group_size
 
 # This script is used to run multiple simulations on a set of instances. At its core is a loop that generates a
 # configuration file with a different combination of parameters and executes a simulation based on it.
 # If we want to use a group of simulations to draw a 2D plot, showing the behavior obtained by changing a variable, then
 # we need to specify the name of the independent variable and the values we want it to assume.
 
+# TODO: it would be better to do targeted attacks and select nodes beforehand
 indep_var_name = 'attacks'  # name of the independent variable of the simulation
-# indep_var_vals = list(range(0, 3, 1))  # values of the independent value of the simulation
-indep_var_vals = sorted(random.sample(range(1, 200), 50))
+indep_var_vals = list(range(0, 3, 1))  # values of the independent value of the simulation
+# indep_var_vals = sorted(random.sample(range(1, 200), 50))
+# indep_var_vals = range(1, 150)
 print('indep_var_vals = {}'.format(indep_var_vals))
 # indep_var_vals = list(range(0, 61, 5)) + [69]  # values of the independent value of the simulation
 # indep_var_name = 'min_rank'  # name of the independent variable of the simulation, in the run_opts section
 # indep_var_vals = list(range(0, 2000, 1))  # values of the independent variable of the simulation
 
-seeds = list(range(100, 120, 1))  # used to execute multiple tests on the same network instance
-# seeds = [1]
+# seeds = list(range(100, 200, 1))  # used to execute multiple tests on the same network instance
+seeds = [1]
 # end of user defined variables
 
 floader = fl.FileLoader()
@@ -117,7 +119,7 @@ for sim_group in range(0, len(base_configs)):
     sf.ensure_dir_exists(group_results_dir)
     misc = base_configs[sim_group]['misc']
     misc['sim_group'] = sim_group
-    runs_by_instance = [0] * (last_instance - first_instance)  # number of simulations executed for each instance
+    run_num_by_inst = {}  # number of simulations we ran for each instance i
 
     # group_index will be the index of the config files for each simulation of that group
     group_index_fpath = os.path.join(group_results_dir, 'sim_group_{}_index.tsv'.format(sim_group))
@@ -132,13 +134,17 @@ for sim_group in range(0, len(base_configs)):
 
         # inner cycle ranging over different network instances
         for instance_num in range(first_instance, last_instance, 1):
-            misc['instance'] = instance_num
+            # if it's the first simulation we run for this instance, then take note
+            if instance_num not in run_num_by_inst:
+                run_num_by_inst[instance_num] = 0
+            # pick up the simulation number (n-th time we run a simulation on this instance)
+            run_num = run_num_by_inst[instance_num]
+            misc['instance'] = instance_num  # mark in the configuration file the number of this instance
             paths['netw_dir'] = os.path.join(instances_dir, 'instance_{}'.format(instance_num))  # input
 
             # inner cycle ranging over different seeds
             for seed in seeds:
                 run_options['seed'] = seed
-                run_num = runs_by_instance[instance_num]
                 paths['results_dir'] = os.path.join(group_results_dir, 'instance_' + str(instance_num),
                                                     'run_' + str(run_num))
                 paths['run_stats_fname'] = 'run_{}_stats.tsv'.format(run_num)
@@ -150,5 +156,5 @@ for sim_group in range(0, len(base_configs)):
                     group_index = csv.writer(group_index_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
                     group_index.writerow([instance_num, conf_fpath])
 
-                sim.run(conf_fpath, floader)
-                runs_by_instance[instance_num] += 1
+                sim.run(conf_fpath, floader)  # run the simulation
+                run_num_by_inst[instance_num] += 1  # next simulation for this instance will be number + 1

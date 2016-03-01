@@ -931,26 +931,36 @@ def rank_nodes_by_score(centr_by_node):
 
 def save_centrality_file(file_dir, G):
     centrality_info = {}
+    percentile_pos = [20, 40, 60, 80]
+
     centr_by_node = nx.betweenness_centrality(G)
     centrality_info['betweenness_centrality'] = centr_by_node
     centr_rank = rank_nodes_by_score(centr_by_node)
     centrality_info['betweenness_centrality_rank'] = centr_rank
+    centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
+    centrality_info['betweenness_centrality_quintiles'] = centr_quintiles.tolist()
 
     centr_by_node = nx.closeness_centrality(G)
     centrality_info['closeness_centrality'] = centr_by_node
     centr_rank = rank_nodes_by_score(centr_by_node)
     centrality_info['closeness_centrality_rank'] = centr_rank
+    centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
+    centrality_info['closeness_centrality_quintiles'] = centr_quintiles.tolist()
 
     if G.is_directed():
         centr_by_node = nx.in_degree_centrality(G)
         centrality_info['indegree_centrality'] = centr_by_node
         centr_rank = rank_nodes_by_score(centr_by_node)
         centrality_info['indegree_centrality_rank'] = centr_rank
+        centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
+        centrality_info['indegree_centrality_quintiles'] = centr_quintiles.tolist()
 
         centr_by_node = nx.katz_centrality_numpy(G)
         centrality_info['katz_centrality'] = centr_by_node
         centr_rank = rank_nodes_by_score(centr_by_node)
         centrality_info['katz_centrality_rank'] = centr_rank
+        centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
+        centrality_info['katz_centrality_quintiles'] = centr_quintiles.tolist()
 
     file_name = 'node_centrality_{}.json'.format(G.graph['name'])
     file_path = os.path.join(file_dir, file_name)
@@ -1420,7 +1430,8 @@ def run(conf_fpath):
 
     if produce_union is True:
         ab_union_name = config.get('misc', 'ab_union_name')
-        ab_union = nx.compose(nx.compose(I, A), B, "Union")  # this returns a directed graph if I is directed
+        ab_union = nx.compose(nx.compose(I, A), B)  # this returns a directed graph if I is directed
+        ab_union.graph['name'] = ab_union_name
         nx.write_graphml(ab_union, os.path.join(output_dir, ab_union_name + '.graphml'))
 
     # precalculate various centrality metrics for nodes in the graph

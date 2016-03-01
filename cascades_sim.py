@@ -244,16 +244,44 @@ def save_state(time, A, B, I, results_dir):
     nx.write_graphml(I, netw_inter_fpath_out)
 
 
-def sum_node_centrality(G, nodes, centrality_name, file_loader, file_dir):
+def calc_stats_on_centrality(G, nodes, full_centrality_name, short_centrality_name, file_loader, file_dir):
     # load file with precalculated centrality metrics
     centr_file_name = 'node_centrality_{}.json'.format(G.graph['name'])
     centr_fpath = os.path.join(file_dir, centr_file_name)
     centrality_info = file_loader.fetch_json(centr_fpath)
-    centr_by_node = centrality_info[centrality_name]
+    centr_by_node = centrality_info[full_centrality_name]
     centr_sum = 0.0
     for node in nodes:
         centr_sum += centr_by_node[node]
-    return centr_sum
+
+    # count how many nodes are in each quintile
+    quintiles = centrality_info[full_centrality_name + '_quintiles']
+    nodes_by_quintile = [0] * 5
+    for node in nodes:
+        node_quintile = 0
+        for i in range(0, 4):
+            if centr_by_node[node] > quintiles[i]:
+                node_quintile += 1
+            else:
+                break
+        nodes_by_quintile[node_quintile] += 1
+
+    # calc what percentage of the nodes in the graph are in each quintile
+    tot_node_cnt = G.number_of_nodes()
+    for i, node_cnt in enumerate(nodes_by_quintile):
+        nodes_by_quintile[i] = sf.percent_of_part(node_cnt, tot_node_cnt)
+
+    # index statistics in a dictionary using shorter names
+
+    centr_stats = {}
+    stat_name = short_centrality_name + '_sum'
+    centr_stats[stat_name] = centr_sum
+
+    for i, val in enumerate(nodes_by_quintile):
+        stat_name = short_centrality_name + '_q_' + str(i + 1)  # q_1 is the first quantile
+        centr_stats[stat_name] = val
+
+    return centr_stats
 
 
 # this function will be called from another script, each time with a different configuration fpath
@@ -376,7 +404,9 @@ def run(conf_fpath, floader):
         ml_stats_fpath = os.path.normpath(config.get('paths', 'ml_stats_fpath'))
         if os.path.isabs(ml_stats_fpath) is False:
             ml_stats_fpath = os.path.abspath(ml_stats_fpath)
-        save_attacked_roles = config.get('run_opts', 'save_attacked_roles')
+
+    if config.has_option('run_opts', 'save_attacked_roles'):
+        save_attacked_roles = config.getboolean('run_opts', 'save_attacked_roles')
     else:
         save_attacked_roles = False
 
@@ -707,25 +737,39 @@ def run(conf_fpath, floader):
 
         # calculate the overall centrality of the attacked nodes
 
-        centrality_name = 'betweenness_centrality'
-        betw_c_a = sum_node_centrality(A, attacked_nodes_a, centrality_name, floader, netw_dir)
-        betw_c_b = sum_node_centrality(B, attacked_nodes_b, centrality_name, floader, netw_dir)
-        betw_c_ab = sum_node_centrality(ab_union, attacked_nodes, centrality_name, floader, netw_dir)
-        betw_c_i = sum_node_centrality(I, attacked_nodes, centrality_name, floader, netw_dir)
+        all_centr_stats = {}
 
-        centrality_name = 'closeness_centrality'
-        clos_c_a = sum_node_centrality(A, attacked_nodes_a, centrality_name, floader, netw_dir)
-        clos_c_b = sum_node_centrality(B, attacked_nodes_b, centrality_name, floader, netw_dir)
-        clos_c_ab = sum_node_centrality(ab_union, attacked_nodes, centrality_name, floader, netw_dir)
-        clos_c_i = sum_node_centrality(I, attacked_nodes, centrality_name, floader, netw_dir)
+        centr_name = 'betweenness_centrality'
+        centr_stats = calc_stats_on_centrality(A, attacked_nodes_a, centr_name, 'betw_c_a', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
+        centr_stats = calc_stats_on_centrality(B, attacked_nodes_b, centr_name, 'betw_c_b', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
+        centr_stats = calc_stats_on_centrality(ab_union, attacked_nodes, centr_name, 'betw_c_ab', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
+        centr_stats = calc_stats_on_centrality(I, attacked_nodes, centr_name, 'betw_c_i', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
 
-        centrality_name = 'indegree_centrality'
-        indeg_c_ab = sum_node_centrality(ab_union, attacked_nodes, centrality_name, floader, netw_dir)
-        indeg_c_i = sum_node_centrality(I, attacked_nodes, centrality_name, floader, netw_dir)
+        centr_name = 'closeness_centrality'
+        centr_stats = calc_stats_on_centrality(A, attacked_nodes_a, centr_name, 'clos_c_a', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
+        centr_stats = calc_stats_on_centrality(B, attacked_nodes_b, centr_name, 'clos_c_b', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
+        centr_stats = calc_stats_on_centrality(ab_union, attacked_nodes, centr_name, 'clos_c_ab', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
+        centr_stats = calc_stats_on_centrality(I, attacked_nodes, centr_name, 'clos_c_i', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
 
-        centrality_name = 'katz_centrality'
-        katz_c_ab = sum_node_centrality(ab_union, attacked_nodes, centrality_name, floader, netw_dir)
-        katz_c_i = sum_node_centrality(I, attacked_nodes, centrality_name, floader, netw_dir)
+        centr_name = 'indegree_centrality'
+        centr_stats = calc_stats_on_centrality(ab_union, attacked_nodes, centr_name, 'indeg_c_ab', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
+        centr_stats = calc_stats_on_centrality(I, attacked_nodes, centr_name, 'indeg_c_i', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
+
+        centr_name = 'katz_centrality'
+        centr_stats = calc_stats_on_centrality(ab_union, attacked_nodes, centr_name, 'katz_c_ab', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
+        centr_stats = calc_stats_on_centrality(I, attacked_nodes, centr_name, 'katz_c_i', floader, netw_dir)
+        all_centr_stats.update(centr_stats)
 
         # if we need to create a new file, then remember to add the header
         if os.path.isfile(ml_stats_fpath) is False:
@@ -735,10 +779,10 @@ def run(conf_fpath, floader):
 
         with open(ml_stats_fpath, 'ab') as ml_stats_file:
             ml_stats_header = ['sim_group', 'instance', '#nodes_a', '#edges_a', '#nodes_b', '#edges_b',
-                               'p_atkd', 'p_dead', 'p_atkd_a', 'p_dead_a', 'p_atkd_b', 'p_dead_b',
-                               'betw_c_a', 'betw_c_b', 'betw_c_ab', 'betw_c_i',
-                               'clos_c_a', 'clos_c_b', 'clos_c_ab', 'clos_c_i',
-                               'indeg_c_ab', 'indeg_c_i', 'katz_c_ab', 'katz_c_i']
+                               'p_atkd', 'p_dead', 'p_atkd_a', 'p_dead_a', 'p_atkd_b', 'p_dead_b', ]
+
+            # add statistics about centrality, sorted so they can be more found easily in the output file
+            ml_stats_header.extend(sorted(all_centr_stats.keys(), key=sf.natural_sort_key))
 
             if save_attacked_roles is True:
                 ml_stats_header.extend(['p_atkd_gen', 'p_atkd_ts', 'p_atkd_ds', 'p_atkd_rel', 'p_atkd_cc'])
@@ -757,15 +801,13 @@ def run(conf_fpath, floader):
                             '#nodes_a': node_cnt_a, '#edges_a': edge_cnt_a,
                             '#nodes_b': node_cnt_b, '#edges_b': edge_cnt_b,
                             'p_atkd': p_atkd, 'p_atkd_a': p_atkd_a, 'p_atkd_b': p_atkd_b,
-                            'p_dead': p_dead, 'p_dead_a': p_dead_a, 'p_dead_b': p_dead_b,
-                            'betw_c_a': betw_c_a, 'betw_c_b': betw_c_b, 'betw_c_ab': betw_c_ab, 'betw_c_i': betw_c_i,
-                            'clos_c_a': clos_c_a, 'clos_c_b': clos_c_b, 'clos_c_ab': clos_c_ab, 'clos_c_i': clos_c_i,
-                            'indeg_c_ab': indeg_c_ab, 'indeg_c_i': indeg_c_i,
-                            'katz_c_ab': katz_c_ab, 'katz_c_i': katz_c_i}
+                            'p_dead': p_dead, 'p_dead_a': p_dead_a, 'p_dead_b': p_dead_b}
+
+            ml_stats_row.update(all_centr_stats)
 
             if save_attacked_roles is True:
                 ml_stats_row.update({'p_atkd_gen': p_atkd_gen, 'p_atkd_ts': p_atkd_ts, 'p_atkd_ds': p_atkd_ds,
-                                     'p_atkd_rel': p_atkd_rel, 'p_atkd_cc': p_atkd_cc, })
+                                     'p_atkd_rel': p_atkd_rel, 'p_atkd_cc': p_atkd_cc,})
 
             if save_death_cause is True:
                 p_no_intra_sup_a = sf.percent_of_part(intra_sup_deaths_a, total_dead_a)

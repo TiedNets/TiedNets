@@ -43,7 +43,7 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-base_dir = os.path.normpath('../Simulations/centrality/1cc_1ap')
+base_dir = os.path.normpath('../Simulations/centrality/1cc_2ap')
 # base_dir = os.path.normpath('../Simulations/centrality/1cc_1ap')
 
 build_a_options = [{
@@ -127,7 +127,7 @@ build_inter_options = [{
     'dependency_model': 'k-to-n',
     'k': 1,
     'n': 1000,
-    'com_access_points': 1,
+    'com_access_points': 2,
     'prefer_nearest': False,
     'produce_max_matching': True,
     'max_matching_name': 'InterMM',
@@ -165,7 +165,9 @@ misc_options = [{
     'calc_node_centrality': True
 }]
 
-instances_per_type = 5
+# TODO: ask what to do if destination folder contains files (right now it removes configs)!
+
+instances_per_type = 2
 seeds = list()
 first_group = True
 
