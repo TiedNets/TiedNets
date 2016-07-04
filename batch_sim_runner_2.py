@@ -1,5 +1,7 @@
 import os
+import sys
 import csv
+import json
 import logging
 import random
 import file_loader as fl
@@ -35,6 +37,24 @@ def write_conf(conf_fpath, paths, run_options, misc):
         config.write(conf_file)
 
 
+def pick_conf_values(config, opt_name):
+    values = None
+    if config[opt_name]['pick'] == 'range':
+        start = config[opt_name]['start']
+        stop = config[opt_name]['stop']
+        if 'step' in config[opt_name]:
+            step = config[opt_name]['step']
+        else:
+            step = 1
+        values = range(start, stop, step)
+    elif config[opt_name]['pick'] == 'specified':
+        if 'single_value' in config[opt_name]:
+            values = [config[opt_name]['single_value']]
+        elif 'list_of_values' in config[opt_name]:
+            values = config[opt_name]['list_of_values']
+    return values
+
+
 # An "instance" is a set of graphs forming an interdependent network (power, telecom and inter), indicated by a number
 # A "group" of simulations (sim_group) is intended to gather simulations executed using similar parameters. For example,
 # a group can contain simulations on the same instances executed changing only the random seed and the value of another
@@ -50,64 +70,61 @@ def write_conf(conf_fpath, paths, run_options, misc):
 
 this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
-sf.setup_logging('logging_base_conf.json')
-logger = logging.getLogger(__name__)
+
+batch_no = int(sys.argv[1])
+batch_conf_fpath = sys.argv[2]
 
 # begin of user defined variables
-index_fname = '_index.tsv'
-instances_dir = '../Simulations/centrality/1cc_1ap'  # parent directory of the instances directories
 
-base_configs = [{
-    'paths': {
-        'netw_dir': None,  # to be filled by the algorithm
-        'netw_b_fname': 'B.graphml',
-        'netw_a_fname': 'A.graphml',
-        'netw_inter_fname': 'Inter.graphml',
-        'netw_union_fname': 'UnionAB.graphml',
-        'results_dir': '../Simulations/centrality/1cc_1ap/results_0',  # group_results_dir
-        'run_stats_fname': None,
-        'end_stats_fpath': None,
-        'ml_stats_fpath': '../Simulations/centrality/1cc_1ap/results_0/ml_stats_0_a.tsv'
-    },
+with open(batch_conf_fpath) as batch_conf_file:
+    batch_conf = json.load(batch_conf_file)
 
-    'run_opts': {
-        'attacked_netw': 'Both',
-        'attack_tactic': 'random',
-        'calc_centrality_on': 'netw_inter',
-        'intra_support_type': 'realistic',
-        'inter_support_type': 'realistic',
-        'save_death_cause': True,
-        'save_attacked_roles': True,
-        'attacks': None,
-        'seed': None
-    },
+    logging.config.dictConfig(batch_conf['logging_config'])
+    logger = logging.getLogger(__name__)
 
-    'misc': {
-        'instance': None,
-        'sim_group': None
-    }
-}]
+    index_fname = batch_conf['index_fname']
+    instances_dir = os.path.normpath(batch_conf['instances_dir'])  # parent directory of the instances directories
+    base_configs = batch_conf['base_configs']
 
-first_instance = 0  # usually 0, unless you want to skip a group, then it should be divisible by sim_group_size
-last_instance = 2  # exclusive, should be divisible by sim_group_size
+# TODO: refine this to a list of instances
+# recall the value of the parameter sim_group_size used in creating batches of networks
+first_instance = batch_conf['first_instance']  # usually 0, unless you want to skip a group
+last_instance = batch_conf['last_instance']  # exclusive, should be divisible by sim_group_size
+logger.info('first_instance = {}'.format(first_instance))
+logger.info('last_instance = {}'.format(last_instance))
 
 # This script is used to run multiple simulations on a set of instances. At its core is a loop that generates a
 # configuration file with a different combination of parameters and executes a simulation based on it.
 # If we want to use a group of simulations to draw a 2D plot, showing the behavior obtained by changing a variable, then
 # we need to specify the name of the independent variable and the values we want it to assume.
 
-# TODO: it would be better to do targeted attacks and select nodes beforehand
-indep_var_name = 'attacks'  # name of the independent variable of the simulation
-indep_var_vals = list(range(0, 3, 1))  # values of the independent value of the simulation
+# name of the independent variable of the simulation
+indep_var_name = batch_conf['indep_var_name']
+# indep_var_vals = list(range(0, 3, 1))
 # indep_var_vals = sorted(random.sample(range(1, 200), 50))
-# indep_var_vals = range(1, 150)
-print('indep_var_vals = {}'.format(indep_var_vals))
+#indep_var_vals = range(1, 26)
+#indep_var_vals = range(26, 76)
+# indep_var_vals = range(1, 76)
+logger.info('indep_var_name = {}'.format(indep_var_name))
+
+# values of the independent value of the simulation
+indep_var_vals = pick_conf_values(batch_conf, 'indep_var_vals')
+# indep_var_vals = list(range(0, 3, 1))
+# indep_var_vals = sorted(random.sample(range(1, 200), 50))
+#indep_var_vals = range(1, 26)
+#indep_var_vals = range(26, 76)
+# indep_var_vals = range(1, 76)
+#indep_var_vals = range(1, 51)
+logger.info('indep_var_vals = {}'.format(indep_var_vals))
 # indep_var_vals = list(range(0, 61, 5)) + [69]  # values of the independent value of the simulation
 # indep_var_name = 'min_rank'  # name of the independent variable of the simulation, in the run_opts section
 # indep_var_vals = list(range(0, 2000, 1))  # values of the independent variable of the simulation
 
-# seeds = list(range(100, 200, 1))  # used to execute multiple tests on the same network instance
-seeds = [1]
+# seeds used to execute multiple tests on the same network instance
+seeds = pick_conf_values(batch_conf, 'seeds')
+#seeds = list(range(50, 200, 1))
+#seeds = list(range(0, 50, 1))
+logger.info('seeds = {}'.format(seeds))
 # end of user defined variables
 
 floader = fl.FileLoader()
@@ -115,7 +132,7 @@ floader = fl.FileLoader()
 for sim_group in range(0, len(base_configs)):
     paths = base_configs[sim_group]['paths']
     run_options = base_configs[sim_group]['run_opts']
-    group_results_dir = paths['results_dir']
+    group_results_dir = os.path.normpath(paths['results_dir'])
     sf.ensure_dir_exists(group_results_dir)
     misc = base_configs[sim_group]['misc']
     misc['sim_group'] = sim_group
@@ -137,13 +154,14 @@ for sim_group in range(0, len(base_configs)):
             # if it's the first simulation we run for this instance, then take note
             if instance_num not in run_num_by_inst:
                 run_num_by_inst[instance_num] = 0
-            # pick up the simulation number (n-th time we run a simulation on this instance)
-            run_num = run_num_by_inst[instance_num]
-            misc['instance'] = instance_num  # mark in the configuration file the number of this instance
-            paths['netw_dir'] = os.path.join(instances_dir, 'instance_{}'.format(instance_num))  # input
 
             # inner cycle ranging over different seeds
             for seed in seeds:
+                print("Batch {}) {} value, seed {}".format(batch_no, var_value, seed))  # debug
+                # pick up the simulation number (n-th time we run a simulation on this instance)
+                run_num = run_num_by_inst[instance_num]
+                misc['instance'] = instance_num  # mark in the configuration file the number of this instance
+                paths['netw_dir'] = os.path.join(instances_dir, 'instance_{}'.format(instance_num))  # input
                 run_options['seed'] = seed
                 paths['results_dir'] = os.path.join(group_results_dir, 'instance_' + str(instance_num),
                                                     'run_' + str(run_num))

@@ -25,6 +25,21 @@ def percent_of_part(part, whole):
     return (1.0 * part) / whole
 
 
+def percentage_split(seq, percentages):
+    if sum(percentages) != 1.0:
+        raise ValueError("The sum of percentages is not 1")
+    start_pos = 0
+    ele_cnt = len(seq)
+    cumul_perc = 0
+    split_seqs = []
+    for perc in percentages:
+        cumul_perc += perc
+        stop_pos = int(cumul_perc * ele_cnt)
+        split_seqs.append(seq[start_pos:stop_pos])
+        start_pos = stop_pos
+    return split_seqs
+
+
 # Taken from http://stackoverflow.com/a/3041990
 def query_yes_no(question, default="yes"):
     """Ask a yes/no question via raw_input() and return their answer.

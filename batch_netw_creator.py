@@ -43,8 +43,8 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-base_dir = os.path.normpath('../Simulations/centrality/1cc_2ap')
-# base_dir = os.path.normpath('../Simulations/centrality/1cc_1ap')
+# base_dir = os.path.normpath('../Simulations/test_mp/1cc_1ap')
+base_dir = os.path.normpath('../Simulations/test_mp/2cc_2ap')
 
 build_a_options = [{
     'name': 'A',
@@ -95,19 +95,19 @@ build_a_options = [{
 }]
 
 build_b_options = [{
-    'name': 'B',
-    'model': 'barabasi_albert',
-    'm': 3,
-    'roles': 'relay_attached_controllers',
-    'controllers': 1,
-    'relays': 999
+    # 'name': 'B',
+    # 'model': 'barabasi_albert',
+    # 'm': 3,
+    # 'roles': 'relay_attached_controllers',
+    # 'controllers': 1,
+    # 'relays': 999
     # }, {
-    #     'name': 'B',
-    #     'model': 'barabasi_albert',
-    #     'm': 3,
-    #     'roles': 'relay_attached_controllers',
-    #     'controllers': 2,
-    #     'relays': 999
+        'name': 'B',
+        'model': 'barabasi_albert',
+        'm': 3,
+        'roles': 'relay_attached_controllers',
+        'controllers': 2,
+        'relays': 999
     #
     #     'name': 'B',
     #     'model': 'user_defined_graph',
@@ -123,22 +123,22 @@ build_b_options = [{
 }]
 
 build_inter_options = [{
-    'name': 'Inter',
-    'dependency_model': 'k-to-n',
-    'k': 1,
-    'n': 1000,
-    'com_access_points': 2,
-    'prefer_nearest': False,
-    'produce_max_matching': True,
-    'max_matching_name': 'InterMM',
+    # 'name': 'Inter',
+    # 'dependency_model': 'k-to-n',
+    # 'k': 1,
+    # 'n': 1000,
+    # 'com_access_points': 1,
+    # 'prefer_nearest': False,
+    # 'produce_max_matching': True,
+    # 'max_matching_name': 'InterMM',
     # }, {
-    #     'name': 'Inter',
-    #     'dependency_model': 'k-to-n',
-    #     'k': 2,
-    #     'n': 1000,
-    #     'com_access_points': 2,
-    #     'produce_max_matching': True,
-    #     'max_matching_name': 'InterMM'
+        'name': 'Inter',
+        'dependency_model': 'k-to-n',
+        'k': 2,
+        'n': 1000,
+        'com_access_points': 2,
+        'produce_max_matching': True,
+        'max_matching_name': 'InterMM'
     #
     #     'name': 'Inter',
     #     'dependency_model': 'k-to-n',
@@ -165,16 +165,14 @@ misc_options = [{
     'calc_node_centrality': True
 }]
 
-# TODO: ask what to do if destination folder contains files (right now it removes configs)!
-
-instances_per_type = 2
+instances_per_type = 4
 seeds = list()
 first_group = True
 
 my_random = random.Random(256)
 
 # create directory if it does not exist, clean it if it already exists
-sf.makedirs_clean(base_dir, False)
+sf.makedirs_clean(base_dir, True)
 
 # outer cycle sets different network structure parameters, mixing build options for the 2 networks
 instance_num = 0

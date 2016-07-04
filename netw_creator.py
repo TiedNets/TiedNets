@@ -651,7 +651,7 @@ def clusterSmallWorld(n, avg_k, d_0, alpha, beta, q_rw, max_tries=20, deg_diff_t
 
         if abs(perc_diff) <= deg_diff_thresh:
             # logger.debug('expected avg deg = {}, avg deg = {}, perc_diff = {}'.format(avg_k, avg_deg, perc_diff))
-            logger.info('base clusterSmallWorld created successfully in {} attempts'.format(tries + tries_b))
+            logger.info('base clusterSmallWorld created successfully on attempt {}'.format(tries + tries_b + 1))
             done = True
         else:
             G.remove_edges_from(G.edges())  # remove all edges before starting over
@@ -929,12 +929,17 @@ def rank_nodes_by_score(centr_by_node):
     return ranked_nodes
 
 
-def save_centrality_file(file_dir, G):
+def save_graph_centralies(G, file_dir):
     centrality_info = {}
     percentile_pos = [20, 40, 60, 80]
 
+    node_cnt = G.number_of_nodes()
+    centrality_info['node_count'] = node_cnt
+
     centr_by_node = nx.betweenness_centrality(G)
     centrality_info['betweenness_centrality'] = centr_by_node
+    tot_centr = sum(centr_by_node.values())
+    centrality_info['total_betweenness_centrality'] = tot_centr
     centr_rank = rank_nodes_by_score(centr_by_node)
     centrality_info['betweenness_centrality_rank'] = centr_rank
     centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
@@ -942,6 +947,8 @@ def save_centrality_file(file_dir, G):
 
     centr_by_node = nx.closeness_centrality(G)
     centrality_info['closeness_centrality'] = centr_by_node
+    tot_centr = sum(centr_by_node.values())
+    centrality_info['total_closeness_centrality'] = tot_centr
     centr_rank = rank_nodes_by_score(centr_by_node)
     centrality_info['closeness_centrality_rank'] = centr_rank
     centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
@@ -950,6 +957,8 @@ def save_centrality_file(file_dir, G):
     if G.is_directed():
         centr_by_node = nx.in_degree_centrality(G)
         centrality_info['indegree_centrality'] = centr_by_node
+        tot_centr = sum(centr_by_node.values())
+        centrality_info['total_indegree_centrality'] = tot_centr
         centr_rank = rank_nodes_by_score(centr_by_node)
         centrality_info['indegree_centrality_rank'] = centr_rank
         centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
@@ -957,12 +966,178 @@ def save_centrality_file(file_dir, G):
 
         centr_by_node = nx.katz_centrality_numpy(G)
         centrality_info['katz_centrality'] = centr_by_node
+        tot_centr = sum(centr_by_node.values())
+        centrality_info['total_katz_centrality'] = tot_centr
         centr_rank = rank_nodes_by_score(centr_by_node)
         centrality_info['katz_centrality_rank'] = centr_rank
         centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
         centrality_info['katz_centrality_quintiles'] = centr_quintiles.tolist()
 
     file_name = 'node_centrality_{}.json'.format(G.graph['name'])
+    file_path = os.path.join(file_dir, file_name)
+    with open(file_path, 'wb') as centr_file:
+        json.dump(centrality_info, centr_file)
+
+
+# count the number of node-disjoint paths between two nodes
+def count_node_disjoint_paths(G, source, target):
+    paths_cnt = 0
+    temp_G = G.copy()
+    # special case if source and target are linked
+    if temp_G.has_edge(source, target):
+        paths_cnt += 1
+        temp_G.remove_edge(source, target)
+    try:
+        # find path between src_node and dst_node
+        # increment counter
+        # remove all nodes in the path from the graph
+        # restart
+        while True:
+            path = nx.shortest_path(temp_G, source, target)
+            paths_cnt += 1
+            path_nodes = path[1:-1]  # exclude source and target
+            temp_G.remove_nodes_from(path_nodes)
+    except nx.NetworkXNoPath:
+        return paths_cnt
+
+
+def calc_relay_betweenness(A, B, I):
+    # old definition: the fraction of *adjective* paths in which the relay v appears between a power
+    # node u and the control centers it depends from
+    # new definition for relay betweennes:
+    # counts for what fraction of power nodes a relay appears in a shortest path to one of their control centers
+    # for all nodes that are not relays, it's 0
+
+    hits_by_relay = {}
+    for node_b in B.nodes():
+        if B.node[node_b]['role'] == 'relay':
+            hits_by_relay[node_b] = 0
+
+    # find for how many power nodes each relay appears in a shortest path to a control center
+    for node_a in A.nodes():
+        support_relays = []
+        support_ccs = []
+        # find the relays and control centers that support this power node
+        for node_b in I.successors(node_a):
+            if B.node[node_b]['role'] == 'relay':
+                support_relays.append(node_b)
+            elif B.node[node_b]['role'] == 'controller':
+                support_ccs.append(node_b)
+            else:
+                raise RuntimeError('Node in B with unrecognized role')
+        # remembers what relays appear in the shortest paths between this power node its control centers
+        relays_on_path = set()
+        for relay in support_relays:
+            for controller in support_ccs:
+                # find all shortest paths between this relay and the control centers
+                try:
+                    paths = list(nx.all_shortest_paths(B, relay, controller))
+                except nx.NetworkXNoPath:
+                    continue
+                for path in paths:
+                    for node in path:
+                        if B.node[node]['role'] == 'relay':
+                            relays_on_path.add(node)  # added only if not already present
+        for relay in relays_on_path:
+            hits_by_relay[relay] += 1
+
+    nodes_a_cnt = A.number_of_nodes()
+    print(hits_by_relay)
+    betw_by_relay = {}
+    for relay in hits_by_relay:
+        betw_by_relay[relay] = sf.percent_of_part(hits_by_relay[relay], nodes_a_cnt)
+
+    # for all nodes that are not relays, it's 0
+    betw_by_nodes = {}
+    betw_by_nodes.update(betw_by_relay)
+    for node_a in A.nodes():
+        betw_by_nodes[node_a] = 0.
+    for node_b in B.nodes():
+        if B.node[node_b]['role'] != 'relay':
+            betw_by_nodes[node_b] = 0.
+
+    return betw_by_nodes
+
+
+def calc_transm_subst_betweenness(A, B, I):
+    # new definition for transmission substation betweennes:
+    # counts for what fraction of power nodes a relay appears in a shortest path to one of their control centers
+    # for all nodes that are not transmission substations, it's 0
+
+    hits_by_transm_sub = {}
+    generators = []
+    for node_a in A.nodes():
+        if A.node[node_a]['role'] == 'transmission_substation':
+            hits_by_transm_sub[node_a] = 0
+        elif A.node[node_a]['role'] == 'generator':
+            generators.append(node_a)
+
+    # find for how many communication nodes each transmission substation appears in a shortest path to a generator
+    for node_b in B.nodes():
+        support_distr_sub = []
+        # find the distribution substations that support this communication nodes
+        for node_a in I.successors(node_b):
+            if A.node[node_a]['role'] == 'distribution_substation':  # redundant check
+                support_distr_sub.append(node_a)
+        # remembers what transmission substations appear in the shortest paths between this distribution substation
+        # and the generators
+        transm_sub_on_path = set()
+        for distr_sub in support_distr_sub:
+            for generator in generators:
+                # find all shortest paths between this distribution substation and this generator
+                try:
+                    paths = list(nx.all_shortest_paths(A, distr_sub, generator))
+                except nx.NetworkXNoPath:
+                    continue
+                for path in paths:
+                    # find the transmission substations on this path
+                    for node in path:
+                        if A.node[node]['role'] == 'transmission_substation':
+                            transm_sub_on_path.add(node)  # added only if not already present
+        for transm_sub in transm_sub_on_path:
+            hits_by_transm_sub[transm_sub] += 1
+
+    nodes_b_cnt = B.number_of_nodes()
+    print(hits_by_transm_sub)
+    betw_by_transm_sub = {}
+    for transm_sub in hits_by_transm_sub:
+        betw_by_transm_sub[transm_sub] = sf.percent_of_part(hits_by_transm_sub[transm_sub], nodes_b_cnt)
+
+    # for all nodes that are not transmission substations, it's 0
+    betw_by_nodes = {}
+    betw_by_nodes.update(betw_by_transm_sub)
+    for node_a in A.nodes():
+        if A.node[node_a]['role'] != 'transmission_substation':
+            betw_by_nodes[node_a] = 0.
+    for node_b in B.nodes():
+        betw_by_nodes[node_b] = 0.
+
+    return betw_by_nodes
+
+
+def save_general_centralities(A, B, I, file_dir):
+    centrality_info = {}
+    percentile_pos = [20, 40, 60, 80]
+
+    centr_by_node = calc_relay_betweenness(A, B, I)
+    centrality_info['relay_betweenness_centrality'] = centr_by_node
+    centr_rank = rank_nodes_by_score(centr_by_node)
+    centrality_info['relay_betweenness_centrality_rank'] = centr_rank
+    centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
+    centrality_info['relay_betweenness_centrality_quintiles'] = centr_quintiles.tolist()
+    tot_centr = sum(centr_by_node.values())
+    centrality_info['total_relay_betweenness_centrality'] = tot_centr
+
+    centr_by_node = calc_transm_subst_betweenness(A, B, I)
+    centrality_info['transm_subst_betweenness_centrality'] = centr_by_node
+    centr_rank = rank_nodes_by_score(centr_by_node)
+    centrality_info['transm_subst_betweenness_centrality_rank'] = centr_rank
+    centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
+    centrality_info['transm_subst_betweenness_centrality_quintiles'] = centr_quintiles.tolist()
+    tot_centr = sum(centr_by_node.values())
+    centrality_info['total_transm_subst_betweenness_centrality'] = tot_centr
+
+    file_name = 'node_centrality_general.json'
     file_path = os.path.join(file_dir, file_name)
     with open(file_path, 'wb') as centr_file:
         json.dump(centrality_info, centr_file)
@@ -1430,8 +1605,17 @@ def run(conf_fpath):
 
     if produce_union is True:
         ab_union_name = config.get('misc', 'ab_union_name')
-        ab_union = nx.compose(nx.compose(I, A), B)  # this returns a directed graph if I is directed
+        # TODO: better create directed copies of A and B, then add their edges to an empty directed graph,
+        # and finally add I edges, perhaps also tell nodes what network they are from
+        ab_union = nx.DiGraph();
+        #ab_union = nx.compose(nx.compose(I, A), B)  # bugged
         ab_union.graph['name'] = ab_union_name
+        ab_union.add_edges_from(A.to_directed().edges())
+        ab_union.add_edges_from(B.to_directed().edges())
+        for node in A.nodes():
+            ab_union.node[node]['network'] = A.graph['name']
+        for node in B.nodes():
+            ab_union.node[node]['network'] = B.graph['name']
         nx.write_graphml(ab_union, os.path.join(output_dir, ab_union_name + '.graphml'))
 
     # precalculate various centrality metrics for nodes in the graph
@@ -1442,13 +1626,14 @@ def run(conf_fpath):
         calc_node_centrality = False
 
     if calc_node_centrality is True:
-        save_centrality_file(output_dir, A)
-        save_centrality_file(output_dir, B)
-        save_centrality_file(output_dir, I)
+        save_graph_centralies(A, output_dir)
+        save_graph_centralies(B, output_dir)
+        save_graph_centralies(I, output_dir)
+        save_general_centralities(A, B, I, output_dir)
         if produce_max_matching is True:
-            save_centrality_file(output_dir, mm_I)
+            save_graph_centralies(mm_I, output_dir)
         if produce_union is True:
-            save_centrality_file(output_dir, ab_union)
+            save_graph_centralies(ab_union, output_dir)
 
     # draw networks
 

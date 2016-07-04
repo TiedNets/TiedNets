@@ -23,6 +23,25 @@ def test_choose_random_nodes():
     assert chosen_nodes == [5, 8, 9]
 
 
+def test_choose_nodes_by_rank():
+    rank_node_pairs = [(1, 1), (1, 2), (2, 3), (3, 4), (4, 5)]
+
+    chosen_nodes = cs.choose_nodes_by_rank(rank_node_pairs, 5, 'random_shuffle', 128)
+    assert chosen_nodes == [5, 4, 3, 2, 1]
+
+    chosen_nodes = cs.choose_nodes_by_rank(rank_node_pairs, 3, 'sort_by_id', 128)
+    assert chosen_nodes == [5, 4, 3]
+
+    chosen_nodes = cs.choose_nodes_by_rank(rank_node_pairs, 0, 'sort_by_id', 128)
+    assert chosen_nodes == []
+
+    chosen_nodes = cs.choose_nodes_by_rank(rank_node_pairs, 5, 'sort_by_id', 42)
+    assert chosen_nodes == [5, 4, 3, 1, 2]
+
+    chosen_nodes = cs.choose_nodes_by_rank(rank_node_pairs, 5, 'sort_by_id', 43)
+    assert chosen_nodes == [5, 4, 3, 2, 1]
+
+
 # tests for example 1
 
 def test_run_ex_1_realistic():
@@ -517,9 +536,9 @@ def test_choose_most_inter_used_nodes():
     sf.setup_logging(logging_conf_fpath)
     A = nx.read_graphml(netw_a_fpath)
     I = nx.read_graphml(netw_inter_fpath)
-    chosen_nodes_1 = cs.choose_most_inter_used_nodes(A, I, 1, 'distribution_substation')
-    chosen_nodes_2 = cs.choose_most_inter_used_nodes(A, I, 2, 'distribution_substation')
-    chosen_nodes_3 = cs.choose_most_inter_used_nodes(A, I, 3, 'distribution_substation')
+    chosen_nodes_1 = cs.choose_most_inter_used_nodes(A, I, 1, 'distribution_substation', 'sort_by_id')
+    chosen_nodes_2 = cs.choose_most_inter_used_nodes(A, I, 2, 'distribution_substation', 'sort_by_id')
+    chosen_nodes_3 = cs.choose_most_inter_used_nodes(A, I, 3, 'distribution_substation', 'sort_by_id')
 
     # then
     assert chosen_nodes_1 == ['D2']
@@ -535,9 +554,9 @@ def test_choose_most_intra_used_nodes():
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
     A = nx.read_graphml(netw_a_fpath)
-    chosen_nodes_1 = cs.choose_most_intra_used_nodes(A, 1, 'transmission_substation')
-    chosen_nodes_2 = cs.choose_most_intra_used_nodes(A, 2, 'transmission_substation')
-    chosen_nodes_3 = cs.choose_most_intra_used_nodes(A, 3, 'transmission_substation')
+    chosen_nodes_1 = cs.choose_most_intra_used_nodes(A, 1, 'transmission_substation', 'sort_by_id')
+    chosen_nodes_2 = cs.choose_most_intra_used_nodes(A, 2, 'transmission_substation', 'sort_by_id')
+    chosen_nodes_3 = cs.choose_most_intra_used_nodes(A, 3, 'transmission_substation', 'sort_by_id')
 
     # then
     assert chosen_nodes_1 == ['T1']
