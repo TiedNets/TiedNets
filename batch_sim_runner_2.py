@@ -68,6 +68,11 @@ def pick_conf_values(config, opt_name):
 # - a simulation was executed m times on q instances (e.g. trying n seeds on each instance), and m*q=n
 # In each of these cases, results regarding the same value of the independent variable must be averaged before plotting.
 
+# A "batch" is a set of simulations to be executed. Unlike simulation groups, it does not have to contain simulations
+# using similar parameters. A batch can contain:
+# - simulations of the same "group", all of that sim_group, or just some of them
+# - simulations from different groups
+
 this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 
@@ -79,12 +84,11 @@ batch_conf_fpath = sys.argv[2]
 with open(batch_conf_fpath) as batch_conf_file:
     batch_conf = json.load(batch_conf_file)
 
-    logging.config.dictConfig(batch_conf['logging_config'])
-    logger = logging.getLogger(__name__)
+logging.config.dictConfig(batch_conf['logging_config'])
+logger = logging.getLogger(__name__)
 
-    index_fname = batch_conf['index_fname']
-    instances_dir = os.path.normpath(batch_conf['instances_dir'])  # parent directory of the instances directories
-    base_configs = batch_conf['base_configs']
+instances_dir = os.path.normpath(batch_conf['instances_dir'])  # parent directory of the instances directories
+base_configs = batch_conf['base_configs']
 
 # TODO: refine this to a list of instances
 # recall the value of the parameter sim_group_size used in creating batches of networks
@@ -136,6 +140,7 @@ for sim_group in range(0, len(base_configs)):
     sf.ensure_dir_exists(group_results_dir)
     misc = base_configs[sim_group]['misc']
     misc['sim_group'] = sim_group
+    paths['batch_conf_fpath'] = batch_conf_fpath
     run_num_by_inst = {}  # number of simulations we ran for each instance i
 
     # group_index will be the index of the config files for each simulation of that group
@@ -157,10 +162,11 @@ for sim_group in range(0, len(base_configs)):
 
             # inner cycle ranging over different seeds
             for seed in seeds:
-                print("Batch {}) {} value, seed {}".format(batch_no, var_value, seed))  # debug
+                logger.debug("Batch {}) {} value, seed {}".format(batch_no, var_value, seed))
                 # pick up the simulation number (n-th time we run a simulation on this instance)
                 run_num = run_num_by_inst[instance_num]
                 misc['instance'] = instance_num  # mark in the configuration file the number of this instance
+                misc['run'] = run_num
                 paths['netw_dir'] = os.path.join(instances_dir, 'instance_{}'.format(instance_num))  # input
                 run_options['seed'] = seed
                 paths['results_dir'] = os.path.join(group_results_dir, 'instance_' + str(instance_num),

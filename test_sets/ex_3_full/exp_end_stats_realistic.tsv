@@ -1,2 +1,2 @@
-sim_group	instance	#dead	#dead_a	#dead_b
-2	0	7	4	3
+batch_conf_fpath	sim_group	instance	#run	#dead	#dead_a	#dead_b
+	2	0	0	7	4	3

@@ -920,16 +920,29 @@ def RT_nested_Smallworld(n, avg_k, d_0, alpha, beta, q_rw, subnet_cnt=None, max_
     return G
 
 
-# nodes_with_centr is a dictionary {'node': score}
+# centrality_by_node is a dictionary {'node': centrality score}
 # this function is used to rank nodes in a deterministic way, that is, if 2 nodes have the same score,
 # their IDs are compared and the one with the lowest ID comes first
-def rank_nodes_by_score(centr_by_node):
-    centr_by_node = OrderedDict(sorted(centr_by_node.items(), key=lambda (k, v): (v, k)))
-    ranked_nodes = list(centr_by_node.keys())
+def rank_nodes_by_score(centrality_by_node):
+    centrality_by_node = OrderedDict(sorted(centrality_by_node.items(), key=lambda (k, v): (v, k)))
+    ranked_nodes = list(centrality_by_node.keys())
     return ranked_nodes
 
 
-def save_graph_centralies(G, file_dir):
+def count_nodes_in_quintiles(centrality_by_node, quintiles):
+    node_cnt_by_quintile = [0] * 5
+    for node, centrality in centrality_by_node:
+        node_quintile = 0
+        for quintile in quintiles:
+            if centrality > quintile:
+                node_quintile += 1
+            else:
+                break
+            node_cnt_by_quintile[node_quintile] += 1
+    return node_cnt_by_quintile
+
+
+def save_graph_centralities(G, file_dir):
     centrality_info = {}
     percentile_pos = [20, 40, 60, 80]
 
@@ -942,8 +955,10 @@ def save_graph_centralies(G, file_dir):
     centrality_info['total_betweenness_centrality'] = tot_centr
     centr_rank = rank_nodes_by_score(centr_by_node)
     centrality_info['betweenness_centrality_rank'] = centr_rank
-    centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
-    centrality_info['betweenness_centrality_quintiles'] = centr_quintiles.tolist()
+    centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos).tolist()
+    node_cnt_by_quintile = count_nodes_in_quintiles(centr_by_node, centr_quintiles)
+    centrality_info['betweenness_centrality_quintiles'] = centr_quintiles
+    centrality_info['betweenness_centrality_node_count_by_quintile'] = node_cnt_by_quintile
 
     centr_by_node = nx.closeness_centrality(G)
     centrality_info['closeness_centrality'] = centr_by_node
@@ -951,8 +966,10 @@ def save_graph_centralies(G, file_dir):
     centrality_info['total_closeness_centrality'] = tot_centr
     centr_rank = rank_nodes_by_score(centr_by_node)
     centrality_info['closeness_centrality_rank'] = centr_rank
-    centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
-    centrality_info['closeness_centrality_quintiles'] = centr_quintiles.tolist()
+    centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos).tolist()
+    node_cnt_by_quintile = count_nodes_in_quintiles(centr_by_node, centr_quintiles)
+    centrality_info['closeness_centrality_quintiles'] = centr_quintiles
+    centrality_info['closeness_centrality_node_count_by_quintile'] = node_cnt_by_quintile
 
     if G.is_directed():
         centr_by_node = nx.in_degree_centrality(G)
@@ -961,8 +978,10 @@ def save_graph_centralies(G, file_dir):
         centrality_info['total_indegree_centrality'] = tot_centr
         centr_rank = rank_nodes_by_score(centr_by_node)
         centrality_info['indegree_centrality_rank'] = centr_rank
-        centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
-        centrality_info['indegree_centrality_quintiles'] = centr_quintiles.tolist()
+        centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos).tolist()
+        node_cnt_by_quintile = count_nodes_in_quintiles(centr_by_node, centr_quintiles)
+        centrality_info['indegree_centrality_quintiles'] = centr_quintiles
+        centrality_info['indegree_centrality_node_count_by_quintile'] = node_cnt_by_quintile
 
         centr_by_node = nx.katz_centrality_numpy(G)
         centrality_info['katz_centrality'] = centr_by_node
@@ -970,8 +989,10 @@ def save_graph_centralies(G, file_dir):
         centrality_info['total_katz_centrality'] = tot_centr
         centr_rank = rank_nodes_by_score(centr_by_node)
         centrality_info['katz_centrality_rank'] = centr_rank
-        centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
-        centrality_info['katz_centrality_quintiles'] = centr_quintiles.tolist()
+        centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos).tolist()
+        node_cnt_by_quintile = count_nodes_in_quintiles(centr_by_node, centr_quintiles)
+        centrality_info['katz_centrality_quintiles'] = centr_quintiles
+        centrality_info['katz_centrality_node_count_by_quintile'] = node_cnt_by_quintile
 
     file_name = 'node_centrality_{}.json'.format(G.graph['name'])
     file_path = os.path.join(file_dir, file_name)
@@ -1626,14 +1647,14 @@ def run(conf_fpath):
         calc_node_centrality = False
 
     if calc_node_centrality is True:
-        save_graph_centralies(A, output_dir)
-        save_graph_centralies(B, output_dir)
-        save_graph_centralies(I, output_dir)
+        save_graph_centralities(A, output_dir)
+        save_graph_centralities(B, output_dir)
+        save_graph_centralities(I, output_dir)
         save_general_centralities(A, B, I, output_dir)
         if produce_max_matching is True:
-            save_graph_centralies(mm_I, output_dir)
+            save_graph_centralities(mm_I, output_dir)
         if produce_union is True:
-            save_graph_centralies(ab_union, output_dir)
+            save_graph_centralities(ab_union, output_dir)
 
     # draw networks
 

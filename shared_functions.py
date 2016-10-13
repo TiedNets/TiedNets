@@ -78,11 +78,12 @@ def setup_logging(
         log_level=logging.INFO,  # used in case config file can't be found
         env_key='LOG_CFG'
 ):
-    log_conf_path = os.path.normpath(log_conf_path)
-
+    # if the environment variable is set, the logging configuration path is picked from there regardless
     value = os.getenv(env_key, None)
-    if value:
+    if value is not None:
         log_conf_path = value
+
+    log_conf_path = os.path.normpath(log_conf_path)
     if os.path.exists(log_conf_path):
         with open(log_conf_path, 'rt') as f:
             config = json.load(f)

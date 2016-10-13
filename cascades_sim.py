@@ -3,7 +3,7 @@ import logging
 import networkx as nx
 import random
 import csv
-from collections import OrderedDict
+import sys
 import shared_functions as sf
 
 try:
@@ -276,43 +276,45 @@ def save_state(time, A, B, I, results_dir):
     nx.write_graphml(I, netw_inter_fpath_out)
 
 
+# TODO: test this function
 def calc_stats_on_centrality(attacked_nodes, full_centrality_name, short_centrality_name, file_loader,
                              centrality_file_path):
     # load file with precalculated centrality metrics
     centrality_info = file_loader.fetch_json(centrality_file_path)
     centr_by_node = centrality_info[full_centrality_name]
-    # TODO: can the fallback be applied to all cases?
-    try:
-        node_cnt = centrality_info['node_count']
-    except KeyError:
-        node_cnt = len(centr_by_node)
-    centr_sum = 0.0
-    for node in attacked_nodes:
-        centr_sum += centr_by_node[node]
 
-    # count how many nodes are in each quintile
+    # how many nodes are in each quintile
+    node_cnt_by_quintile = [full_centrality_name + '_node_count_by_quintile']
+
+    # count how many nodes were attacked in each quintile
     quintiles = centrality_info[full_centrality_name + '_quintiles']
-    nodes_by_quintile = [0] * 5
+    atkd_cnt_by_quintile = [0] * 5
     for node in attacked_nodes:
         node_quintile = 0
-        for i in range(0, 4):
-            if centr_by_node[node] > quintiles[i]:
+        node_centr = centr_by_node[node]
+        for quintile in quintiles:
+            if node_centr > quintile:
                 node_quintile += 1
             else:
                 break
-        nodes_by_quintile[node_quintile] += 1
+        atkd_cnt_by_quintile[node_quintile] += 1
 
-    # calc what percentage of the nodes in the graph are in each quintile
-    for i, q_node_cnt in enumerate(nodes_by_quintile):
-        nodes_by_quintile[i] = sf.percent_of_part(q_node_cnt, node_cnt)
+    # calc what percentage of the nodes in each quintile was attacked
+    atkd_perc_of_quintile = [0.0] * 5
+    for i in range(0, 5):
+        atkd_perc_of_quintile[i] = sf.percent_of_part(atkd_cnt_by_quintile[i], node_cnt_by_quintile[i])
 
-    # index statistics in a dictionary using shorter names
-
+    # dictionary used to index statistics with shorter names
     centr_stats = {}
+
+    # sum the centrality of the attacked nodes
+    centr_sum = 0.0
+    for node in attacked_nodes:
+        centr_sum += centr_by_node[node]
     stat_name = short_centrality_name + '_sum'
     centr_stats[stat_name] = centr_sum
 
-    for i, val in enumerate(nodes_by_quintile):
+    for i, val in enumerate(atkd_perc_of_quintile):
         stat_name = short_centrality_name + '_q_' + str(i + 1)  # q_1 is the first quantile
         centr_stats[stat_name] = val
 
@@ -368,7 +370,7 @@ def run(conf_fpath, floader):
 
     # read graphml files and instantiate network graphs
 
-    seed = config.get('run_opts', 'seed')
+    seed = config.getint('run_opts', 'seed')
 
     if config.has_option('run_opts', 'save_death_cause'):
         save_death_cause = config.getboolean('run_opts', 'save_death_cause')
@@ -489,8 +491,18 @@ def run(conf_fpath, floader):
     sf.ensure_dir_exists(os.path.dirname(end_stats_fpath))
 
     # read information used to identify this simulation run
-    sim_group = config.get('misc', 'sim_group')
-    instance = config.get('misc', 'instance')
+    sim_group = config.getint('misc', 'sim_group')
+    instance = config.getint('misc', 'instance')
+
+    if config.has_option('paths', 'batch_conf_fpath'):
+        batch_conf_fpath = config.get('paths', 'batch_conf_fpath')
+    else:
+        batch_conf_fpath = ''
+
+    if config.has_option('misc', 'run'):
+        run_num = config.getint('misc', 'run')
+    else:
+        run_num = 0
 
     # stability check
     unstable_nodes = set()
@@ -558,6 +570,9 @@ def run(conf_fpath, floader):
             attacked_nodes = [pick_ith_node(attacked_G, node_rank)]
         elif attack_tactic == 'targeted':
             target_nodes = config.get('run_opts', 'target_nodes')
+            # TODO: understand why this returns unicode even if it should not
+            if sys.version_info >= (2, 7, 9):
+                target_nodes = str(target_nodes)
             attacked_nodes = [node for node in target_nodes.split()]  # split list on space
         # TODO: use choose_nodes_by_rank, throw away _centrality_rank columns
         elif attack_tactic == 'betweenness_centrality_rank':
@@ -599,14 +614,13 @@ def run(conf_fpath, floader):
                     node, node_netw))
 
         node_cnt_a = A.number_of_nodes()
-        edge_cnt_a = A.number_of_edges()
         p_atkd_a = sf.percent_of_part(len(attacked_nodes_a), node_cnt_a)
 
         node_cnt_b = B.number_of_nodes()
-        edge_cnt_b = B.number_of_edges()
         p_atkd_b = sf.percent_of_part(len(attacked_nodes_b), node_cnt_b)
 
-        p_atkd = sf.percent_of_part(len(attacked_nodes_a) + len(attacked_nodes_b), node_cnt_a + node_cnt_b)
+        atkd_cnt = len(attacked_nodes_a) + len(attacked_nodes_b)
+        p_atkd = sf.percent_of_part(atkd_cnt, node_cnt_a + node_cnt_b)
 
         if ml_stats_fpath:  # if this string is not empty
 
@@ -790,7 +804,7 @@ def run(conf_fpath, floader):
     else:
         write_header = False
     with open(end_stats_fpath, 'ab') as end_stats_file:
-        end_stats_header = ['sim_group', 'instance', '#dead', '#dead_a', '#dead_b']
+        end_stats_header = ['batch_conf_fpath', 'sim_group', 'instance', '#run', '#dead', '#dead_a', '#dead_b']
         if save_attacked_roles is True:
             end_stats_header.extend(['#atkd_gen', '#atkd_ts', '#atkd_ds', '#atkd_rel', '#atkd_cc'])
         if save_death_cause is True:
@@ -803,7 +817,8 @@ def run(conf_fpath, floader):
         if write_header is True:
             end_stats.writeheader()
 
-        end_stats_row = {'sim_group': sim_group, 'instance': instance, '#dead': total_dead_a + total_dead_b,
+        end_stats_row = {'batch_conf_fpath': batch_conf_fpath, 'sim_group': sim_group, 'instance': instance,
+                         '#run': run_num, '#dead': total_dead_a + total_dead_b,
                          '#dead_a': total_dead_a, '#dead_b': total_dead_b}
         if save_attacked_roles is True:
             end_stats_row.update({'#atkd_gen': atkd_nodes_a_by_role['generator'],
@@ -883,7 +898,7 @@ def run(conf_fpath, floader):
             write_header = False
 
         with open(ml_stats_fpath, 'ab') as ml_stats_file:
-            ml_stats_header = ['sim_group', 'instance', '#nodes_a', '#edges_a', '#nodes_b', '#edges_b',
+            ml_stats_header = ['batch_conf_fpath', 'sim_group', 'instance', '#run', 'seed', '#atkd',
                                'p_atkd', 'p_dead', 'p_atkd_a', 'p_dead_a', 'p_atkd_b', 'p_dead_b']
 
             # add statistics about centrality, sorted so they can be more found easily in the output file
@@ -904,9 +919,8 @@ def run(conf_fpath, floader):
             if write_header is True:
                 ml_stats.writeheader()
 
-            ml_stats_row = {'sim_group': sim_group, 'instance': instance,
-                            '#nodes_a': node_cnt_a, '#edges_a': edge_cnt_a,
-                            '#nodes_b': node_cnt_b, '#edges_b': edge_cnt_b,
+            ml_stats_row = {'batch_conf_fpath': batch_conf_fpath, 'sim_group': sim_group, 'instance': instance,
+                            '#run': run_num, 'seed': seed, '#atkd': atkd_cnt,
                             'p_atkd': p_atkd, 'p_atkd_a': p_atkd_a, 'p_atkd_b': p_atkd_b,
                             'p_dead': p_dead, 'p_dead_a': p_dead_a, 'p_dead_b': p_dead_b}
 
