@@ -374,7 +374,3 @@ def test_calc_transm_subst_betweenness():
     I.add_edges_from(edges_i)
 
     print(nc.calc_transm_subst_betweenness(A, B, I))
-
-
-# test_calc_relay_betweenness()
-#test_calc_transm_subst_betweenness()

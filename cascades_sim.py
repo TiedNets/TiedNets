@@ -5,6 +5,7 @@ import random
 import csv
 import sys
 import shared_functions as sf
+from math import ceil
 
 try:
     from configparser import ConfigParser
@@ -14,7 +15,7 @@ except ImportError:
 __author__ = 'Agostino Sturaro'
 
 # global variables
-logger = None
+logger = logging.getLogger(__name__)
 time = None
 
 
@@ -39,7 +40,6 @@ def pick_ith_node(G, node_rank):
 # [node with lowest rank, ..., node with highest rank]
 # node_cnt is the number of nodes to pick
 # min_rank is the rank of the first node to pick
-# TODO: throw away
 def pick_nodes_by_rank(ranked_nodes, node_cnt, min_rank):
     chosen_nodes = list()
     for i in range(min_rank, min_rank + node_cnt):
@@ -63,50 +63,22 @@ def pick_nodes_by_role(G, role, only_nodes_in=None):
     return chosen_nodes
 
 
-# rank_node_pairs is a list of tuples (rank, node), nodes with the same rank get ordered by id and then can be shuffled
-def choose_nodes_by_rank(rank_node_pairs, node_cnt, secondary_sort, seed=None):
-    if len(rank_node_pairs) < node_cnt:
+# score_node_pairs is a list of tuples (score, node), nodes with the same score are sorted using their id
+def pick_nodes_by_score(score_node_pairs, node_cnt):
+    if len(score_node_pairs) < node_cnt:
         raise RuntimeError("Insufficient nodes to select")
 
+    # sort the data structure by rank first and then by node id (tuple sorting)
+    sorted_pairs = sorted(score_node_pairs)
+
     chosen_nodes = list()
-
-    # sort the data structure by rank and node id, so have a deterministic order
-    sorted_pairs = sorted(rank_node_pairs)
-
-    if secondary_sort == 'random_shuffle':
-        chosen_nodes = list()
-        for i in range(0, node_cnt):
-            chosen_nodes.append(sorted_pairs.pop()[1])
-    else:
-        # shuffle nodes with the same degree
-        my_random = random.Random(seed)
-        current_rank = sorted_pairs[0];
-        nodes_by_rank = {};
-
-        for i in range(0, len(sorted_pairs)):
-            rank, node = sorted_pairs[i]
-            if rank != current_rank:
-                nodes_by_rank[rank] = []
-                current_rank = rank
-            nodes_by_rank[rank].append(node)
-
-        ranks = sorted(nodes_by_rank.keys(), reverse=True)
-        for rank in ranks:
-            nodes = nodes_by_rank[rank]
-            if len(nodes_by_rank[rank]) > 1:
-                my_random.shuffle(nodes)
-            for node in nodes:
-                if len(chosen_nodes) >= node_cnt:
-                    break
-                chosen_nodes.append(node)
-
-            if len(chosen_nodes) >= node_cnt:
-                break
+    for i in range(0, node_cnt):
+        chosen_nodes.append(sorted_pairs.pop()[1])
 
     return chosen_nodes
 
 
-def choose_most_inter_used_nodes(G, I, node_cnt, role, secondary_sort, seed=None):
+def choose_most_inter_used_nodes(G, I, node_cnt, role):
     # select nodes with the specified role from graph G and create a list of tuples with their in-degree in graph I
     rank_node_pairs = list()
     for node in G.nodes():
@@ -118,10 +90,10 @@ def choose_most_inter_used_nodes(G, I, node_cnt, role, secondary_sort, seed=None
                 rank = I.degree(node)
             rank_node_pairs.append((rank, node))
 
-    return choose_nodes_by_rank(rank_node_pairs, node_cnt, secondary_sort, seed)
+    return pick_nodes_by_score(rank_node_pairs, node_cnt)
 
 
-def choose_most_intra_used_nodes(G, node_cnt, role, secondary_sort, seed=None):
+def choose_most_intra_used_nodes(G, node_cnt, role):
     # select nodes from G, get their degree
     # make that a list of tuples
     rank_node_pairs = list()
@@ -131,7 +103,7 @@ def choose_most_intra_used_nodes(G, node_cnt, role, secondary_sort, seed=None):
             rank = G.degree(node)
             rank_node_pairs.append((rank, node))
 
-    return choose_nodes_by_rank(rank_node_pairs, node_cnt, secondary_sort, seed)
+    return pick_nodes_by_score(rank_node_pairs, node_cnt)
 
 
 # find nodes that are not in the giant component, used by the basic models
@@ -195,6 +167,7 @@ def find_nodes_in_unsupported_clusters(G, I):
 
 # find substation nodes in the power network that are not connected to a generator, used by the realistic model
 def find_unpowered_substations(G):
+    global logger
     unsupported_nodes = list()
 
     # divide nodes by role
@@ -276,85 +249,169 @@ def save_state(time, A, B, I, results_dir):
     nx.write_graphml(I, netw_inter_fpath_out)
 
 
-# TODO: test this function
-def calc_stats_on_centrality(attacked_nodes, full_centrality_name, short_centrality_name, file_loader,
-                             centrality_file_path):
-    # load file with precalculated centrality metrics
-    centrality_info = file_loader.fetch_json(centrality_file_path)
-    centr_by_node = centrality_info[full_centrality_name]
+# calculate the percentage of nodes attacked for each role
+# result_key_by_role is a dictionary {name of the node role: key to use for the corresponding metric in the result}
+def calc_atkd_percent_by_role(G, attacked_nodes, result_key_by_role):
+    atkd_perc_by_role = dict()
 
-    # how many nodes are in each quintile
-    node_cnt_by_quintile = [full_centrality_name + '_node_count_by_quintile']
+    node_cnt_by_role = dict()
+    node_roles = result_key_by_role.keys()
+    for node_role in node_roles:
+        node_cnt_by_role[node_role] = 0
+    atkd_node_cnt_by_role = node_cnt_by_role.copy()
 
-    # count how many nodes were attacked in each quintile
-    quintiles = centrality_info[full_centrality_name + '_quintiles']
-    atkd_cnt_by_quintile = [0] * 5
+    for node in G.nodes():
+        node_role = G.node[node]['role']
+        node_cnt_by_role[node_role] += 1
+
     for node in attacked_nodes:
-        node_quintile = 0
-        node_centr = centr_by_node[node]
-        for quintile in quintiles:
-            if node_centr > quintile:
-                node_quintile += 1
-            else:
-                break
-        atkd_cnt_by_quintile[node_quintile] += 1
+        node_role = G.node[node]['role']
+        atkd_node_cnt_by_role[node_role] += 1
 
-    # calc what percentage of the nodes in each quintile was attacked
-    atkd_perc_of_quintile = [0.0] * 5
-    for i in range(0, 5):
-        atkd_perc_of_quintile[i] = sf.percent_of_part(atkd_cnt_by_quintile[i], node_cnt_by_quintile[i])
+    for node_role in node_roles:
+        result_name = result_key_by_role[node_role]
+        atkd_perc_by_role[result_name] = sf.percent_of_part(atkd_node_cnt_by_role[node_role],
+                                                            node_cnt_by_role[node_role])
 
-    # dictionary used to index statistics with shorter names
-    centr_stats = {}
+    return atkd_perc_by_role
 
-    # sum the centrality of the attacked nodes
+
+# for a given centrality, calculates what percentage of nodes was attacked in each quintile and the total centrality
+# score fo the attacked nodes
+def calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix, centrality_info):
+    global logger
+    centr_stats = {}  # dictionary used to index statistics with shorter names
+
+    node_cnt = centrality_info['node_count']
+    centr_by_node = centrality_info[centrality_name]
+
+    # sum the centrality scores of the attacked nodes
     centr_sum = 0.0
     for node in attacked_nodes:
         centr_sum += centr_by_node[node]
-    stat_name = short_centrality_name + '_sum'
-    centr_stats[stat_name] = centr_sum
+    total_centr = centr_by_node['total_' + centrality_name]
+    stat_name = 'p_tot_' + result_key_suffix
+    centr_stats[stat_name] = sf.percent_of_part(centr_sum, total_centr)
 
+    # count how many nodes were attacked in each quintile
+    quintiles = centrality_info[centrality_name + '_quintiles']
+    atkd_cnt_by_quintile = [0] * 5
+    quintiles_set = set(quintiles)
+    if len(quintiles_set) == len(quintiles):
+        for node in attacked_nodes:
+            node_quintile = 0
+            node_centr = centr_by_node[node]
+            for quintile_val in quintiles:
+                if node_centr > quintile_val:
+                    node_quintile += 1
+                else:
+                    break
+            atkd_cnt_by_quintile[node_quintile] += 1
+    else:
+        # this is a corner case presented by graphs in which many nodes have identical centrality scores, like in
+        # random regular graphs. To determine the quintile each node belong to, we check their position in our
+        # ranking, that considered their centrality score as well as their id to sort them
+        logger.info('There are only {} different quintiles for centrality {}'.format(len(quintiles_set),
+                                                                                     centrality_name))
+        ranked_nodes = centrality_info[centrality_name + '_rank']
+        rank_of_quintiles = [0] * 4
+        for quintile_num, perc_below in enumerate([0.1, 0.3, 0.5, 0.7]):
+            rank_of_quintiles[quintile_num] = ceil(perc_below * node_cnt)
+        logger.debug('rank_of_quintiles {}'.format(rank_of_quintiles))
+
+        for node in attacked_nodes:
+            node_quintile = 0
+            node_rank = ranked_nodes.index(node)
+            for quintile_rank in rank_of_quintiles:
+                if node_rank > quintile_rank:
+                    node_quintile += 1
+                else:
+                    break
+            atkd_cnt_by_quintile[node_quintile] += 1
+
+    logger.debug('atkd_cnt_by_quintile {}'.format(atkd_cnt_by_quintile))
+
+    nodes_in_quintile = 1.0 * node_cnt / 5
+    logger.debug('nodes_in_quintile {}'.format(nodes_in_quintile))
+
+    # calculate the percentage of nodes attacked in each quintile
+    atkd_perc_of_quintile = [0.0] * 5
+    for i in range(0, 5):
+        atkd_perc_of_quintile[i] = sf.percent_of_part(atkd_cnt_by_quintile[i], nodes_in_quintile)
+    logger.debug('atkd_perc_of_quintile {}'.format(atkd_perc_of_quintile))
+
+    # p_q1 is percentage of nodes attacked in the first quintile
     for i, val in enumerate(atkd_perc_of_quintile):
-        stat_name = short_centrality_name + '_q_' + str(i + 1)  # q_1 is the first quantile
+        stat_name = 'p_q{}_{}'.format(i + 1, result_key_suffix)
         centr_stats[stat_name] = val
 
     return centr_stats
 
 
-# TODO: make it all uniform
-def calc_centrality_fraction(attacked_nodes, full_centrality_name, file_loader, centrality_file_path):
-    if full_centrality_name == 'degree_centrality':
-        raise RuntimeError('Call calc_degree_centr_fraction instead')
-    elif full_centrality_name == 'degree_centrality':  # redundant, already saved!
-        raise RuntimeError('Call calc_indegree_centr_fraction instead')
-    centrality_info = file_loader.fetch_json(centrality_file_path)
-    centr_by_node = centrality_info[full_centrality_name]
-    nodes_degree = 0.0
-    for node in attacked_nodes:
-        nodes_degree += centr_by_node[node]
-    tot_degree = centrality_info['total_' + full_centrality_name]
-    fraction = sf.percent_of_part(nodes_degree, tot_degree)
-    return fraction
+def calc_atk_centr_stats(name_A, name_B, name_I, name_AB, attacked_nodes_a, attacked_nodes_b, floader, netw_dir):
+    attacked_nodes = attacked_nodes_a + attacked_nodes_b
+    centr_stats = {}
 
+    # load files with precalculated centrality metrics
+    centr_fpath_a = os.path.join(netw_dir, 'node_centrality_{}.json'.format(name_A))
+    centr_info_a = floader.fetch_json(centr_fpath_a)
+    centr_fpath_b = os.path.join(netw_dir, 'node_centrality_{}.json'.format(name_B))
+    centr_info_b = floader.fetch_json(centr_fpath_b)
+    centr_fpath_ab = os.path.join(netw_dir, 'node_centrality_{}.json'.format(name_AB))
+    centr_info_ab = floader.fetch_json(centr_fpath_ab)
+    centr_fpath_i = os.path.join(netw_dir, 'node_centrality_{}.json'.format(name_I))
+    centr_info_i = floader.fetch_json(centr_fpath_i)
+    centr_fpath_gen = os.path.join(netw_dir, 'node_centrality_misc.json')
+    centr_info_misc = floader.fetch_json(centr_fpath_gen)
 
-def calc_degree_centr_fraction(G, nodes):
-    tot_degree = sum(G.degree(G.nodes()).values())
-    nodes_degree = sum(G.degree(nodes).values())
-    fraction = sf.percent_of_part(nodes_degree, tot_degree)
-    return fraction
+    node_cnt_a = centr_info_a['node_count']
+    centr_stats['p_atkd_a'] = sf.percent_of_part(len(attacked_nodes_a), node_cnt_a)
 
+    node_cnt_b = centr_info_b['node_count']
+    centr_stats['p_atkd_b'] = sf.percent_of_part(len(attacked_nodes_b), node_cnt_b)
 
-def calc_indegree_centr_fraction(G, nodes):
-    tot_indegree = sum(G.in_degree(G.nodes()).values())
-    nodes_indegree = sum(G.in_degree(nodes).values())
-    fraction = sf.percent_of_part(nodes_indegree, tot_indegree)
-    return fraction
+    centr_name = 'betweenness_centrality'
+    centr_stats.update(calc_atk_centrality_stats(attacked_nodes_a, centr_name, 'atkd_betw_c_a', centr_info_a))
+    centr_stats.update(calc_atk_centrality_stats(attacked_nodes_b, centr_name, 'atkd_betw_c_b', centr_info_b))
+    centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_betw_c_ab', centr_info_ab))
+    centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_betw_c_i', centr_info_i))
+
+    centr_name = 'closeness_centrality'
+    centr_stats.update(calc_atk_centrality_stats(attacked_nodes_a, centr_name, 'atkd_clos_c_a', centr_info_a))
+    centr_stats.update(calc_atk_centrality_stats(attacked_nodes_b, centr_name, 'atkd_clos_c_b', centr_info_b))
+    centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_clos_c_ab', centr_info_ab))
+    centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_clos_c_i', centr_info_i))
+
+    centr_name = 'degree_centrality'
+    centr_stats.update(calc_atk_centrality_stats(attacked_nodes_a, centr_name, 'atkd_deg_c_a', centr_info_a))
+    centr_stats.update(calc_atk_centrality_stats(attacked_nodes_b, centr_name, 'atkd_deg_c_b', centr_info_b))
+
+    centr_name = 'indegree_centrality'
+    if centr_name in centr_info_ab:
+        centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_indeg_c_ab', centr_info_ab))
+    if centr_name in centr_info_i:
+        centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_indeg_c_i', centr_info_i))
+
+    centr_name = 'katz_centrality'
+    if centr_name in centr_info_ab:
+        centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_katz_c_ab', centr_info_ab))
+    if centr_name in centr_info_i:
+        centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_katz_c_i', centr_info_i))
+
+    centr_name = 'relay_betweenness_centrality'
+    if centr_name in centr_info_misc:
+        centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_rel_betw_c', centr_info_misc))
+
+    centr_name = 'transm_subst_betweenness_centrality'
+    if centr_name in centr_info_misc:
+        centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_ts_betw_c', centr_info_misc))
+
+    return centr_stats
 
 
 # this function will be called from another script, each time with a different configuration fpath
 def run(conf_fpath, floader):
     global logger
-    logger = logging.getLogger(__name__)
     logger.info('conf_fpath = {}'.format(conf_fpath))
 
     conf_fpath = os.path.normpath(conf_fpath)
@@ -481,12 +538,7 @@ def run(conf_fpath, floader):
         if os.path.isabs(ml_stats_fpath) is False:
             ml_stats_fpath = os.path.abspath(ml_stats_fpath)
 
-    if config.has_option('run_opts', 'save_attacked_roles'):
-        save_attacked_roles = config.getboolean('run_opts', 'save_attacked_roles')
-    else:
-        save_attacked_roles = False
-
-    # ensure output directories exist and are empty
+    # ensure output directories exist
     sf.ensure_dir_exists(results_dir)
     sf.ensure_dir_exists(os.path.dirname(end_stats_fpath))
 
@@ -549,10 +601,17 @@ def run(conf_fpath, floader):
     inter_sup_deaths_a = 0
     inter_sup_deaths_b = 0
 
-    if save_death_cause is True and inter_support_type == 'realistic':
-        no_sup_ccs_deaths = 0
-        no_sup_relays_deaths = 0
-        no_com_path_deaths = 0
+    # only used if save_death_cause is True and inter_support_type == 'realistic'
+    no_sup_ccs_deaths = 0
+    no_sup_relays_deaths = 0
+    no_com_path_deaths = 0
+
+    base_node_cnt_a = A.number_of_nodes()
+    base_node_cnt_b = B.number_of_nodes()
+
+    # statistics meant for machine learning are stored in this dictionary
+    ml_atk_stats = {'batch_conf_fpath': batch_conf_fpath, 'sim_group': sim_group, 'instance': instance,
+                    '#run': run_num, 'seed': seed}
 
     # execute simulation of failure propagation
     with open(run_stats_fpath, 'wb') as run_stats_file:
@@ -571,10 +630,9 @@ def run(conf_fpath, floader):
         elif attack_tactic == 'targeted':
             target_nodes = config.get('run_opts', 'target_nodes')
             # TODO: understand why this returns unicode even if it should not
-            if sys.version_info >= (2, 7, 9):
+            if (2, 7, 9) < sys.version_info < (3, 0, 0):
                 target_nodes = str(target_nodes)
             attacked_nodes = [node for node in target_nodes.split()]  # split list on space
-        # TODO: use choose_nodes_by_rank, throw away _centrality_rank columns
         elif attack_tactic == 'betweenness_centrality_rank':
             ranked_nodes = centrality_info['betweenness_centrality_rank']
             attacked_nodes = pick_nodes_by_rank(ranked_nodes, attack_cnt, min_rank)
@@ -588,21 +646,18 @@ def run(conf_fpath, floader):
             ranked_nodes = centrality_info['katz_centrality_rank']
             attacked_nodes = pick_nodes_by_rank(ranked_nodes, attack_cnt, min_rank)
         elif attack_tactic == 'most_inter_used_distr_subs':
-            attacked_nodes = choose_most_inter_used_nodes(attacked_G, I, attack_cnt, 'distribution_substation',
-                                                          secondary_sort, seed)
+            attacked_nodes = choose_most_inter_used_nodes(attacked_G, I, attack_cnt, 'distribution_substation')
         elif attack_tactic == 'most_intra_used_distr_subs':
-            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'distribution_substation',
-                                                          secondary_sort, seed)
+            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'distribution_substation')
         elif attack_tactic == 'most_intra_used_transm_subs':
-            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'transmission_substation',
-                                                          secondary_sort, seed)
+            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'transmission_substation')
         elif attack_tactic == 'most_intra_used_generators':
-            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'generator', secondary_sort, seed)
+            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'generator')
         else:
             raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
 
-        attacked_nodes_a = []
-        attacked_nodes_b = []
+        attacked_nodes_a = []  # nodes in network A hit by the initial attack
+        attacked_nodes_b = []  # nodes in network B hit by the initial attack
         for node in attacked_nodes:
             node_netw = I.node[node]['network']
             if node_netw == A.graph['name']:
@@ -613,69 +668,16 @@ def run(conf_fpath, floader):
                 raise RuntimeError('Node {} network "{}" marked in inter graph is neither A nor B'.format(
                     node, node_netw))
 
-        node_cnt_a = A.number_of_nodes()
-        p_atkd_a = sf.percent_of_part(len(attacked_nodes_a), node_cnt_a)
-
-        node_cnt_b = B.number_of_nodes()
-        p_atkd_b = sf.percent_of_part(len(attacked_nodes_b), node_cnt_b)
-
-        atkd_cnt = len(attacked_nodes_a) + len(attacked_nodes_b)
-        p_atkd = sf.percent_of_part(atkd_cnt, node_cnt_a + node_cnt_b)
-
         if ml_stats_fpath:  # if this string is not empty
+            ml_atk_stats.update(calc_atk_centr_stats(A.graph['name'], B.graph['name'], I.graph['name'],
+                                                     ab_union.graph['name'], attacked_nodes_a, attacked_nodes_b))
 
-            # fractions of connectivity lost due to the attacks
-            lost_deg_a = calc_degree_centr_fraction(A, attacked_nodes_a)
-            lost_deg_b = calc_degree_centr_fraction(B, attacked_nodes_b)
-            lost_indeg_i = calc_indegree_centr_fraction(I, attacked_nodes_a + attacked_nodes_b)
-            centr_fpath = os.path.join(netw_dir, 'node_centrality_general.json')
-            lost_relay_betw = calc_centrality_fraction(attacked_nodes, 'relay_betweenness_centrality', floader,
-                                                       centr_fpath)
-            lost_ts_betw = calc_centrality_fraction(attacked_nodes, 'transm_subst_betweenness_centrality', floader,
-                                                    centr_fpath)
+            result_key_by_role = {'generator': 'p_atkd_gen', 'transmission_substation': 'p_atkd_ts',
+                                  'distribution_substation': 'p_atkd_ds'}
+            ml_atk_stats.update(calc_atkd_percent_by_role(A, attacked_nodes_a, result_key_by_role))
 
-            # Please note that this section only works for nodes created using realistic roles
-            if save_attacked_roles is True:
-                # count how many nodes there are for each role in the power network
-                nodes_a_by_role = {'generator': 0, 'transmission_substation': 0, 'distribution_substation': 0}
-                try:
-                    for node in A.nodes():
-                        node_role = A.node[node]['role']
-                        nodes_a_by_role[node_role] += 1
-                except KeyError:
-                    raise RuntimeError('Unrecognized node role {} in graph {}'.format(node_role, A.graph['name']))
-
-                # count how many nodes were attacked for each power role
-                atkd_nodes_a_by_role = {'generator': 0, 'transmission_substation': 0, 'distribution_substation': 0}
-                for node in attacked_nodes_a:
-                    node_role = A.node[node]['role']
-                    atkd_nodes_a_by_role[node_role] += 1
-
-                # calculate the percentage of nodes attacked for each power role
-                p_atkd_gen = sf.percent_of_part(atkd_nodes_a_by_role['generator'], nodes_a_by_role['generator'])
-                p_atkd_ts = sf.percent_of_part(atkd_nodes_a_by_role['transmission_substation'],
-                                               nodes_a_by_role['transmission_substation'])
-                p_atkd_ds = sf.percent_of_part(atkd_nodes_a_by_role['distribution_substation'],
-                                               nodes_a_by_role['distribution_substation'])
-
-                # count how many nodes there are for each role in the telecom network
-                nodes_b_by_role = {'relay': 0, 'controller': 0}
-                try:
-                    for node in B.nodes():
-                        node_role = B.node[node]['role']
-                        nodes_b_by_role[node_role] += 1
-                except KeyError:
-                    raise RuntimeError('Unrecognized node role {} in graph {}'.format(node_role, B.graph['name']))
-
-                # count how many nodes were attacked for each telecom role
-                atkd_nodes_b_by_role = {'relay': 0, 'controller': 0}
-                for node in attacked_nodes_b:
-                    node_role = B.node[node]['role']
-                    atkd_nodes_b_by_role[node_role] += 1
-
-                # calculate the percentage of nodes attacked for each telecom role
-                p_atkd_rel = sf.percent_of_part(atkd_nodes_b_by_role['relay'], nodes_b_by_role['relay'])
-                p_atkd_cc = sf.percent_of_part(atkd_nodes_b_by_role['controller'], nodes_b_by_role['controller'])
+            result_key_by_role = {'relay': 'p_atkd_rel', 'controller': 'p_atkd_cc'}
+            ml_atk_stats.update(calc_atkd_percent_by_role(B, attacked_nodes_b, result_key_by_role))
 
         total_dead_a = len(attacked_nodes_a)
         if total_dead_a > 0:
@@ -805,8 +807,7 @@ def run(conf_fpath, floader):
         write_header = False
     with open(end_stats_fpath, 'ab') as end_stats_file:
         end_stats_header = ['batch_conf_fpath', 'sim_group', 'instance', '#run', '#dead', '#dead_a', '#dead_b']
-        if save_attacked_roles is True:
-            end_stats_header.extend(['#atkd_gen', '#atkd_ts', '#atkd_ds', '#atkd_rel', '#atkd_cc'])
+
         if save_death_cause is True:
             end_stats_header.extend(['no_intra_sup_a', 'no_inter_sup_a',
                                      'no_intra_sup_b', 'no_inter_sup_b'])
@@ -820,12 +821,7 @@ def run(conf_fpath, floader):
         end_stats_row = {'batch_conf_fpath': batch_conf_fpath, 'sim_group': sim_group, 'instance': instance,
                          '#run': run_num, '#dead': total_dead_a + total_dead_b,
                          '#dead_a': total_dead_a, '#dead_b': total_dead_b}
-        if save_attacked_roles is True:
-            end_stats_row.update({'#atkd_gen': atkd_nodes_a_by_role['generator'],
-                                  '#atkd_ts': atkd_nodes_a_by_role['transmission_substation'],
-                                  '#atkd_ds': atkd_nodes_a_by_role['distribution_substation'],
-                                  '#atkd_rel': atkd_nodes_b_by_role['relay'],
-                                  '#atkd_cc': atkd_nodes_b_by_role['controller']})
+
         if save_death_cause is True:
             end_stats_row.update({'no_intra_sup_a': intra_sup_deaths_a, 'no_inter_sup_a': inter_sup_deaths_a,
                                   'no_intra_sup_b': intra_sup_deaths_b, 'no_inter_sup_b': inter_sup_deaths_b})
@@ -837,59 +833,20 @@ def run(conf_fpath, floader):
     if ml_stats_fpath:  # if this string is not empty
 
         # percentages of dead nodes over the initial number of nodes in the graph
-        p_dead_a = sf.percent_of_part(total_dead_a, node_cnt_a)
-        p_dead_b = sf.percent_of_part(total_dead_b, node_cnt_b)
-        p_dead = sf.percent_of_part(total_dead_a + total_dead_b, node_cnt_a + node_cnt_b)
+        ml_atk_stats['p_dead_a'] = sf.percent_of_part(total_dead_a, base_node_cnt_a)
+        ml_atk_stats['p_dead_b'] = sf.percent_of_part(total_dead_b, base_node_cnt_b)
+        ml_atk_stats['p_dead'] = sf.percent_of_part(total_dead_a + total_dead_b, base_node_cnt_a + base_node_cnt_b)
 
-        # calculate the overall centrality of the attacked nodes
+        if save_death_cause is True:
+            ml_atk_stats['p_no_intra_sup_a'] = sf.percent_of_part(intra_sup_deaths_a, total_dead_a)
+            ml_atk_stats['p_no_inter_sup_a'] = sf.percent_of_part(inter_sup_deaths_a, total_dead_a)
+            ml_atk_stats['p_no_intra_sup_b'] = sf.percent_of_part(intra_sup_deaths_b, total_dead_b)
+            ml_atk_stats['p_no_inter_sup_b'] = sf.percent_of_part(inter_sup_deaths_b, total_dead_b)
 
-        all_centr_stats = {}
-
-        centr_name = 'betweenness_centrality'
-        centr_fpath_a = os.path.join(netw_dir, 'node_centrality_{}.json'.format(A.graph['name']))
-        centr_stats = calc_stats_on_centrality(attacked_nodes_a, centr_name, 'betw_c_a', floader, centr_fpath_a)
-        all_centr_stats.update(centr_stats)
-        centr_fpath_b = os.path.join(netw_dir, 'node_centrality_{}.json'.format(B.graph['name']))
-        centr_stats = calc_stats_on_centrality(attacked_nodes_b, centr_name, 'betw_c_b', floader, centr_fpath_b)
-        all_centr_stats.update(centr_stats)
-        tot_node_cnt = node_cnt_a + node_cnt_b
-        centr_fpath_ab = os.path.join(netw_dir, 'node_centrality_{}.json'.format(ab_union.graph['name']))
-        centr_stats = calc_stats_on_centrality(attacked_nodes, centr_name, 'betw_c_ab', floader, centr_fpath_ab)
-        all_centr_stats.update(centr_stats)
-        centr_fpath_i = os.path.join(netw_dir, 'node_centrality_{}.json'.format(I.graph['name']))
-        centr_stats = calc_stats_on_centrality(attacked_nodes, centr_name, 'betw_c_i', floader, centr_fpath_i)
-        all_centr_stats.update(centr_stats)
-
-        centr_name = 'closeness_centrality'
-        centr_stats = calc_stats_on_centrality(attacked_nodes_a, centr_name, 'clos_c_a', floader, centr_fpath_a)
-        all_centr_stats.update(centr_stats)
-        centr_stats = calc_stats_on_centrality(attacked_nodes_b, centr_name, 'clos_c_b', floader, centr_fpath_b)
-        all_centr_stats.update(centr_stats)
-        centr_stats = calc_stats_on_centrality(attacked_nodes, centr_name, 'clos_c_ab', floader, centr_fpath_ab)
-        all_centr_stats.update(centr_stats)
-        centr_stats = calc_stats_on_centrality(attacked_nodes, centr_name, 'clos_c_i', floader, centr_fpath_i)
-        all_centr_stats.update(centr_stats)
-
-        centr_name = 'indegree_centrality'
-        centr_stats = calc_stats_on_centrality(attacked_nodes, centr_name, 'indeg_c_ab', floader, centr_fpath_ab)
-        all_centr_stats.update(centr_stats)
-        centr_stats = calc_stats_on_centrality(attacked_nodes, centr_name, 'indeg_c_i', floader, centr_fpath_i)
-        all_centr_stats.update(centr_stats)
-
-        centr_name = 'katz_centrality'
-        centr_stats = calc_stats_on_centrality(attacked_nodes, centr_name, 'katz_c_ab', floader, centr_fpath_ab)
-        all_centr_stats.update(centr_stats)
-        centr_stats = calc_stats_on_centrality(attacked_nodes, centr_name, 'katz_c_i', floader, centr_fpath_i)
-        all_centr_stats.update(centr_stats)
-
-        centr_name = 'relay_betweenness_centrality'
-        centr_fpath_gen = os.path.join(netw_dir, 'node_centrality_general.json')
-        centr_stats = calc_stats_on_centrality(attacked_nodes, centr_name, 'rel_betw_c', floader, centr_fpath_gen)
-        all_centr_stats.update(centr_stats)
-
-        centr_name = 'transm_subst_betweenness_centrality'
-        centr_stats = calc_stats_on_centrality(attacked_nodes, centr_name, 'ts_betw_c', floader, centr_fpath_gen)
-        all_centr_stats.update(centr_stats)
+            if inter_support_type == 'realistic':
+                ml_atk_stats['p_no_sup_ccs'] = sf.percent_of_part(no_sup_ccs_deaths, total_dead_a)
+                ml_atk_stats['p_no_sup_relays'] = sf.percent_of_part(no_sup_relays_deaths, total_dead_a)
+                ml_atk_stats['p_no_com_path'] = sf.percent_of_part(no_com_path_deaths, total_dead_a)
 
         # if we need to create a new file, then remember to add the header
         if os.path.isfile(ml_stats_fpath) is False:
@@ -898,54 +855,12 @@ def run(conf_fpath, floader):
             write_header = False
 
         with open(ml_stats_fpath, 'ab') as ml_stats_file:
-            ml_stats_header = ['batch_conf_fpath', 'sim_group', 'instance', '#run', 'seed', '#atkd',
-                               'p_atkd', 'p_dead', 'p_atkd_a', 'p_dead_a', 'p_atkd_b', 'p_dead_b']
 
-            # add statistics about centrality, sorted so they can be more found easily in the output file
-            ml_stats_header.extend(sorted(all_centr_stats.keys(), key=sf.natural_sort_key))
-
-            if save_attacked_roles is True:
-                ml_stats_header.extend(['p_atkd_gen', 'p_atkd_ts', 'p_atkd_ds', 'p_atkd_rel', 'p_atkd_cc'])
-
-            ml_stats_header.extend(['lost_deg_a', 'lost_deg_b', 'lost_indeg_i', 'lost_rel_betw', 'lost_ts_betw'])
-
-            if save_death_cause is True:
-                ml_stats_header.extend(['p_no_intra_sup_a', 'p_no_inter_sup_a',
-                                        'p_no_intra_sup_b', 'p_no_inter_sup_b'])
-                if inter_support_type == 'realistic':
-                    ml_stats_header.extend(['p_no_sup_ccs', 'p_no_sup_relays', 'p_no_com_path'])
+            # sort statistics columns by name so they can be more found easily in the output file
+            ml_stats_header = sorted(ml_atk_stats.keys(), key=sf.natural_sort_key)
 
             ml_stats = csv.DictWriter(ml_stats_file, ml_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
             if write_header is True:
                 ml_stats.writeheader()
 
-            ml_stats_row = {'batch_conf_fpath': batch_conf_fpath, 'sim_group': sim_group, 'instance': instance,
-                            '#run': run_num, 'seed': seed, '#atkd': atkd_cnt,
-                            'p_atkd': p_atkd, 'p_atkd_a': p_atkd_a, 'p_atkd_b': p_atkd_b,
-                            'p_dead': p_dead, 'p_dead_a': p_dead_a, 'p_dead_b': p_dead_b}
-
-            ml_stats_row.update(all_centr_stats)
-
-            if save_attacked_roles is True:
-                ml_stats_row.update({'p_atkd_gen': p_atkd_gen, 'p_atkd_ts': p_atkd_ts, 'p_atkd_ds': p_atkd_ds,
-                                     'p_atkd_rel': p_atkd_rel, 'p_atkd_cc': p_atkd_cc,})
-
-            ml_stats_row.update({'lost_deg_a': lost_deg_a, 'lost_deg_b': lost_deg_b, 'lost_indeg_i': lost_indeg_i,
-                                 'lost_rel_betw': lost_relay_betw, 'lost_ts_betw': lost_ts_betw})
-
-            if save_death_cause is True:
-                p_no_intra_sup_a = sf.percent_of_part(intra_sup_deaths_a, total_dead_a)
-                p_no_inter_sup_a = sf.percent_of_part(inter_sup_deaths_a, total_dead_a)
-                p_no_intra_sup_b = sf.percent_of_part(intra_sup_deaths_b, total_dead_b)
-                p_no_inter_sup_b = sf.percent_of_part(inter_sup_deaths_b, total_dead_b)
-                ml_stats_row.update({'p_no_intra_sup_a': p_no_intra_sup_a, 'p_no_inter_sup_a': p_no_inter_sup_a,
-                                     'p_no_intra_sup_b': p_no_intra_sup_b, 'p_no_inter_sup_b': p_no_inter_sup_b})
-
-                if inter_support_type == 'realistic':
-                    p_no_sup_ccs = sf.percent_of_part(no_sup_ccs_deaths, total_dead_a)
-                    p_no_sup_relays = sf.percent_of_part(no_sup_relays_deaths, total_dead_a)
-                    p_no_com_path = sf.percent_of_part(no_com_path_deaths, total_dead_a)
-                    ml_stats_row.update({'p_no_sup_ccs': p_no_sup_ccs, 'p_no_sup_relays': p_no_sup_relays,
-                                         'p_no_com_path': p_no_com_path})
-
-            ml_stats.writerow(ml_stats_row)
+            ml_stats.writerow(ml_atk_stats)

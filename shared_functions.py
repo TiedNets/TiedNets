@@ -368,10 +368,9 @@ def makedirs_clean(path, clean_subdirs=False, ask_confirmation=False):
 
         # if the directory exists, but is empty, do nothing
         if len(fnames) == 0:
-            # print("dir exists but is empty")
             return
 
-        # print("dir exists and is not empty")
+        # otherwise
         if ask_confirmation is False or query_yes_no('Output directory not empty, do you want to remove its files?\n'
                                                      'Path: ' + str(path)) is True:
             # remove all files in the directory, and optionally remove its subdirectories

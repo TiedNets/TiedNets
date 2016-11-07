@@ -26,7 +26,7 @@ __author__ = 'Agostino Sturaro'
 
 if sys.version_info[0] < 3:
     integer_types = (int, long,)
-    string_types = (basestring)
+    string_types = (basestring,)
 else:
     integer_types = (int,)
     string_types = (str,)
@@ -414,7 +414,7 @@ def create_ranged_dep(G1, G2, radius):
 
 
 def relabel_nodes(G, prefix):
-    if not isinstance(prefix, str):
+    if not isinstance(prefix, string_types):
         raise TypeError('prefix is not a string')
 
     mapping = {}
@@ -929,19 +929,6 @@ def rank_nodes_by_score(centrality_by_node):
     return ranked_nodes
 
 
-def count_nodes_in_quintiles(centrality_by_node, quintiles):
-    node_cnt_by_quintile = [0] * 5
-    for node, centrality in centrality_by_node:
-        node_quintile = 0
-        for quintile in quintiles:
-            if centrality > quintile:
-                node_quintile += 1
-            else:
-                break
-            node_cnt_by_quintile[node_quintile] += 1
-    return node_cnt_by_quintile
-
-
 def save_graph_centralities(G, file_dir):
     centrality_info = {}
     percentile_pos = [20, 40, 60, 80]
@@ -956,9 +943,7 @@ def save_graph_centralities(G, file_dir):
     centr_rank = rank_nodes_by_score(centr_by_node)
     centrality_info['betweenness_centrality_rank'] = centr_rank
     centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos).tolist()
-    node_cnt_by_quintile = count_nodes_in_quintiles(centr_by_node, centr_quintiles)
     centrality_info['betweenness_centrality_quintiles'] = centr_quintiles
-    centrality_info['betweenness_centrality_node_count_by_quintile'] = node_cnt_by_quintile
 
     centr_by_node = nx.closeness_centrality(G)
     centrality_info['closeness_centrality'] = centr_by_node
@@ -967,9 +952,16 @@ def save_graph_centralities(G, file_dir):
     centr_rank = rank_nodes_by_score(centr_by_node)
     centrality_info['closeness_centrality_rank'] = centr_rank
     centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos).tolist()
-    node_cnt_by_quintile = count_nodes_in_quintiles(centr_by_node, centr_quintiles)
     centrality_info['closeness_centrality_quintiles'] = centr_quintiles
-    centrality_info['closeness_centrality_node_count_by_quintile'] = node_cnt_by_quintile
+
+    centr_by_node = nx.degree_centrality(G)
+    centrality_info['degree_centrality'] = centr_by_node
+    tot_centr = sum(centr_by_node.values())
+    centrality_info['total_degree_centrality'] = tot_centr
+    centr_rank = rank_nodes_by_score(centr_by_node)
+    centrality_info['degree_centrality_rank'] = centr_rank
+    centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos).tolist()
+    centrality_info['degree_centrality_quintiles'] = centr_quintiles
 
     if G.is_directed():
         centr_by_node = nx.in_degree_centrality(G)
@@ -979,9 +971,7 @@ def save_graph_centralities(G, file_dir):
         centr_rank = rank_nodes_by_score(centr_by_node)
         centrality_info['indegree_centrality_rank'] = centr_rank
         centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos).tolist()
-        node_cnt_by_quintile = count_nodes_in_quintiles(centr_by_node, centr_quintiles)
         centrality_info['indegree_centrality_quintiles'] = centr_quintiles
-        centrality_info['indegree_centrality_node_count_by_quintile'] = node_cnt_by_quintile
 
         centr_by_node = nx.katz_centrality_numpy(G)
         centrality_info['katz_centrality'] = centr_by_node
@@ -990,9 +980,7 @@ def save_graph_centralities(G, file_dir):
         centr_rank = rank_nodes_by_score(centr_by_node)
         centrality_info['katz_centrality_rank'] = centr_rank
         centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos).tolist()
-        node_cnt_by_quintile = count_nodes_in_quintiles(centr_by_node, centr_quintiles)
         centrality_info['katz_centrality_quintiles'] = centr_quintiles
-        centrality_info['katz_centrality_node_count_by_quintile'] = node_cnt_by_quintile
 
     file_name = 'node_centrality_{}.json'.format(G.graph['name'])
     file_path = os.path.join(file_dir, file_name)
@@ -1136,7 +1124,7 @@ def calc_transm_subst_betweenness(A, B, I):
     return betw_by_nodes
 
 
-def save_general_centralities(A, B, I, file_dir):
+def save_misc_centralities(A, B, I, file_dir):
     centrality_info = {}
     percentile_pos = [20, 40, 60, 80]
 
@@ -1158,7 +1146,7 @@ def save_general_centralities(A, B, I, file_dir):
     tot_centr = sum(centr_by_node.values())
     centrality_info['total_transm_subst_betweenness_centrality'] = tot_centr
 
-    file_name = 'node_centrality_general.json'
+    file_name = 'node_centrality_misc.json'
     file_path = os.path.join(file_dir, file_name)
     with open(file_path, 'wb') as centr_file:
         json.dump(centrality_info, centr_file)
@@ -1167,6 +1155,10 @@ def save_general_centralities(A, B, I, file_dir):
 def run(conf_fpath):
     global logger
     logger.info('conf_fpath = ' + conf_fpath)
+
+    if parse_version(nx.__version__) == parse_version('1.10'):
+        raise ValueError('NetworkX 1.10 has bugs in its layouts, please use a different version.'
+                         'For more information, see issue #1750 of their GitHub page.')
 
     conf_fpath = os.path.normpath(conf_fpath)
     if os.path.isabs(conf_fpath) is False:
@@ -1188,10 +1180,10 @@ def run(conf_fpath):
     output_dir = os.path.normpath(config.get('paths', 'netw_dir'))
     if os.path.isabs(output_dir) is False:
         output_dir = os.path.abspath(output_dir)
+    logger.info('output_dir = {}'.format(output_dir))
 
-    # create directory if it does not exist
-    # clean it if it does exist
-    sf.makedirs_clean(output_dir, False)
+    # create directory if it does not exist, otherwise ask the user whether to empty it or not
+    sf.makedirs_clean(output_dir, True, True)
 
     # create the power network
 
@@ -1300,32 +1292,20 @@ def run(conf_fpath):
         else:
             center = [span / 2.0, span / 2.0]
 
-        # networkx 1.10 has some bugs in its layouts, there is extra code to check against that
-        if parse_version(nx.__version__) > parse_version('1.10'):
-            raise ValueError('Check issue #1750 and see if layouts work correctly in this NetworkX version')
-
         if layout in ['random', 'uar']:
             pos_by_node = uar_layout(A, span, center)
         elif layout == 'circular':
-            if parse_version(nx.__version__) == parse_version('1.10'):
-                pos_by_node = nx.circular_layout(A, dim=2, scale=span / 2.0, center=center)
-            else:
-                pos_by_node = nx.circular_layout(A, dim=2, scale=span)
+            pos_by_node = nx.circular_layout(A, dim=2, scale=span)
         elif layout in ['spring', 'fruchterman_reingold']:
-            logger.warning('This layout will produce a non-deterministic placement of A nodes')
-            if parse_version(nx.__version__) == parse_version('1.10'):
-                pos_by_node = nx.spring_layout(A, dim=2, scale=span / 2.0, center=center)
-            else:
-                pos_by_node = nx.spring_layout(A, dim=2, scale=span)
+            logger.info('This layout will produce a non-deterministic placement of A nodes')
+            pos_by_node = nx.spring_layout(A, dim=2, scale=span)
         else:
             raise ValueError('Invalid value for parameter "layout" of network A: ' + layout)
 
-        # before NetworkX 1.10, layouts were centered on 0.5, 0.5 and then scaled
-        if parse_version(nx.__version__) < parse_version('1.10'):
-            if layout not in ['random', 'uar']:
-                for node in pos_by_node:
-                    pos_by_node[node][0] += center[0] - center[0] * span
-                    pos_by_node[node][1] += center[1] - center[1] * span
+        if layout not in ['random', 'uar']:
+            for node in pos_by_node:
+                pos_by_node[node][0] += center[0] - center[0] * span
+                pos_by_node[node][1] += center[1] - center[1] * span
 
         arrange_nodes(A, pos_by_node)
 
@@ -1337,7 +1317,9 @@ def run(conf_fpath):
     netw_b_seed = seed
 
     if netw_b_model != 'user_defined_graph':
-        if roles_b == 'relay_attached_controllers':
+        if roles_b == 'same':
+            node_cnt = config.getint('build_b', 'nodes')
+        elif roles_b == 'relay_attached_controllers':
             node_cnt = config.getint('build_b', 'relays')
         else:
             relay_cnt = config.getint('build_b', 'relays')
@@ -1449,32 +1431,20 @@ def run(conf_fpath):
             y_min = 0
             y_max = span
 
-        # networkx 1.10 has some bugs in its layouts, there is extra code to check against that
-        if parse_version(nx.__version__) > parse_version('1.10'):
-            raise ValueError('Check issue #1750 and see if layouts work correctly in this NetworkX version')
-
         if layout in ['random', 'uar']:
             pos_by_node = uar_layout(B, span, center)
         elif layout == 'circular':
-            if parse_version(nx.__version__) == parse_version('1.10'):
-                pos_by_node = nx.circular_layout(B, dim=2, scale=span / 2.0, center=center)
-            else:
-                pos_by_node = nx.circular_layout(B, dim=2, scale=span)
+            pos_by_node = nx.circular_layout(B, dim=2, scale=span)
         elif layout in ['spring', 'fruchterman_reingold']:
-            logger.warning('This layout will produce a non-deterministic placement of B nodes')
-            if parse_version(nx.__version__) == parse_version('1.10'):
-                pos_by_node = nx.spring_layout(B, dim=2, scale=span / 2.0, center=center)
-            else:
-                pos_by_node = nx.spring_layout(B, dim=2, scale=span)
+            logger.info('This layout will produce a non-deterministic placement of B nodes')
+            pos_by_node = nx.spring_layout(B, dim=2, scale=span)
         else:
             raise ValueError('Invalid value for parameter "layout" of network B: ' + layout)
 
-        # before NetworkX 1.10, layouts were centered on 0.5, 0.5 and then scaled
-        if parse_version(nx.__version__) < parse_version('1.10'):
-            if layout not in ['random', 'uar']:
-                for node in pos_by_node:
-                    pos_by_node[node][0] += center[0] - center[0] * span
-                    pos_by_node[node][1] += center[1] - center[1] * span
+        if layout not in ['random', 'uar']:
+            for node in pos_by_node:
+                pos_by_node[node][0] += center[0] - center[0] * span
+                pos_by_node[node][1] += center[1] - center[1] * span
 
         arrange_nodes(B, pos_by_node)
 
@@ -1650,7 +1620,10 @@ def run(conf_fpath):
         save_graph_centralities(A, output_dir)
         save_graph_centralities(B, output_dir)
         save_graph_centralities(I, output_dir)
-        save_general_centralities(A, B, I, output_dir)
+        if roles_a != 'same' and roles_b != 'same':
+            save_misc_centralities(A, B, I, output_dir)
+        else:
+            logger.info('Only basic centrality measures were calculated')
         if produce_max_matching is True:
             save_graph_centralities(mm_I, output_dir)
         if produce_union is True:

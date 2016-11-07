@@ -26,20 +26,14 @@ def test_choose_random_nodes():
 def test_choose_nodes_by_rank():
     rank_node_pairs = [(1, 1), (1, 2), (2, 3), (3, 4), (4, 5)]
 
-    chosen_nodes = cs.choose_nodes_by_rank(rank_node_pairs, 5, 'random_shuffle', 128)
+    chosen_nodes = cs.pick_nodes_by_score(rank_node_pairs, 5)
     assert chosen_nodes == [5, 4, 3, 2, 1]
 
-    chosen_nodes = cs.choose_nodes_by_rank(rank_node_pairs, 3, 'sort_by_id', 128)
+    chosen_nodes = cs.pick_nodes_by_score(rank_node_pairs, 3)
     assert chosen_nodes == [5, 4, 3]
 
-    chosen_nodes = cs.choose_nodes_by_rank(rank_node_pairs, 0, 'sort_by_id', 128)
+    chosen_nodes = cs.pick_nodes_by_score(rank_node_pairs, 0)
     assert chosen_nodes == []
-
-    chosen_nodes = cs.choose_nodes_by_rank(rank_node_pairs, 5, 'sort_by_id', 42)
-    assert chosen_nodes == [5, 4, 3, 1, 2]
-
-    chosen_nodes = cs.choose_nodes_by_rank(rank_node_pairs, 5, 'sort_by_id', 43)
-    assert chosen_nodes == [5, 4, 3, 2, 1]
 
 
 # tests for example 1
@@ -536,9 +530,9 @@ def test_choose_most_inter_used_nodes():
     sf.setup_logging(logging_conf_fpath)
     A = nx.read_graphml(netw_a_fpath)
     I = nx.read_graphml(netw_inter_fpath)
-    chosen_nodes_1 = cs.choose_most_inter_used_nodes(A, I, 1, 'distribution_substation', 'sort_by_id')
-    chosen_nodes_2 = cs.choose_most_inter_used_nodes(A, I, 2, 'distribution_substation', 'sort_by_id')
-    chosen_nodes_3 = cs.choose_most_inter_used_nodes(A, I, 3, 'distribution_substation', 'sort_by_id')
+    chosen_nodes_1 = cs.choose_most_inter_used_nodes(A, I, 1, 'distribution_substation')
+    chosen_nodes_2 = cs.choose_most_inter_used_nodes(A, I, 2, 'distribution_substation')
+    chosen_nodes_3 = cs.choose_most_inter_used_nodes(A, I, 3, 'distribution_substation')
 
     # then
     assert chosen_nodes_1 == ['D2']
@@ -554,9 +548,9 @@ def test_choose_most_intra_used_nodes():
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
     A = nx.read_graphml(netw_a_fpath)
-    chosen_nodes_1 = cs.choose_most_intra_used_nodes(A, 1, 'transmission_substation', 'sort_by_id')
-    chosen_nodes_2 = cs.choose_most_intra_used_nodes(A, 2, 'transmission_substation', 'sort_by_id')
-    chosen_nodes_3 = cs.choose_most_intra_used_nodes(A, 3, 'transmission_substation', 'sort_by_id')
+    chosen_nodes_1 = cs.choose_most_intra_used_nodes(A, 1, 'transmission_substation')
+    chosen_nodes_2 = cs.choose_most_intra_used_nodes(A, 2, 'transmission_substation')
+    chosen_nodes_3 = cs.choose_most_intra_used_nodes(A, 3, 'transmission_substation')
 
     # then
     assert chosen_nodes_1 == ['T1']
@@ -604,3 +598,36 @@ def test_find_uncontrolled_pow_nodes():
     assert sorted(found_nodes_2['no_com_path']) == ['D2', 'G2', 'T2']
     assert found_nodes_3['no_sup_ccs'] == []
     assert sorted(found_nodes_4['no_sup_ccs']) == ['D1', 'D2', 'G1', 'G2', 'T1', 'T2']
+
+
+def test_calc_stats_on_centrality():
+    global this_dir, logging_conf_fpath
+    os.chdir(this_dir)
+    sf.setup_logging(logging_conf_fpath)
+
+    attacked_nodes = ['A0', 'A4', 'A8', 'A9']
+    full_centrality_name = 'closeness_centrality'
+    short_centrality_name = 'clos_c_i'
+    file_loader = fl.FileLoader()
+    centrality_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_centralities/same.json'))
+    exp_centr_stats = {'clos_c_i_q_1': 0.5, 'clos_c_i_q_2': 0.0, 'clos_c_i_q_3': 0.5, 'clos_c_i_q_4': 0.0,
+                       'clos_c_i_q_5': 1.0, 'clos_c_i_sum': 1.44}
+    centr_stats = cs.calc_atk_centrality_stats(attacked_nodes, full_centrality_name, short_centrality_name, file_loader,
+                                               centrality_fpath)
+
+    assert centr_stats == exp_centr_stats
+
+    attacked_nodes = ['A0', 'A1', 'A3', 'A4']
+    full_centrality_name = 'closeness_centrality'
+    short_centrality_name = 'clos_c_i'
+    file_loader = fl.FileLoader()
+    centrality_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_centralities/different.json'))
+    exp_centr_stats = {'clos_c_i_q_1': 0.5, 'clos_c_i_q_2': 0.0, 'clos_c_i_q_3': 0.5, 'clos_c_i_q_4': 0.0,
+                       'clos_c_i_q_5': 1.0, 'clos_c_i_sum': 2.8928571428571429}
+    centr_stats = cs.calc_atk_centrality_stats(attacked_nodes, full_centrality_name, short_centrality_name, file_loader,
+                                               centrality_fpath)
+
+    print('centr_stats {}'.format(centr_stats))
+    assert centr_stats == exp_centr_stats
+
+
