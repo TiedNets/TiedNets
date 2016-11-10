@@ -5,7 +5,7 @@ import random
 import csv
 import sys
 import shared_functions as sf
-from math import ceil
+from numpy import percentile
 
 try:
     from configparser import ConfigParser
@@ -278,6 +278,8 @@ def calc_atkd_percent_by_role(G, attacked_nodes, result_key_by_role):
 
 # for a given centrality, calculates what percentage of nodes was attacked in each quintile and the total centrality
 # score fo the attacked nodes
+# NOTE: by "being part of the 2nd quintile" we mean "having a score having a score greater than the 1st quintile,
+# and lower than the third quintile"
 def calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix, centrality_info):
     global logger
     centr_stats = {}  # dictionary used to index statistics with shorter names
@@ -286,12 +288,12 @@ def calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix
     centr_by_node = centrality_info[centrality_name]
 
     # sum the centrality scores of the attacked nodes
-    centr_sum = 0.0
+    atkd_centr_sum = 0.0
+    total_centr = centrality_info['total_' + centrality_name]
     for node in attacked_nodes:
-        centr_sum += centr_by_node[node]
-    total_centr = centr_by_node['total_' + centrality_name]
+        atkd_centr_sum += centr_by_node[node]
     stat_name = 'p_tot_' + result_key_suffix
-    centr_stats[stat_name] = sf.percent_of_part(centr_sum, total_centr)
+    centr_stats[stat_name] = sf.percent_of_part(atkd_centr_sum, total_centr)
 
     # count how many nodes were attacked in each quintile
     quintiles = centrality_info[centrality_name + '_quintiles']
@@ -314,9 +316,8 @@ def calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix
         logger.info('There are only {} different quintiles for centrality {}'.format(len(quintiles_set),
                                                                                      centrality_name))
         ranked_nodes = centrality_info[centrality_name + '_rank']
-        rank_of_quintiles = [0] * 4
-        for quintile_num, perc_below in enumerate([0.1, 0.3, 0.5, 0.7]):
-            rank_of_quintiles[quintile_num] = ceil(perc_below * node_cnt)
+        # find the positions that separate the quintiles
+        rank_of_quintiles = percentile(range(0, node_cnt), [20, 40, 60, 80]).tolist()
         logger.debug('rank_of_quintiles {}'.format(rank_of_quintiles))
 
         for node in attacked_nodes:
@@ -342,7 +343,7 @@ def calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix
 
     # p_q1 is percentage of nodes attacked in the first quintile
     for i, val in enumerate(atkd_perc_of_quintile):
-        stat_name = 'p_q{}_{}'.format(i + 1, result_key_suffix)
+        stat_name = 'p_q_{}_{}'.format(i + 1, result_key_suffix)
         centr_stats[stat_name] = val
 
     return centr_stats

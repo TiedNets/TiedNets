@@ -604,30 +604,24 @@ def test_calc_stats_on_centrality():
     global this_dir, logging_conf_fpath
     os.chdir(this_dir)
     sf.setup_logging(logging_conf_fpath)
-
-    attacked_nodes = ['A0', 'A4', 'A8', 'A9']
-    full_centrality_name = 'closeness_centrality'
-    short_centrality_name = 'clos_c_i'
     file_loader = fl.FileLoader()
-    centrality_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_centralities/same.json'))
-    exp_centr_stats = {'clos_c_i_q_1': 0.5, 'clos_c_i_q_2': 0.0, 'clos_c_i_q_3': 0.5, 'clos_c_i_q_4': 0.0,
-                       'clos_c_i_q_5': 1.0, 'clos_c_i_sum': 1.44}
-    centr_stats = cs.calc_atk_centrality_stats(attacked_nodes, full_centrality_name, short_centrality_name, file_loader,
-                                               centrality_fpath)
+    centrality_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_centralities/centralities.json'))
+    centrality_info = file_loader.fetch_json(centrality_fpath)
 
+    centrality_name = 'centrality_a'
+    result_key_suffix = 'centr_a'
+    attacked_nodes = ['A1', 'A4', 'A8', 'A9']
+    exp_centr_stats = {'p_q_1_centr_a': 0.5, 'p_q_2_centr_a': 0.0, 'p_q_3_centr_a': 0.5, 'p_q_4_centr_a': 0.0,
+                       'p_q_5_centr_a': 1.0, 'p_tot_centr_a': 0.4}
+
+    centr_stats = cs.calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix, centrality_info)
     assert centr_stats == exp_centr_stats
 
-    attacked_nodes = ['A0', 'A1', 'A3', 'A4']
-    full_centrality_name = 'closeness_centrality'
-    short_centrality_name = 'clos_c_i'
-    file_loader = fl.FileLoader()
-    centrality_fpath = os.path.join(this_dir, os.path.normpath('test_sets/ex_centralities/different.json'))
-    exp_centr_stats = {'clos_c_i_q_1': 0.5, 'clos_c_i_q_2': 0.0, 'clos_c_i_q_3': 0.5, 'clos_c_i_q_4': 0.0,
-                       'clos_c_i_q_5': 1.0, 'clos_c_i_sum': 2.8928571428571429}
-    centr_stats = cs.calc_atk_centrality_stats(attacked_nodes, full_centrality_name, short_centrality_name, file_loader,
-                                               centrality_fpath)
+    centrality_name = 'centrality_b'
+    result_key_suffix = 'centr_b'
+    attacked_nodes = ['A1', 'A4', 'A8', 'A9']
+    exp_centr_stats = {'p_q_1_centr_b': 0.5, 'p_q_2_centr_b': 0.0, 'p_q_3_centr_b': 0.5, 'p_q_4_centr_b': 0.0,
+                       'p_q_5_centr_b': 1.0, 'p_tot_centr_b': (22.0 / 45.0)}
 
-    print('centr_stats {}'.format(centr_stats))
+    centr_stats = cs.calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix, centrality_info)
     assert centr_stats == exp_centr_stats
-
-
