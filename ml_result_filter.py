@@ -31,7 +31,7 @@ def merge_files_with_headers(base_input_fpath, postfixes, file_ext, output_fpath
                     output_file.write(line)
 
                 # if there was no empty last line, add one
-                if not line.endswith('\n') or line.endswith('\\n'):
+                if not line.endswith('\n') or line.endswith('\r\n'):
                     output_file.write('\n')
 
 

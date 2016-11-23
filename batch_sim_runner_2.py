@@ -25,11 +25,11 @@ def write_conf(conf_fpath, paths, run_options, misc):
 
     config.add_section('run_opts')
     for opt_name in run_options:
-        config.set('run_opts', opt_name, run_options[opt_name])
+        config.set('run_opts', opt_name, str(run_options[opt_name]))
 
     config.add_section('misc')
     for opt_name in misc:
-        config.set('misc', opt_name, misc[opt_name])
+        config.set('misc', opt_name, str(misc[opt_name]))
 
     sf.ensure_dir_exists(os.path.dirname(os.path.realpath(conf_fpath)))
 

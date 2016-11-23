@@ -21,19 +21,19 @@ def write_conf(instance_dir, conf_fpath, a_options, b_options, inter_options, mi
 
     config.add_section('build_a')
     for opt_name in a_options:
-        config.set('build_a', opt_name, a_options[opt_name])
+        config.set('build_a', opt_name, str(a_options[opt_name]))
 
     config.add_section('build_b')
     for opt_name in b_options:
-        config.set('build_b', opt_name, b_options[opt_name])
+        config.set('build_b', opt_name, str(b_options[opt_name]))
 
     config.add_section('build_inter')
     for opt_name in inter_options:
-        config.set('build_inter', opt_name, inter_options[opt_name])
+        config.set('build_inter', opt_name, str(inter_options[opt_name]))
 
     config.add_section('misc')
     for opt_name in misc_options:
-        config.set('misc', opt_name, misc_options[opt_name])
+        config.set('misc', opt_name, str(misc_options[opt_name]))
 
     with open(conf_fpath, 'w') as configfile:
         config.write(configfile)
@@ -43,8 +43,8 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-# base_dir = os.path.normpath('../Simulations/test_mp/1cc_1ap')
-base_dir = os.path.normpath('../Simulations/test_mp/2cc_2ap')
+base_dir = os.path.normpath('../Simulations/test_mp/1cc_1ap')
+# base_dir = os.path.normpath('../Simulations/test_mp/2cc_2ap')
 
 build_a_options = [{
     'name': 'A',
@@ -95,20 +95,20 @@ build_a_options = [{
 }]
 
 build_b_options = [{
-    # 'name': 'B',
-    # 'model': 'barabasi_albert',
-    # 'm': 3,
-    # 'roles': 'relay_attached_controllers',
-    # 'controllers': 1,
-    # 'relays': 999
+    'name': 'B',
+    'model': 'barabasi_albert',
+    'm': 3,
+    'roles': 'relay_attached_controllers',
+    'controllers': 1,
+    'relays': 999
     # }, {
-        'name': 'B',
-        'model': 'barabasi_albert',
-        'm': 3,
-        'roles': 'relay_attached_controllers',
-        'controllers': 2,
-        'relays': 999
-    #
+    #     'name': 'B',
+    #     'model': 'barabasi_albert',
+    #     'm': 3,
+    #     'roles': 'relay_attached_controllers',
+    #     'controllers': 2,
+    #     'relays': 999
+    # }, {
     #     'name': 'B',
     #     'model': 'user_defined_graph',
     #     'user_graph_fpath': '../Simulations/MN_data/MN_com.graphml',
@@ -123,23 +123,23 @@ build_b_options = [{
 }]
 
 build_inter_options = [{
-    # 'name': 'Inter',
-    # 'dependency_model': 'k-to-n',
-    # 'k': 1,
-    # 'n': 1000,
-    # 'com_access_points': 1,
-    # 'prefer_nearest': False,
-    # 'produce_max_matching': True,
-    # 'max_matching_name': 'InterMM',
+    'name': 'Inter',
+    'dependency_model': 'k-to-n',
+    'k': 1,
+    'n': 1000,
+    'com_access_points': 1,
+    'prefer_nearest': False,
+    'produce_max_matching': True,
+    'max_matching_name': 'InterMM'
     # }, {
-        'name': 'Inter',
-        'dependency_model': 'k-to-n',
-        'k': 2,
-        'n': 1000,
-        'com_access_points': 2,
-        'produce_max_matching': True,
-        'max_matching_name': 'InterMM'
-    #
+    #     'name': 'Inter',
+    #     'dependency_model': 'k-to-n',
+    #     'k': 2,
+    #     'n': 1000,
+    #     'com_access_points': 2,
+    #     'produce_max_matching': True,
+    #     'max_matching_name': 'InterMM'
+    # }, {
     #     'name': 'Inter',
     #     'dependency_model': 'k-to-n',
     #     'k': 1,
@@ -165,7 +165,7 @@ misc_options = [{
     'calc_node_centrality': True
 }]
 
-instances_per_type = 4
+instances_per_type = 1
 seeds = list()
 first_group = True
 

@@ -1,8 +1,8 @@
-__author__ = 'Agostino Sturaro'
-
 import networkx as nx
 from collections import defaultdict
 import netw_creator as nc
+
+__author__ = 'Agostino Sturaro'
 
 
 def test_assign_power_roles():

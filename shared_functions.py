@@ -110,22 +110,21 @@ def get_unnamed_numpy_col_as_list(numpy_struct, col_num):
     return col
 
 
-# confront two text files line by line, ignoring different line endings and whites at the end of the files
+# compare two text files line by line, ignoring differences due to OS-specific newlines and
+# the number of newlines at the end of the files
 def compare_files_by_line(fpath1, fpath2, silent=True):
-    # all line endings in UNIX style when opening the files
     with open(fpath1, 'r') as file1, open(fpath2, 'r') as file2:
-        # lines_match = all(a == b for a, b in izip(exp_file, res_file))
         file1_end = False
         file2_end = False
         found_diff = False
         while not file1_end and not file2_end and not found_diff:
             try:
-                f1_line = next(file1).rstrip('\n')
+                f1_line = next(file1).rstrip('\r\n')  # strip '\n' and '\r' characters at the end of the line
             except StopIteration:
                 f1_line = None
                 file1_end = True
             try:
-                f2_line = next(file2).rstrip('\n')
+                f2_line = next(file2).rstrip('\r\n')
             except StopIteration:
                 f2_line = None
                 file2_end = True

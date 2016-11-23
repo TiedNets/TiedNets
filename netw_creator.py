@@ -1128,23 +1128,36 @@ def save_misc_centralities(A, B, I, file_dir):
     centrality_info = {}
     percentile_pos = [20, 40, 60, 80]
 
+    node_count_by_role = {'generator': 0, 'transmission_substation': 0, 'distribution_substation': 0,
+                          'controller': 0, 'relay': 0}
+    for node_a in A.nodes():
+        node_role = A.node[node_a]['role']
+        node_count_by_role[node_role] += 1
+    for node_b in B.nodes():
+        node_role = B.node[node_b]['role']
+        node_count_by_role[node_role] += 1
+
+    for node_role in node_count_by_role:
+        node_count = node_count_by_role[node_role]
+        centrality_info[node_role + '_count'] = node_count
+
     centr_by_node = calc_relay_betweenness(A, B, I)
     centrality_info['relay_betweenness_centrality'] = centr_by_node
+    tot_centr = sum(centr_by_node.values())
+    centrality_info['total_relay_betweenness_centrality'] = tot_centr
     centr_rank = rank_nodes_by_score(centr_by_node)
     centrality_info['relay_betweenness_centrality_rank'] = centr_rank
     centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
     centrality_info['relay_betweenness_centrality_quintiles'] = centr_quintiles.tolist()
-    tot_centr = sum(centr_by_node.values())
-    centrality_info['total_relay_betweenness_centrality'] = tot_centr
 
     centr_by_node = calc_transm_subst_betweenness(A, B, I)
     centrality_info['transm_subst_betweenness_centrality'] = centr_by_node
+    tot_centr = sum(centr_by_node.values())
+    centrality_info['total_transm_subst_betweenness_centrality'] = tot_centr
     centr_rank = rank_nodes_by_score(centr_by_node)
     centrality_info['transm_subst_betweenness_centrality_rank'] = centr_rank
     centr_quintiles = np.percentile(centr_by_node.values(), percentile_pos)
     centrality_info['transm_subst_betweenness_centrality_quintiles'] = centr_quintiles.tolist()
-    tot_centr = sum(centr_by_node.values())
-    centrality_info['total_transm_subst_betweenness_centrality'] = tot_centr
 
     file_name = 'node_centrality_misc.json'
     file_path = os.path.join(file_dir, file_name)
@@ -1596,13 +1609,14 @@ def run(conf_fpath):
 
     if produce_union is True:
         ab_union_name = config.get('misc', 'ab_union_name')
-        # TODO: better create directed copies of A and B, then add their edges to an empty directed graph,
-        # and finally add I edges, perhaps also tell nodes what network they are from
+        # create directed copies of A, B and I, add their edges to an empty directed graph,
+        # do not use the nx.compose function to create this graph, it's bugged!
+        # TODO: the union graph is always directed, we might not want this
         ab_union = nx.DiGraph();
-        #ab_union = nx.compose(nx.compose(I, A), B)  # bugged
         ab_union.graph['name'] = ab_union_name
         ab_union.add_edges_from(A.to_directed().edges())
         ab_union.add_edges_from(B.to_directed().edges())
+        ab_union.add_edges_from(I.to_directed().edges())
         for node in A.nodes():
             ab_union.node[node]['network'] = A.graph['name']
         for node in B.nodes():

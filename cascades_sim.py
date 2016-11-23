@@ -401,10 +401,12 @@ def calc_atk_centr_stats(name_A, name_B, name_I, name_AB, attacked_nodes_a, atta
 
     centr_name = 'relay_betweenness_centrality'
     if centr_name in centr_info_misc:
+        centr_info_misc['node_count'] = centr_info_misc['relay_count']  # trick to reuse the same logic
         centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_rel_betw_c', centr_info_misc))
 
     centr_name = 'transm_subst_betweenness_centrality'
     if centr_name in centr_info_misc:
+        centr_info_misc['node_count'] = centr_info_misc['transmission_substation_count']  # trick
         centr_stats.update(calc_atk_centrality_stats(attacked_nodes, centr_name, 'atkd_ts_betw_c', centr_info_misc))
 
     return centr_stats
@@ -441,24 +443,20 @@ def run(conf_fpath, floader):
         netw_dir = os.path.abspath(netw_dir)
     netw_a_fname = config.get('paths', 'netw_a_fname')
     netw_a_fpath_in = os.path.join(netw_dir, netw_a_fname)
-    # A = nx.read_graphml(netw_a_fpath_in, node_type=str)
     A = floader.fetch_graphml(netw_a_fpath_in, str)
 
     netw_b_fname = config.get('paths', 'netw_b_fname')
     netw_b_fpath_in = os.path.join(netw_dir, netw_b_fname)
-    # B = nx.read_graphml(netw_b_fpath_in, node_type=str)
     B = floader.fetch_graphml(netw_b_fpath_in, str)
 
     netw_inter_fname = config.get('paths', 'netw_inter_fname')
     netw_inter_fpath_in = os.path.join(netw_dir, netw_inter_fname)
-    # I = nx.read_graphml(netw_inter_fpath_in, node_type=str)
     I = floader.fetch_graphml(netw_inter_fpath_in, str)
 
     # if the union graph is needed for this simulation, it's better to have it created in advance and just load it
     if config.has_option('paths', 'netw_union_fname'):
         netw_union_fname = config.get('paths', 'netw_union_fname')
         netw_union_fpath_in = os.path.join(netw_dir, netw_union_fname)
-        # ab_union = nx.read_graphml(netw_union_fpath_in, node_type=str)
         ab_union = floader.fetch_graphml(netw_union_fpath_in, str)
     else:
         ab_union = None
@@ -490,16 +488,8 @@ def run(conf_fpath, floader):
     if attack_tactic in attacks_for_A_only and attacked_netw != A.graph['name']:
         raise ValueError('Attack {} can only be used on the power network A'.format(attack_tactic))
 
-    usage_attacks = ['most_inter_used_distr_subs', 'most_intra_used_distr_subs', 'most_intra_used_transm_subs',
-                     'most_intra_used_generators', 'most_inter_used_relays', 'most_intra_used_relays']
-
     centrality_attacks = ['betweenness_centrality_rank', 'closeness_centrality_rank', 'indegree_centrality_rank',
                           'katz_centrality_rank']
-
-    if attack_tactic in usage_attacks:
-        secondary_sort = config.get('run_opts', 'secondary_sort')
-        if secondary_sort not in ['random_shuffle', 'sort_by_id']:
-            raise ValueError('Invalid value for parameter "secondary_sort": ' + secondary_sort)
 
     if attack_tactic in centrality_attacks:
         min_rank = config.getint('run_opts', 'min_rank')
@@ -557,6 +547,10 @@ def run(conf_fpath, floader):
     else:
         run_num = 0
 
+    # statistics meant for machine learning are stored in this dictionary
+    ml_stats = {'batch_conf_fpath': batch_conf_fpath, 'sim_group': sim_group, 'instance': instance,
+                'run': run_num, 'seed': seed}
+
     # stability check
     unstable_nodes = set()
     if inter_support_type == 'node_interlink':
@@ -588,6 +582,7 @@ def run(conf_fpath, floader):
         unstable_nodes.update(find_nodes_not_in_giant_component(B))
     elif intra_support_type == 'cluster_size':
         unstable_nodes.update(find_nodes_in_smaller_clusters(B, min_cluster_size))
+    # TODO: find out why we skipped / did not implement stability checks for this case
     # elif intra_support_type == 'realistic':
     #     unstable_nodes.update(list())
 
@@ -609,10 +604,6 @@ def run(conf_fpath, floader):
 
     base_node_cnt_a = A.number_of_nodes()
     base_node_cnt_b = B.number_of_nodes()
-
-    # statistics meant for machine learning are stored in this dictionary
-    ml_atk_stats = {'batch_conf_fpath': batch_conf_fpath, 'sim_group': sim_group, 'instance': instance,
-                    '#run': run_num, 'seed': seed}
 
     # execute simulation of failure propagation
     with open(run_stats_fpath, 'wb') as run_stats_file:
@@ -670,15 +661,16 @@ def run(conf_fpath, floader):
                     node, node_netw))
 
         if ml_stats_fpath:  # if this string is not empty
-            ml_atk_stats.update(calc_atk_centr_stats(A.graph['name'], B.graph['name'], I.graph['name'],
-                                                     ab_union.graph['name'], attacked_nodes_a, attacked_nodes_b))
+            ml_stats.update(
+                calc_atk_centr_stats(A.graph['name'], B.graph['name'], I.graph['name'], ab_union.graph['name'],
+                                     attacked_nodes_a, attacked_nodes_b, floader, netw_dir))
 
             result_key_by_role = {'generator': 'p_atkd_gen', 'transmission_substation': 'p_atkd_ts',
                                   'distribution_substation': 'p_atkd_ds'}
-            ml_atk_stats.update(calc_atkd_percent_by_role(A, attacked_nodes_a, result_key_by_role))
+            ml_stats.update(calc_atkd_percent_by_role(A, attacked_nodes_a, result_key_by_role))
 
             result_key_by_role = {'relay': 'p_atkd_rel', 'controller': 'p_atkd_cc'}
-            ml_atk_stats.update(calc_atkd_percent_by_role(B, attacked_nodes_b, result_key_by_role))
+            ml_stats.update(calc_atkd_percent_by_role(B, attacked_nodes_b, result_key_by_role))
 
         total_dead_a = len(attacked_nodes_a)
         if total_dead_a > 0:
@@ -802,12 +794,10 @@ def run(conf_fpath, floader):
     # save_state('final', A, B, I, results_dir)
 
     # write statistics about the final result
-    if os.path.isfile(end_stats_fpath) is False:
-        write_header = True  # if we are going to create a new file, then add the header
-    else:
-        write_header = False
+
+    end_stats_file_existed = os.path.isfile(end_stats_fpath)
     with open(end_stats_fpath, 'ab') as end_stats_file:
-        end_stats_header = ['batch_conf_fpath', 'sim_group', 'instance', '#run', '#dead', '#dead_a', '#dead_b']
+        end_stats_header = ['batch_conf_fpath', 'sim_group', 'instance', 'run', '#dead', '#dead_a', '#dead_b']
 
         if save_death_cause is True:
             end_stats_header.extend(['no_intra_sup_a', 'no_inter_sup_a',
@@ -815,12 +805,12 @@ def run(conf_fpath, floader):
             if inter_support_type == 'realistic':
                 end_stats_header.extend(['no_sup_ccs', 'no_sup_relays', 'no_com_path'])
 
-        end_stats = csv.DictWriter(end_stats_file, end_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
-        if write_header is True:
-            end_stats.writeheader()
+        end_stats_writer = csv.DictWriter(end_stats_file, end_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        if end_stats_file_existed is False:
+            end_stats_writer.writeheader()
 
         end_stats_row = {'batch_conf_fpath': batch_conf_fpath, 'sim_group': sim_group, 'instance': instance,
-                         '#run': run_num, '#dead': total_dead_a + total_dead_b,
+                         'run': run_num, '#dead': total_dead_a + total_dead_b,
                          '#dead_a': total_dead_a, '#dead_b': total_dead_b}
 
         if save_death_cause is True:
@@ -829,39 +819,23 @@ def run(conf_fpath, floader):
             if inter_support_type == 'realistic':
                 end_stats_row.update({'no_sup_ccs': no_sup_ccs_deaths, 'no_sup_relays': no_sup_relays_deaths,
                                       'no_com_path': no_com_path_deaths})
-        end_stats.writerow(end_stats_row)
+        end_stats_writer.writerow(end_stats_row)
 
     if ml_stats_fpath:  # if this string is not empty
 
         # percentages of dead nodes over the initial number of nodes in the graph
-        ml_atk_stats['p_dead_a'] = sf.percent_of_part(total_dead_a, base_node_cnt_a)
-        ml_atk_stats['p_dead_b'] = sf.percent_of_part(total_dead_b, base_node_cnt_b)
-        ml_atk_stats['p_dead'] = sf.percent_of_part(total_dead_a + total_dead_b, base_node_cnt_a + base_node_cnt_b)
+        ml_stats['p_dead_a'] = sf.percent_of_part(total_dead_a, base_node_cnt_a)
+        ml_stats['p_dead_b'] = sf.percent_of_part(total_dead_b, base_node_cnt_b)
+        ml_stats['p_dead'] = sf.percent_of_part(total_dead_a + total_dead_b, base_node_cnt_a + base_node_cnt_b)
 
-        if save_death_cause is True:
-            ml_atk_stats['p_no_intra_sup_a'] = sf.percent_of_part(intra_sup_deaths_a, total_dead_a)
-            ml_atk_stats['p_no_inter_sup_a'] = sf.percent_of_part(inter_sup_deaths_a, total_dead_a)
-            ml_atk_stats['p_no_intra_sup_b'] = sf.percent_of_part(intra_sup_deaths_b, total_dead_b)
-            ml_atk_stats['p_no_inter_sup_b'] = sf.percent_of_part(inter_sup_deaths_b, total_dead_b)
-
-            if inter_support_type == 'realistic':
-                ml_atk_stats['p_no_sup_ccs'] = sf.percent_of_part(no_sup_ccs_deaths, total_dead_a)
-                ml_atk_stats['p_no_sup_relays'] = sf.percent_of_part(no_sup_relays_deaths, total_dead_a)
-                ml_atk_stats['p_no_com_path'] = sf.percent_of_part(no_com_path_deaths, total_dead_a)
-
-        # if we need to create a new file, then remember to add the header
-        if os.path.isfile(ml_stats_fpath) is False:
-            write_header = True
-        else:
-            write_header = False
-
+        ml_stats_file_existed = os.path.isfile(ml_stats_fpath)
         with open(ml_stats_fpath, 'ab') as ml_stats_file:
 
             # sort statistics columns by name so they can be more found easily in the output file
-            ml_stats_header = sorted(ml_atk_stats.keys(), key=sf.natural_sort_key)
+            ml_stats_header = sorted(ml_stats.keys(), key=sf.natural_sort_key)
 
-            ml_stats = csv.DictWriter(ml_stats_file, ml_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
-            if write_header is True:
-                ml_stats.writeheader()
+            ml_stats_writer = csv.DictWriter(ml_stats_file, ml_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+            if ml_stats_file_existed is False:
+                ml_stats_writer.writeheader()
 
-            ml_stats.writerow(ml_atk_stats)
+            ml_stats_writer.writerow(ml_stats)

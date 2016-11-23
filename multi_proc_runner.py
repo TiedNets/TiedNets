@@ -6,7 +6,7 @@ import subprocess
 __author__ = 'Agostino Sturaro'
 
 
-def run_batches(batches, base_conf_fpath):
+def run_batches(batches):
     # check that all configuration files exist and are valid json
     # for batch_no in range(concurrent_procs):
     for batch_no in batches:
@@ -35,6 +35,6 @@ def run_batches(batches, base_conf_fpath):
 # TODO: ask before overwrite
 # each of these processes must have its own configuration file
 # if we need them to run concurrently, all of their output files must be different
-concurrent_procs = 8  # TODO: use this to separate batches
-run_batches(range(0, 8))
+concurrent_procs = 1  # TODO: use this to separate batches
+run_batches(range(0, 1))
 # run_batches(range(8, 16))
