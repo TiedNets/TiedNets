@@ -152,7 +152,8 @@ for sim_group in range(0, len(base_configs)):
     # outer cycle ranging over values of the independent variable
     for var_value in indep_var_vals:
         run_options[indep_var_name] = var_value
-        paths['end_stats_fpath'] = os.path.join(group_results_dir, 'sim_group_{}_stats.tsv'.format(sim_group))
+        paths['end_stats_fpath'] = os.path.join(group_results_dir,
+                                                'batch_no_{}_sim_group_{}_stats.tsv'.format(batch_no, sim_group))
 
         # inner cycle ranging over different network instances
         for instance_num in range(first_instance, last_instance, 1):

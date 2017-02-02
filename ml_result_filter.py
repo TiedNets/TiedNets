@@ -13,11 +13,10 @@ def check_split_tolerance(total_item_cnt, chosen_item_cnt, desired_perc, perc_to
 
 
 # assumes all files have a single header line and only keeps the header of the first file
-def merge_files_with_headers(base_input_fpath, postfixes, file_ext, output_fpath):
+def merge_files_with_headers(input_file_paths, output_file_path):
     first_header = True
-    with open(output_fpath, 'wb') as output_file:
-        for postfix in postfixes:
-            input_fpath = base_input_fpath + postfix + file_ext
+    with open(output_file_path, 'w') as output_file:
+        for input_fpath in input_file_paths:
             with open(input_fpath, 'r') as input_file:
                 if first_header is True:
                     header_line = next(input_file)
@@ -25,30 +24,49 @@ def merge_files_with_headers(base_input_fpath, postfixes, file_ext, output_fpath
                     first_header = False
                 else:
                     if next(input_file) != header_line:
-                        raise RuntimeError('Header mismatch between {} and {} '.format(base_input_fpath + postfix[0] +
-                                                                                       file_ext, input_fpath))
+                        raise RuntimeError('Header mismatch between {} and {}'.format(input_file_paths[0], input_fpath))
                 for line in input_file:
                     output_file.write(line)
 
                 # if there was no empty last line, add one
-                if not line.endswith('\n') or line.endswith('\r\n'):
+                if not line.endswith('\n') and not line.endswith('\r\n'):
                     output_file.write('\n')
 
 
 def filter_file_cols(input_fpath, output_fpath, wanted_col_names):
-    with open(input_fpath, 'r') as input_file, open(output_fpath, 'wb') as output_file:
+    with open(input_fpath, 'r') as input_file, open(output_fpath, 'w') as output_file:
         csvreader = csv.reader(input_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
         csvwriter = csv.writer(output_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
         header = csvreader.next()
-        wanted_cols = []
+        wanted_col_nums = []
         for col_name in wanted_col_names:
             col_num = header.index(col_name)
-            wanted_cols.append(col_num)
-        wanted_cols.sort()
+            wanted_col_nums.append(col_num)
+        wanted_col_nums.sort()
 
         for row in csvreader:
-            wanted_row = [row[i] for i in wanted_cols]
-            csvwriter.writerow(wanted_row)
+            filtered_row = [row[col_num] for col_num in wanted_col_nums]
+            csvwriter.writerow(filtered_row)
+
+
+def filter_duplicates_on_col(input_fpath, output_fpath, duplicates_col_name):
+    with open(input_fpath, 'r') as input_file, open(output_fpath, 'w') as output_file:
+        csvreader = csv.reader(input_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        csvwriter = csv.writer(output_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        header = csvreader.next()
+        csvwriter.writerow(header)
+        duplicates_col_num = header.index(duplicates_col_name)
+        seen = set()
+        duplicate_cnt = 0
+        for row in csvreader:
+            col_val = row[duplicates_col_num]
+            if col_val not in seen:
+                csvwriter.writerow(row)
+                seen.add(col_val)
+            else:
+                duplicate_cnt += 1
+                print('Found duplicate val {}'.format(col_val))
+    print('Found {} duplicates'.format(duplicate_cnt))
 
 
 # open the tsv file (set correct parameters)
@@ -61,48 +79,57 @@ def filter_file_cols(input_fpath, output_fpath, wanted_col_names):
 
 # TODO: offer an alternative split that does not slice examples first
 
-# base_input_fpath = 'C:/Users/Agostino/Documents/Simulations/test_mp/ml_stats_'
-# postfixes = [str(element) for element in range(0, 16)]
-# merge_files_with_headers(base_input_fpath, postfixes, '.tsv', base_input_fpath + '0-16ab_union.tsv')
-
 my_random = random.Random(128)
-# in_fpath = 'C:/Users/Agostino/Documents/OctaveProjects/TiedNetsLearner/Data/atks_on_a0123_2-26_401s_26-51_201s_extra.txt'
-# train_fpath = 'C:/Users/Agostino/Desktop/train_0123ab.tsv'
-# cv_fpath = 'C:/Users/Agostino/Desktop/cv_0123ab.tsv'
-# test_fpath = 'C:/Users/Agostino/Desktop/test_0123ab.tsv'
 
-in_fpath = 'C:/Users/Agostino/Desktop/ml_stats_0-8a_union.tsv'
-train_fpath = 'C:/Users/Agostino/Desktop/train_0-8_0123a.tsv'
-cv_fpath = 'C:/Users/Agostino/Desktop/cv_0-8_0123a.tsv'
-test_fpath = 'C:/Users/Agostino/Desktop/test_0-8_0123a.tsv'
+input_folder = '/home/agostino/Documents/Sims/single net 20161212/'
+
+input_file_paths = ['{}ml_stats_{}.tsv'.format(input_folder, element) for element in range(4, 8)]
+merged_file_name = '4-7_union_inst_0_b.tsv'
+merged_file_path = input_folder + merged_file_name
+merge_files_with_headers(input_file_paths, merged_file_path)
+
+deduped_file_path = input_folder + '4-7_union_deduped_inst_0_b.tsv'
+duplicates_col_name = 'atkd_nodes_b'
+filter_duplicates_on_col(merged_file_path, deduped_file_path, duplicates_col_name)
+
+in_fpath = deduped_file_path
+train_fpath = input_folder + 'train_' + merged_file_name
+cv_fpath = input_folder + 'cv_' + merged_file_name
+test_fpath = input_folder + 'test_' + merged_file_name
 
 # how to subdivide the set of examples
 p_train = 0.8  # training set
-p_cv = 0.0  # cross validation
+p_cv = 0.0  # cross validation/home/agostino/Documents/train_0-7_union.tsv
 p_test = 0.2  # test set
 p_tolerance = 0.05  # maximum acceptable deviation from intended percentage
 
-col_name = '#atkd'
+# subdivide examples based on the value they have in this column
+splitting_col_name = '#atkd_b'
+# filter_col_name = 'instance'
+# filter_val = '0'
 examples_by_val = {}
 tot_ex_cnt = 0
 
 with open(in_fpath, 'r') as ml_file:
     csvreader = csv.reader(ml_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
     header = csvreader.next()
-    col_num = header.index(col_name)
+    splitting_col_num = header.index(splitting_col_name)
+    # filter_col_num = header.index(filter_col_name)
     for example in csvreader:
-        col_val = example[col_num]
-        if col_val not in examples_by_val:
-            examples_by_val[col_val] = []
-        examples_by_val[col_val].append(example)
+        # if example[filter_col_num] != filter_val:
+        #     continue
+        splitting_val = example[splitting_col_num]
+        if splitting_val not in examples_by_val:
+            examples_by_val[splitting_val] = []
+        examples_by_val[splitting_val].append(example)
         tot_ex_cnt += 1
 
-    for col_val in examples_by_val:
-        my_random.shuffle(examples_by_val[col_val])
+    for splitting_val in examples_by_val:
+        my_random.shuffle(examples_by_val[splitting_val])
 
 train_ex_cnt = cv_ex_cnt = test_ex_cnt = 0
 
-with open(train_fpath, 'wb') as train_file, open(cv_fpath, 'wb') as cv_file, open(test_fpath, 'wb') as test_file:
+with open(train_fpath, 'w') as train_file, open(cv_fpath, 'w') as cv_file, open(test_fpath, 'w') as test_file:
     train_writer = csv.writer(train_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
     train_writer.writerow(header)
     cv_writer = csv.writer(cv_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
@@ -110,8 +137,8 @@ with open(train_fpath, 'wb') as train_file, open(cv_fpath, 'wb') as cv_file, ope
     test_writer = csv.writer(test_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
     test_writer.writerow(header)
 
-    for col_val in sorted(examples_by_val.keys(), key=sf.natural_sort_key):
-        all_sets = sf.percentage_split(examples_by_val[col_val], [p_train, p_cv, p_test])
+    for splitting_val in sorted(examples_by_val.keys(), key=sf.natural_sort_key):
+        all_sets = sf.percentage_split(examples_by_val[splitting_val], [p_train, p_cv, p_test])
 
         train_set = all_sets[0]
         train_ex_cnt += len(train_set)

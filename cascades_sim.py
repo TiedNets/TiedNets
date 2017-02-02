@@ -650,6 +650,8 @@ def run(conf_fpath, floader):
 
         attacked_nodes_a = []  # nodes in network A hit by the initial attack
         attacked_nodes_b = []  # nodes in network B hit by the initial attack
+        dead_nodes_a = []
+        dead_nodes_b = []
         for node in attacked_nodes:
             node_netw = I.node[node]['network']
             if node_netw == A.graph['name']:
@@ -661,6 +663,9 @@ def run(conf_fpath, floader):
                     node, node_netw))
 
         if ml_stats_fpath:  # if this string is not empty
+            ml_stats.update({'#atkd': len(attacked_nodes_a) + len(attacked_nodes_b), '#atkd_a': len(attacked_nodes_a),
+                             '#atkd_b': len(attacked_nodes_b)})
+            ml_stats.update({'atkd_nodes_a': attacked_nodes_a, 'atkd_nodes_b': attacked_nodes_b})
             ml_stats.update(
                 calc_atk_centr_stats(A.graph['name'], B.graph['name'], I.graph['name'], ab_union.graph['name'],
                                      attacked_nodes_a, attacked_nodes_b, floader, netw_dir))
@@ -674,12 +679,14 @@ def run(conf_fpath, floader):
 
         total_dead_a = len(attacked_nodes_a)
         if total_dead_a > 0:
+            dead_nodes_a.extend(attacked_nodes_a)
             A.remove_nodes_from(attacked_nodes_a)
             logger.info('Time {}) {} nodes of network {} failed because of initial attack: {}'.format(
                 time, total_dead_a, A.graph['name'], sorted(attacked_nodes_a, key=sf.natural_sort_key)))
 
         total_dead_b = len(attacked_nodes_b)
         if total_dead_b > 0:
+            dead_nodes_b.extend(attacked_nodes_b)
             B.remove_nodes_from(attacked_nodes_b)
             logger.info('Time {}) {} nodes of network {} failed because of initial attack: {}'.format(
                 time, total_dead_b, B.graph['name'], sorted(attacked_nodes_b, key=sf.natural_sort_key)))
@@ -724,6 +731,7 @@ def run(conf_fpath, floader):
                     time, failed_cnt_a, A.graph['name'], sorted(unsupported_nodes_a, key=sf.natural_sort_key)))
                 total_dead_a += failed_cnt_a
                 inter_sup_deaths_a += failed_cnt_a
+                dead_nodes_a.extend(unsupported_nodes_a)
                 A.remove_nodes_from(unsupported_nodes_a)
                 I.remove_nodes_from(unsupported_nodes_a)
                 updated = True
@@ -744,6 +752,7 @@ def run(conf_fpath, floader):
                     time, failed_cnt_a, A.graph['name'], sorted(unsupported_nodes_a, key=sf.natural_sort_key)))
                 total_dead_a += failed_cnt_a
                 intra_sup_deaths_a += failed_cnt_a
+                dead_nodes_a.extend(unsupported_nodes_a)
                 A.remove_nodes_from(unsupported_nodes_a)
                 I.remove_nodes_from(unsupported_nodes_a)
                 updated = True
@@ -764,6 +773,7 @@ def run(conf_fpath, floader):
                     time, failed_cnt_b, B.graph['name'], sorted(unsupported_nodes_b, key=sf.natural_sort_key)))
                 total_dead_b += failed_cnt_b
                 inter_sup_deaths_b += failed_cnt_b
+                dead_nodes_b.extend(unsupported_nodes_b)
                 B.remove_nodes_from(unsupported_nodes_b)
                 I.remove_nodes_from(unsupported_nodes_b)
                 updated = True
@@ -784,6 +794,7 @@ def run(conf_fpath, floader):
                     time, failed_cnt_b, B.graph['name'], sorted(unsupported_nodes_b, key=sf.natural_sort_key)))
                 total_dead_b += failed_cnt_b
                 intra_sup_deaths_b += failed_cnt_b
+                dead_nodes_b.extend(unsupported_nodes_b)
                 B.remove_nodes_from(unsupported_nodes_b)
                 I.remove_nodes_from(unsupported_nodes_b)
                 updated = True
@@ -827,6 +838,8 @@ def run(conf_fpath, floader):
         ml_stats['p_dead_a'] = sf.percent_of_part(total_dead_a, base_node_cnt_a)
         ml_stats['p_dead_b'] = sf.percent_of_part(total_dead_b, base_node_cnt_b)
         ml_stats['p_dead'] = sf.percent_of_part(total_dead_a + total_dead_b, base_node_cnt_a + base_node_cnt_b)
+        ml_stats['dead_nodes_a'] = dead_nodes_a
+        ml_stats['dead_nodes_b'] = dead_nodes_b
 
         ml_stats_file_existed = os.path.isfile(ml_stats_fpath)
         with open(ml_stats_fpath, 'ab') as ml_stats_file:

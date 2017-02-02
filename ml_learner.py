@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from sklearn import linear_model
+from sklearn.feature_selection import VarianceThreshold
+from sklearn.feature_selection import SelectFromModel
 
 __author__ = 'Agostino Sturaro'
 
@@ -30,11 +32,25 @@ def find_mu_and_sigma(X, col_names):
     return mu, sigma
 
 
-# Applies the pre-calculated normalization parameters to X
+def find_mu_and_sigma_bis(X):
+    global logger
+    mu = np.mean(X, 0)  # mean of each column
+    sigma = np.std(X, 0, ddof=1)
+    logger.debug('mu shape = {} mu = {}\nsigma shape = {} sigma = {}'.format(mu.shape, mu, sigma.shape, sigma))
+
+    for i in range(sigma.size):
+        if sigma[i] == 0:
+            logger.info('Column {} of X is full of identical values {}'.format(i, X[0, i]))
+            sigma[i] = 1
+
+    return mu, sigma
+
+
+# Applies the pre-calculated standardization parameters to X
 # the mean value of each feature becomes 0 and the standard deviation becomes 1
 # The proper term for this operation is "standardization", but in ML we have this frequent misnomer
-# if this was an actual normalization, then the value of each feature of each example would be in [0,1]
-def apply_normalization(X, mu, sigma):
+# do not confuse standardization (works by column) with normalization (works by row)
+def apply_standardization(X, mu, sigma):
     global logger
     logger.debug('X.dtype = {}, sigma.dtype = {}'.format(X.dtype, sigma.dtype))
     if 0.0 in sigma:
@@ -58,6 +74,15 @@ def calc_my_cost(X, y, predictor):
     predictions = predictor(X)
     errors = (predictions - y)
     cost = np.mean(np.abs(errors))  # average of absolute error
+
+    return cost
+
+
+def calc_cost_scikit(X, y, predictor):
+    m = y.size  # number of examples given
+    predictions = predictor(X)
+    errors = (predictions - y)
+    cost = (1.0 / (2 * m)) * errors.T.dot(errors)
 
     return cost
 
@@ -127,6 +152,18 @@ def plot_2D_line(x_vector, y_vector, xlabel, ylabel, line_label):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     plt.plot(x_vector, y_vector, 'b-o', label=line_label)
+    plt.legend(fontsize=10)
+    plt.tight_layout()  # make sure everything is showing
+    plt.show()
+
+
+# lines is a list of dictionaries {x_vector, y_vector, line_label}
+def plot_2D_lines(lines, xlabel, ylabel):
+    ax = plt.axes()
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    for line in lines:
+        plt.plot(line['x_vector'], line['y_vector'], line['style'], label=line['label'])
     plt.legend(fontsize=10)
     plt.tight_layout()  # make sure everything is showing
     plt.show()
@@ -219,7 +256,29 @@ def calc_cost_by_atk_size(data_X, data_y, data_info, atks_cnt_col, predictor):
         relevant_data_X = data_X[relevant_test_idx, :]
         relevant_data_y = data_y[relevant_test_idx]
         var_costs[i] = calc_my_cost(relevant_data_X, relevant_data_y, predictor)
+        # var_costs[i] = calc_cost_scikit(relevant_data_X, relevant_data_y, predictor)
     return atk_sizes, var_costs
+
+
+# returns three arrays:
+# 1) atk_sizes, the different numbers of attacks operated on the network, from lowest to highest
+# 2) avg_deaths, the average fraction of dead nodes after the attacks
+# 3) avg_preds, the average of the predicted fractions of dead nodes after the attacks
+# The ith cells of avg_deaths and avg_preds are related to the number of attacks in atk_sizes[i]
+def avg_deaths_and_preds_by_atk_size(data_X, data_y, data_info, atks_cnt_col, predictor):
+    # pick unique values on the column with the number of attacks
+    atk_sizes = np.sort(np.unique(data_info[:, atks_cnt_col]))
+    avg_preds = np.zeros(atk_sizes.size)
+    avg_deaths = np.zeros(atk_sizes.size)
+    # create the mask (row y/n) using the info matrix, but apply it to the data matrix
+    # this way we can filter data rows using information not provided to the learning alg
+    for i, atk_size in enumerate(atk_sizes):
+        relevant_test_idx = data_info[:, atks_cnt_col] == atk_size
+        relevant_data_X = data_X[relevant_test_idx, :]
+        relevant_data_y = data_y[relevant_test_idx]
+        avg_preds[i] = np.mean(predictor(relevant_data_X))
+        avg_deaths[i] = np.mean(relevant_data_y)
+    return atk_sizes, avg_deaths, avg_preds
 
 
 def train_and_test(train_set_fpath, test_set_fpath, X_col_names, y_col_name, info_col_names, alpha, num_iters):
@@ -252,15 +311,15 @@ def train_and_test(train_set_fpath, test_set_fpath, X_col_names, y_col_name, inf
     # feature standardization
     mu, sigma = find_mu_and_sigma(train_X, X_col_names)
 
-    train_X = apply_normalization(train_X, mu, sigma)
+    train_X = apply_standardization(train_X, mu, sigma)
     train_X = np.c_[np.ones(train_X.shape[0], dtype=train_X.dtype), train_X]  # add intercept (prefix a column of ones)
-    logger.debug('train_X normalized with intercept (first 2 rows)\n{}'.format(train_X[range(2), :]))
+    logger.debug('train_X standardized with intercept (first 2 rows)\n{}'.format(train_X[range(2), :]))
 
     X_col_names.insert(0, '')  # prepend empty label to keep column names aligned
 
-    test_X = apply_normalization(test_X, mu, sigma)
+    test_X = apply_standardization(test_X, mu, sigma)
     test_X = np.c_[np.ones(test_X.shape[0], dtype=test_X.dtype), test_X]  # add intercept term
-    logger.debug('test_X normalized with intercept (first 2 rows)\n{}'.format(test_X[range(2), :]))
+    logger.debug('test_X standardized with intercept (first 2 rows)\n{}'.format(test_X[range(2), :]))
 
     theta = np.zeros(train_X.shape[1], dtype=train_X.dtype)  # initialize theta to all zeros
     theta_history = gradient_descent_ext(train_X, train_y, theta, alpha, num_iters)
@@ -271,7 +330,7 @@ def train_and_test(train_set_fpath, test_set_fpath, X_col_names, y_col_name, inf
     plot_cost_history(train_cost_history, test_cost_history, 'Number of iterations', 'Value of cost function')
 
     # draw a graph showing the mean error for each #attacks
-    atks_cnt_col = info_col_names.index('#atkd')
+    atks_cnt_col = info_col_names.index('#atkd_a')  # TODO: this should not be hardcoded
     atk_sizes, test_costs = calc_cost_by_atk_size(test_X, test_y, test_info, atks_cnt_col, predictor)
     logger.debug('atk_sizes = {}'.format(atk_sizes))
     plot_2D_line(atk_sizes, test_costs, '% of attacked nodes', 'Avg abs prediction error', 'test set')
@@ -323,10 +382,10 @@ def solve_and_test(train_set_fpath, test_set_fpath, X_col_names, y_col_name, inf
     predictor = lambda x: x.dot(theta)
 
     # draw a graph showing the mean error for each #attacks
-    atks_cnt_col = info_col_names.index('#atkd')
+    atks_cnt_col = info_col_names.index('#atkd_a')  # TODO: this should not be hardcoded
     atk_sizes, test_costs = calc_cost_by_atk_size(test_X, test_y, test_info, atks_cnt_col, predictor)
     logger.debug('atk_sizes = {}'.format(atk_sizes))
-    plot_2D_line(atk_sizes, test_costs, '% of attacked nodes', 'Avg abs prediction error', 'test set')
+    plot_2D_line(atk_sizes, test_costs, '# of attacked power nodes', 'Avg abs prediction error', 'test set')
 
     full_X = np.append(train_X, test_X, axis=0)
     full_y = np.append(train_y, test_y, axis=0)
@@ -366,48 +425,100 @@ def train_and_test_sk(train_set_fpath, test_set_fpath, X_col_names, y_col_name, 
     logger.debug('test_X (first 2 rows)\n{}'.format(test_X[range(2), :]))
     logger.debug('test_y (first 2 rows)\n{}'.format(test_y[range(2)]))
 
-    # feature standardization
-    mu, sigma = find_mu_and_sigma(train_X, X_col_names)
+    # baseline feature selection, round 1
+    base_feature_cnt = train_X.shape[1]
+    vt_sel = VarianceThreshold()
+    train_X = vt_sel.fit_transform(train_X)
+    test_X = vt_sel.transform(test_X)
+    sel_feature_cnt = train_X.shape[1]
+    logger.debug('removed {} features'.format(base_feature_cnt - sel_feature_cnt))
 
-    train_X = apply_normalization(train_X, mu, sigma)
-    # no intercept term added, scikit-learn will do it
-    logger.debug('train_X normalized without intercept (first 2 rows)\n{}'.format(train_X[range(2), :]))
-
-    X_col_names.insert(0, '')  # prepend empty label to keep column names aligned
-
-    test_X = apply_normalization(test_X, mu, sigma)
-    # no intercept term added, scikit-learn will do it
-    logger.debug('test_X normalized without intercept (first 2 rows)\n{}'.format(test_X[range(2), :]))
-
-    # polynomial features/interactions
-    poly = preprocessing.PolynomialFeatures(2)
+    # polynomial features/interactions, allow to learn a more complex prediction function
+    poly = preprocessing.PolynomialFeatures(3, interaction_only=False)  # TODO: increase this? set add_bias=False?
     train_X = poly.fit_transform(train_X)
+    poly_feature_names = poly.get_feature_names(X_col_names)
     test_X = poly.fit_transform(test_X)
+    logger.debug('train_X with polynomial features (first 2 rows)\n{}'.format(train_X[range(2), :]))
     logger.debug('test_X with polynomial features (first 2 rows)\n{}'.format(test_X[range(2), :]))
+
+    scaler = preprocessing.StandardScaler()
+    train_X = scaler.fit_transform(train_X)
+    test_X = scaler.transform(test_X)
 
     # apply regularized polynomial regression with built-in cross validation to choose the best value for the
     # hyperparameter alpha, basically it chooses the best regularization parameter by itself
-    alphas = (0.1, 0.5, 1.0, 5.0, 10.0, 25.0, 50.0)
-    clf = linear_model.RidgeCV(alphas)
+    # alphas = (0.1, 0.5, 1.0, 5.0, 10.0, 25.0, 50.0)
+    # clf = linear_model.RidgeCV(alphas, normalize=True)
+    # clf = linear_model.Ridge(alpha=0.1)
+    clf = linear_model.ElasticNetCV(max_iter=10000)
+    # clf = linear_model.ElasticNetCV(normalize=True, max_iter=100000)  #clf.alpha_ 4.02307373299e-06
+    # clf = linear_model.LassoCV(max_iter=100000, fit_intercept=False)
+
+    # model selection by feature selection
+    sfm = SelectFromModel(clf)
+    sfm.fit(train_X, train_y)
+    temp_train_X = sfm.transform(train_X)
+    sel_feature_cnt = temp_train_X.shape[1]
+    logger.debug('smf.threshold = {}, sel_feature_cnt = {}'.format(sfm.threshold, sel_feature_cnt))
+
+    # sfm_params = sfm.get_params()
+    # with open('params.json', 'w') as params_file:
+    #     json.dump(sfm_params, params_file)
+
+    if sel_feature_cnt > 20:
+        rounds = 0
+        sfm.threshold = 0.01
+        temp_train_X = sfm.transform(train_X)
+        sel_feature_cnt = temp_train_X.shape[1]
+        logger.debug('smf.threshold = {}, sel_feature_cnt = {}'.format(sfm.threshold, sel_feature_cnt))
+        while sel_feature_cnt > 20 and rounds < 100:
+            # sfm.threshold = '{}*median'.format(multiplier)
+            sfm.threshold += 0.01
+            temp_train_X = sfm.transform(train_X)
+            sel_feature_cnt = temp_train_X.shape[1]
+            rounds += 1
+            logger.debug('smf.threshold = {}, sel_feature_cnt = {}'.format(sfm.threshold, sel_feature_cnt))
+    train_X = temp_train_X
+    test_X = sfm.transform(test_X)
+    sel_feature_mask = sfm.get_support()
+    sel_features_names = [item for item_num, item in enumerate(poly_feature_names) if sel_feature_mask[item_num]]
+    logger.debug('sel_features_names = {}'.format(sel_features_names))
+
     clf.fit(train_X, train_y)
-    logger.debug('clf.alpha_ {}'.format(clf.alpha_))
+    # logger.debug('clf.alpha_ {}'.format(clf.alpha_))
     predictor = lambda x: clf.predict(x)  # function we use to predict the result
+    logger.debug('learning done')
 
     # draw a graph showing the mean error for each #attacks
-    atks_cnt_col = info_col_names.index('#atkd')
+    atks_cnt_col = info_col_names.index('#atkd_a')  # TODO: this should not be hardcoded
     atk_sizes, test_costs = calc_cost_by_atk_size(test_X, test_y, test_info, atks_cnt_col, predictor)
     logger.debug('atk_sizes = {}'.format(atk_sizes))
-    plot_2D_line(atk_sizes, test_costs, '% of attacked nodes', 'Avg abs prediction error', 'test set')
+    logger.debug('atk_sizes = {}'.format(atk_sizes))
+    plot_2D_line(atk_sizes, test_costs, '# of attacked power nodes', 'Avg abs prediction error', 'test set')
+
+    # atk_sizes, test_costs = calc_cost_by_atk_size(train_X, train_y, train_info, atks_cnt_col, predictor)
+    # line_1 = {'x_vector': atk_sizes, 'y_vector': test_costs, 'style': 'g-o', 'label': 'training set'}
+    # line_2 = {'x_vector': atk_sizes, 'y_vector': test_costs, 'style': 'b-o', 'label': 'test set'}
+    # plot_2D_lines([line_1, line_2],'% of attacked power nodes', 'Avg abs prediction error')
+
+    atk_sizes, avg_deaths, avg_preds = \
+        avg_deaths_and_preds_by_atk_size(test_X, test_y, test_info, atks_cnt_col, predictor)
+    line_1 = {'x_vector': atk_sizes, 'y_vector': avg_deaths, 'style': 'g-o', 'label': 'Actual'}
+    line_2 = {'x_vector': atk_sizes, 'y_vector': avg_preds, 'style': 'b-o', 'label': 'Predicted'}
+    plot_2D_lines([line_1, line_2], '% of attacked power nodes', 'Average fraction of dead nodes')
 
     full_X = np.append(train_X, test_X, axis=0)
     full_y = np.append(train_y, test_y, axis=0)
     full_info = np.append(train_info, test_info, axis=0)
+    # full_X = train_X
+    # full_y = train_y
+    # full_info = train_info
 
     for cur_seed in range(20):
         info_filter = {info_col_names.index('instance'): 0, info_col_names.index('seed'): cur_seed}
         indep_var_vals, results, predictions = \
             find_scenario_results_and_predictions(full_X, full_y, full_info, info_filter, atks_cnt_col, predictor)
-        plot_scenario_performances(indep_var_vals, results, predictions, '# attacked nodes', '% dead nodes')
+        plot_scenario_performances(indep_var_vals, results, predictions, '# of attacked power nodes', '% dead nodes')
 
 
 def run():
@@ -419,22 +530,95 @@ def run():
     logging.config.dictConfig(config)
     logger = logging.getLogger(__name__)
 
-    train_set_fpath = 'Data/train_0-8_0123a.tsv'
-    test_set_fpath = 'Data/test_0-8_0123a.tsv'
+    # train_set_fpath = 'Data/train_0-7_union.tsv'
+    # test_set_fpath = 'Data/test_0-7_union.tsv'
+    train_set_fpath = 'Data/train_0-3_union_inst_0_a.tsv'
+    test_set_fpath = 'Data/test_0-3_union_inst_0_a.tsv'
 
-    data_col_names = ['p_atkd', 'p_atkd_a', 'p_atkd_b',
-                      'indeg_c_ab_q_1', 'indeg_c_ab_q_2', 'indeg_c_ab_q_3', 'indeg_c_ab_q_4', 'indeg_c_ab_q_5',
-                      'indeg_c_i_q_1', 'indeg_c_i_q_2', 'indeg_c_i_q_3', 'indeg_c_i_q_4', 'indeg_c_i_q_5',
-                      'rel_betw_c_q_1', 'rel_betw_c_q_2', 'rel_betw_c_q_3', 'rel_betw_c_q_4', 'rel_betw_c_q_5',
-                      'p_atkd_gen', 'p_atkd_ts', 'p_atkd_ds', 'p_atkd_rel', 'p_atkd_cc']
+    # data_col_names = ['p_atkd', 'p_atkd_a', 'p_atkd_b',
+    #                   'indeg_c_ab_q_1', 'indeg_c_ab_q_2', 'indeg_c_ab_q_3', 'indeg_c_ab_q_4', 'indeg_c_ab_q_5',
+    #                   'indeg_c_i_q_1', 'indeg_c_i_q_2', 'indeg_c_i_q_3', 'indeg_c_i_q_4', 'indeg_c_i_q_5',
+    #                   'rel_betw_c_q_1', 'rel_betw_c_q_2', 'rel_betw_c_q_3', 'rel_betw_c_q_4', 'rel_betw_c_q_5',
+    #                   'p_atkd_gen', 'p_atkd_ts', 'p_atkd_ds', 'p_atkd_rel', 'p_atkd_cc']
+    # result_col_name = 'p_dead'
+    # info_col_names = ['instance', 'seed', '#atkd']
+    # data_col_names = ['p_atkd_a', 'p_atkd_ds', 'p_atkd_gen', 'p_atkd_ts',
+    #                   'p_q_1_atkd_betw_c_a', 'p_q_1_atkd_betw_c_ab', 'p_q_1_atkd_betw_c_i',
+    #                   'p_q_1_atkd_deg_c_a', 'p_q_1_atkd_indeg_c_i',
+    #                   'p_q_1_atkd_katz_c_ab', 'p_q_1_atkd_katz_c_i', 'p_q_1_atkd_ts_betw_c',
+    #                   'p_q_2_atkd_betw_c_a', 'p_q_2_atkd_betw_c_ab',
+    #                   'p_q_2_atkd_deg_c_a', 'p_q_2_atkd_indeg_c_i',
+    #                   'p_q_2_atkd_katz_c_ab', 'p_q_2_atkd_katz_c_i', 'p_q_2_atkd_ts_betw_c',
+    #                   'p_q_3_atkd_betw_c_a', 'p_q_3_atkd_betw_c_ab', 'p_q_3_atkd_betw_c_i',
+    #                   'p_q_3_atkd_deg_c_a', 'p_q_3_atkd_indeg_c_i',
+    #                   'p_q_3_atkd_katz_c_ab', 'p_q_3_atkd_katz_c_i', 'p_q_3_atkd_ts_betw_c',
+    #                   'p_q_4_atkd_betw_c_a', 'p_q_4_atkd_betw_c_ab',
+    #                   'p_q_4_atkd_deg_c_a', 'p_q_4_atkd_indeg_c_i',
+    #                   'p_q_4_atkd_katz_c_ab', 'p_q_4_atkd_katz_c_i', 'p_q_4_atkd_ts_betw_c',
+    #                   'p_q_5_atkd_betw_c_a', 'p_q_5_atkd_betw_c_ab', 'p_q_5_atkd_betw_c_i',
+    #                   'p_q_5_atkd_deg_c_a', 'p_q_5_atkd_indeg_c_i',
+    #                   'p_q_5_atkd_katz_c_ab', 'p_q_5_atkd_katz_c_i', 'p_q_5_atkd_ts_betw_c',
+    #                   'p_tot_atkd_betw_c_a', 'p_tot_atkd_betw_c_ab', 'p_tot_atkd_betw_c_i',
+    #                   'p_tot_atkd_deg_c_a', 'p_tot_atkd_indeg_c_i',
+    #                   'p_tot_atkd_katz_c_ab', 'p_tot_atkd_katz_c_i', 'p_tot_atkd_ts_betw_c'
+    #                   ]
+    # very good set, p_tot_atkd_betw_c_ab can be cut
+    # data_col_names = ['p_atkd_ds',
+    #                   'p_q_5_atkd_betw_c_ab', 'p_q_5_atkd_betw_c_i',
+    #                   'p_q_5_atkd_indeg_c_i', 'p_q_5_atkd_ts_betw_c',
+    #                   'p_tot_atkd_betw_c_ab', 'p_tot_atkd_betw_c_i',
+    #                   'p_tot_atkd_indeg_c_i', 'p_tot_atkd_ts_betw_c'
+    #                   ]
+    data_col_names = ['p_atkd_ds',
+                      'p_q_4_atkd_betw_c_ab', 'p_q_4_atkd_betw_c_i',
+                      'p_q_4_atkd_indeg_c_i', 'p_q_4_atkd_ts_betw_c',
+                      'p_q_5_atkd_betw_c_ab', 'p_q_5_atkd_betw_c_i',
+                      'p_q_5_atkd_indeg_c_i', 'p_q_5_atkd_ts_betw_c',
+                      'p_tot_atkd_betw_c_ab', 'p_tot_atkd_betw_c_i',
+                      'p_tot_atkd_indeg_c_i', 'p_tot_atkd_ts_betw_c'
+                      ]
+    # data_col_names = ['p_atkd_ds', 'p_atkd_gen', 'p_atkd_ts',
+    #                   'p_q_1_atkd_betw_c_a', 'p_q_1_atkd_betw_c_ab', 'p_q_1_atkd_betw_c_i',
+    #                   'p_q_1_atkd_clos_c_a', 'p_q_1_atkd_clos_c_ab', 'p_q_1_atkd_clos_c_i',
+    #                   'p_q_1_atkd_deg_c_a', 'p_q_1_atkd_indeg_c_ab', 'p_q_1_atkd_indeg_c_i',
+    #                   'p_q_1_atkd_katz_c_ab', 'p_q_1_atkd_katz_c_i', 'p_q_1_atkd_ts_betw_c',
+    #                   'p_q_2_atkd_betw_c_a', 'p_q_2_atkd_betw_c_ab',
+    #                   'p_q_2_atkd_clos_c_a', 'p_q_2_atkd_clos_c_ab', 'p_q_2_atkd_clos_c_i',
+    #                   'p_q_2_atkd_deg_c_a', 'p_q_2_atkd_indeg_c_ab', 'p_q_2_atkd_indeg_c_i',
+    #                   'p_q_2_atkd_katz_c_ab', 'p_q_2_atkd_katz_c_i', 'p_q_2_atkd_ts_betw_c',
+    #                   'p_q_3_atkd_betw_c_a', 'p_q_3_atkd_betw_c_ab', 'p_q_3_atkd_betw_c_i',
+    #                   'p_q_3_atkd_clos_c_a', 'p_q_3_atkd_clos_c_ab', 'p_q_3_atkd_clos_c_i',
+    #                   'p_q_3_atkd_deg_c_a', 'p_q_3_atkd_indeg_c_ab', 'p_q_3_atkd_indeg_c_i',
+    #                   'p_q_3_atkd_katz_c_ab', 'p_q_3_atkd_katz_c_i', 'p_q_3_atkd_ts_betw_c',
+    #                   'p_q_4_atkd_betw_c_a', 'p_q_4_atkd_betw_c_ab',
+    #                   'p_q_4_atkd_clos_c_a', 'p_q_4_atkd_clos_c_ab', 'p_q_4_atkd_clos_c_i',
+    #                   'p_q_4_atkd_deg_c_a', 'p_q_4_atkd_indeg_c_ab', 'p_q_4_atkd_indeg_c_i',
+    #                   'p_q_4_atkd_katz_c_ab', 'p_q_4_atkd_katz_c_i', 'p_q_4_atkd_ts_betw_c',
+    #                   'p_q_5_atkd_betw_c_a', 'p_q_5_atkd_betw_c_ab', 'p_q_5_atkd_betw_c_i',
+    #                   'p_q_5_atkd_clos_c_a', 'p_q_5_atkd_clos_c_ab', 'p_q_5_atkd_clos_c_i',
+    #                   'p_q_5_atkd_deg_c_a', 'p_q_5_atkd_indeg_c_ab', 'p_q_5_atkd_indeg_c_i',
+    #                   'p_q_5_atkd_katz_c_ab', 'p_q_5_atkd_katz_c_i', 'p_q_5_atkd_ts_betw_c',
+    #                   'p_tot_atkd_betw_c_a', 'p_tot_atkd_betw_c_ab', 'p_tot_atkd_betw_c_i',
+    #                   'p_tot_atkd_clos_c_a', 'p_tot_atkd_clos_c_ab', 'p_tot_atkd_clos_c_i',
+    #                   'p_tot_atkd_deg_c_a', 'p_tot_atkd_indeg_c_ab', 'p_tot_atkd_indeg_c_i',
+    #                   'p_tot_atkd_katz_c_ab', 'p_tot_atkd_katz_c_i', 'p_tot_atkd_ts_betw_c'
+    #                   ]
+    # data_col_names = ['p_atkd_cc', 'p_atkd_ds', 'p_atkd_gen', 'p_atkd_rel', 'p_atkd_ts',
+    #                   'p_q_1_atkd_indeg_c_i', 'p_q_2_atkd_indeg_c_i', 'p_q_3_atkd_indeg_c_i', 'p_q_4_atkd_indeg_c_i',
+    #                   'p_q_5_atkd_indeg_c_i', 'p_tot_atkd_indeg_c_i',
+    #                   'p_q_1_atkd_ts_betw_c', 'p_q_2_atkd_ts_betw_c', 'p_q_3_atkd_ts_betw_c', 'p_q_4_atkd_ts_betw_c',
+    #                   'p_q_5_atkd_ts_betw_c', 'p_tot_atkd_ts_betw_c',
+    #                   'p_q_1_atkd_katz_c_ab', 'p_q_2_atkd_katz_c_ab', 'p_q_3_atkd_katz_c_ab', 'p_q_4_atkd_katz_c_ab',
+    #                   'p_q_5_atkd_katz_c_ab', 'p_tot_atkd_katz_c_ab'
+    #                   ]
     result_col_name = 'p_dead'
-    info_col_names = ['instance', 'seed', '#atkd']
+    info_col_names = ['instance', 'seed', '#atkd_a']
 
     alpha = 0.01  # the learning rate
     num_iters = 400  # the number of iterations
 
-    train_and_test(train_set_fpath, test_set_fpath, data_col_names, result_col_name, info_col_names, alpha, num_iters)
-    solve_and_test(train_set_fpath, test_set_fpath, data_col_names, result_col_name, info_col_names)
+    # train_and_test(train_set_fpath, test_set_fpath, data_col_names, result_col_name, info_col_names, alpha, num_iters)
+    # solve_and_test(train_set_fpath, test_set_fpath, data_col_names, result_col_name, info_col_names)
     train_and_test_sk(train_set_fpath, test_set_fpath, data_col_names, result_col_name, info_col_names)
 
 

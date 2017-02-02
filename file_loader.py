@@ -8,7 +8,7 @@ __author__ = 'Agostino Sturaro'
 
 
 class FileLoader:
-    def __init__(self, return_copy=True, cache_size=10):
+    def __init__(self, return_copy=True, cache_size=100):
         self.loaded = {}
         self.last_hit = {}
         self.return_copy = return_copy
