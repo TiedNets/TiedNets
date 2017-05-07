@@ -43,23 +43,37 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-base_dir = os.path.normpath('../Simulations/test_mp/1cc_1ap')
+base_dir = os.path.normpath('../Simulations/test_mp_/2000_nodes_40_subnets')
 # base_dir = os.path.normpath('../Simulations/test_mp/2cc_2ap')
 
+# remember to increase d_0 for bigger networks
 build_a_options = [{
     'name': 'A',
     'model': 'rt_nested_smallworld',
-    'nodes': 1000,
-    'subnets': 20,
+    'nodes': 2000,
+    'subnets': 40,
     'beta': 0.2,
     'alpha': 0.2,
-    'd_0': 7,
+    'd_0': 14,
     'avg_k': 4,
     'q_rw': 0.5,
     'roles': 'subnet_gen_transm_distr',
-    'generators': 100,
+    'generators': 200,
     'transmission_substations': 270,
-    'distribution_substations': 630
+    'distribution_substations': 1260
+    # 'name': 'A',
+    # 'model': 'rt_nested_smallworld',
+    # 'nodes': 1000,
+    # 'subnets': 20,
+    # 'beta': 0.2,
+    # 'alpha': 0.2,
+    # 'd_0': 7,
+    # 'avg_k': 4,
+    # 'q_rw': 0.5,
+    # 'roles': 'subnet_gen_transm_distr',
+    # 'generators': 100,
+    # 'transmission_substations': 270,
+    # 'distribution_substations': 630
     # }, {
     #     'name': 'A',
     #     'model': 'rt_nested_smallworld',
@@ -100,7 +114,13 @@ build_b_options = [{
     'm': 3,
     'roles': 'relay_attached_controllers',
     'controllers': 1,
-    'relays': 999
+    'relays': 1999
+    # 'name': 'B',
+    # 'model': 'barabasi_albert',
+    # 'm': 3,
+    # 'roles': 'relay_attached_controllers',
+    # 'controllers': 1,
+    # 'relays': 999
     # }, {
     #     'name': 'B',
     #     'model': 'barabasi_albert',
@@ -126,11 +146,19 @@ build_inter_options = [{
     'name': 'Inter',
     'dependency_model': 'k-to-n',
     'k': 1,
-    'n': 1000,
+    'n': 2000,
     'com_access_points': 1,
     'prefer_nearest': False,
     'produce_max_matching': True,
     'max_matching_name': 'InterMM'
+    # 'name': 'Inter',
+    # 'dependency_model': 'k-to-n',
+    # 'k': 1,
+    # 'n': 1000,
+    # 'com_access_points': 1,
+    # 'prefer_nearest': False,
+    # 'produce_max_matching': True,
+    # 'max_matching_name': 'InterMM'
     # }, {
     #     'name': 'Inter',
     #     'dependency_model': 'k-to-n',
@@ -165,11 +193,12 @@ misc_options = [{
     'calc_node_centrality': True
 }]
 
-instances_per_type = 1
+instances_per_type = 10
 seeds = list()
 first_group = True
 
-my_random = random.Random(256)
+# my_random = random.Random(257)
+my_random = random.Random(258)
 
 # create directory if it does not exist, clean it if it already exists
 sf.makedirs_clean(base_dir, True)

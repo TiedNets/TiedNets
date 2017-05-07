@@ -76,10 +76,9 @@ def pick_conf_values(config, opt_name):
 this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 
+# read the arguments this script was called with
 batch_no = int(sys.argv[1])
 batch_conf_fpath = sys.argv[2]
-
-# begin of user defined variables
 
 with open(batch_conf_fpath) as batch_conf_file:
     batch_conf = json.load(batch_conf_file)
@@ -90,7 +89,7 @@ logger = logging.getLogger(__name__)
 instances_dir = os.path.normpath(batch_conf['instances_dir'])  # parent directory of the instances directories
 base_configs = batch_conf['base_configs']
 
-# TODO: refine this to a list of instances
+# TODO: also accept a list of instances
 # recall the value of the parameter sim_group_size used in creating batches of networks
 first_instance = batch_conf['first_instance']  # usually 0, unless you want to skip a group
 last_instance = batch_conf['last_instance']  # exclusive, should be divisible by sim_group_size
@@ -104,32 +103,18 @@ logger.info('last_instance = {}'.format(last_instance))
 
 # name of the independent variable of the simulation
 indep_var_name = batch_conf['indep_var_name']
-# indep_var_vals = list(range(0, 3, 1))
-# indep_var_vals = sorted(random.sample(range(1, 200), 50))
-#indep_var_vals = range(1, 26)
-#indep_var_vals = range(26, 76)
-# indep_var_vals = range(1, 76)
 logger.info('indep_var_name = {}'.format(indep_var_name))
 
 # values of the independent value of the simulation
 indep_var_vals = pick_conf_values(batch_conf, 'indep_var_vals')
-# indep_var_vals = list(range(0, 3, 1))
-# indep_var_vals = sorted(random.sample(range(1, 200), 50))
-#indep_var_vals = range(1, 26)
-#indep_var_vals = range(26, 76)
-# indep_var_vals = range(1, 76)
-#indep_var_vals = range(1, 51)
 logger.info('indep_var_vals = {}'.format(indep_var_vals))
-# indep_var_vals = list(range(0, 61, 5)) + [69]  # values of the independent value of the simulation
-# indep_var_name = 'min_rank'  # name of the independent variable of the simulation, in the run_opts section
-# indep_var_vals = list(range(0, 2000, 1))  # values of the independent variable of the simulation
 
 # seeds used to execute multiple tests on the same network instance
 seeds = pick_conf_values(batch_conf, 'seeds')
-#seeds = list(range(50, 200, 1))
-#seeds = list(range(0, 50, 1))
 logger.info('seeds = {}'.format(seeds))
-# end of user defined variables
+
+sim_cnt = len(base_configs) * len(indep_var_vals) * (last_instance - first_instance) * len(seeds)
+cur_sim_num = 0
 
 floader = fl.FileLoader()
 
@@ -162,8 +147,7 @@ for sim_group in range(0, len(base_configs)):
                 run_num_by_inst[instance_num] = 0
 
             # inner cycle ranging over different seeds
-            for seed in seeds:
-                logger.debug("Batch {}) {} value, seed {}".format(batch_no, var_value, seed))
+            for seed_pos, seed in enumerate(seeds):
                 # pick up the simulation number (n-th time we run a simulation on this instance)
                 run_num = run_num_by_inst[instance_num]
                 misc['instance'] = instance_num  # mark in the configuration file the number of this instance
@@ -181,5 +165,8 @@ for sim_group in range(0, len(base_configs)):
                     group_index = csv.writer(group_index_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
                     group_index.writerow([instance_num, conf_fpath])
 
+                logger.info('Batch {}) Running simulation {} of {}\nsim group {}, value {}, intance {}, seed {}'
+                            .format(cur_sim_num, sim_cnt, batch_no, var_value, sim_group, seed))
                 sim.run(conf_fpath, floader)  # run the simulation
                 run_num_by_inst[instance_num] += 1  # next simulation for this instance will be number + 1
+                cur_sim_num += 1

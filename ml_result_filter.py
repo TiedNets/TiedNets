@@ -1,3 +1,4 @@
+import os
 import csv
 import random
 import shared_functions as sf
@@ -14,14 +15,14 @@ def check_split_tolerance(total_item_cnt, chosen_item_cnt, desired_perc, perc_to
 
 # assumes all files have a single header line and only keeps the header of the first file
 def merge_files_with_headers(input_file_paths, output_file_path):
-    first_header = True
+    first_file = True
     with open(output_file_path, 'w') as output_file:
         for input_fpath in input_file_paths:
             with open(input_fpath, 'r') as input_file:
-                if first_header is True:
+                if first_file is True:
                     header_line = next(input_file)
                     output_file.write(header_line)
-                    first_header = False
+                    first_file = False
                 else:
                     if next(input_file) != header_line:
                         raise RuntimeError('Header mismatch between {} and {}'.format(input_file_paths[0], input_fpath))
@@ -49,6 +50,7 @@ def filter_file_cols(input_fpath, output_fpath, wanted_col_names):
             csvwriter.writerow(filtered_row)
 
 
+# keep only one row with for each value on a given column
 def filter_duplicates_on_col(input_fpath, output_fpath, duplicates_col_name):
     with open(input_fpath, 'r') as input_file, open(output_fpath, 'w') as output_file:
         csvreader = csv.reader(input_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
@@ -81,21 +83,29 @@ def filter_duplicates_on_col(input_fpath, output_fpath, duplicates_col_name):
 
 my_random = random.Random(128)
 
-input_folder = '/home/agostino/Documents/Sims/single net 20161212/'
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_10/500_nodes_10_subnets_results/'
+# batches = [0, 1]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_10/500_nodes_20_subnets_results/'
+# batches = [2, 3]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_20_subnets_results/'
+# batches = [4, 5]
+input_folder = '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_40_subnets_results/'
+batches = [0, 1, 2]
+input_file_paths = []
+for batch_num in batches:
+    input_file_paths.append(os.path.join(input_folder, 'ml_stats_{}.tsv'.format(batch_num)))
 
-input_file_paths = ['{}ml_stats_{}.tsv'.format(input_folder, element) for element in range(4, 8)]
-merged_file_name = '4-7_union_inst_0_b.tsv'
-merged_file_path = input_folder + merged_file_name
+# merged_file_name = '500_n_10_s.tsv'
+# merged_file_name = '500_n_20_s.tsv'
+# merged_file_name = '2000_n_20_s.tsv'
+merged_file_name = '2000_n_40_s.tsv'
+merged_file_path = os.path.join(input_folder, merged_file_name)
 merge_files_with_headers(input_file_paths, merged_file_path)
 
-deduped_file_path = input_folder + '4-7_union_deduped_inst_0_b.tsv'
-duplicates_col_name = 'atkd_nodes_b'
-filter_duplicates_on_col(merged_file_path, deduped_file_path, duplicates_col_name)
-
-in_fpath = deduped_file_path
-train_fpath = input_folder + 'train_' + merged_file_name
-cv_fpath = input_folder + 'cv_' + merged_file_name
-test_fpath = input_folder + 'test_' + merged_file_name
+in_fpath = merged_file_path
+train_fpath = os.path.join(input_folder, 'train_' + merged_file_name)
+cv_fpath = os.path.join(input_folder, 'cv_' + merged_file_name)
+test_fpath = os.path.join(input_folder, 'test_' + merged_file_name)
 
 # how to subdivide the set of examples
 p_train = 0.8  # training set
@@ -104,9 +114,7 @@ p_test = 0.2  # test set
 p_tolerance = 0.05  # maximum acceptable deviation from intended percentage
 
 # subdivide examples based on the value they have in this column
-splitting_col_name = '#atkd_b'
-# filter_col_name = 'instance'
-# filter_val = '0'
+splitting_col_name = '#atkd_a'
 examples_by_val = {}
 tot_ex_cnt = 0
 
@@ -114,10 +122,7 @@ with open(in_fpath, 'r') as ml_file:
     csvreader = csv.reader(ml_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
     header = csvreader.next()
     splitting_col_num = header.index(splitting_col_name)
-    # filter_col_num = header.index(filter_col_name)
     for example in csvreader:
-        # if example[filter_col_num] != filter_val:
-        #     continue
         splitting_val = example[splitting_col_num]
         if splitting_val not in examples_by_val:
             examples_by_val[splitting_val] = []
