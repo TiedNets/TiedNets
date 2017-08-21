@@ -74,6 +74,19 @@ build_a_options = [{
     # 'generators': 100,
     # 'transmission_substations': 270,
     # 'distribution_substations': 630
+    # 'name': 'A',
+    # 'model': 'rt_nested_smallworld',
+    # 'nodes': 500,
+    # 'subnets': 20,
+    # 'beta': 0.2,
+    # 'alpha': 0.2,
+    # 'd_0': 7,
+    # 'avg_k': 4,
+    # 'q_rw': 0.5,
+    # 'roles': 'subnet_gen_transm_distr',
+    # 'generators': 50,
+    # 'transmission_substations': 135,
+    # 'distribution_substations': 315
     # }, {
     #     'name': 'A',
     #     'model': 'rt_nested_smallworld',
@@ -121,6 +134,12 @@ build_b_options = [{
     # 'roles': 'relay_attached_controllers',
     # 'controllers': 1,
     # 'relays': 999
+    # 'name': 'B',
+    # 'model': 'barabasi_albert',
+    # 'm': 3,
+    # 'roles': 'relay_attached_controllers',
+    # 'controllers': 1,
+    # 'relays': 499
     # }, {
     #     'name': 'B',
     #     'model': 'barabasi_albert',
@@ -159,6 +178,14 @@ build_inter_options = [{
     # 'prefer_nearest': False,
     # 'produce_max_matching': True,
     # 'max_matching_name': 'InterMM'
+    # 'name': 'Inter',
+    # 'dependency_model': 'k-to-n',
+    # 'k': 1,
+    # 'n': 500,
+    # 'com_access_points': 1,
+    # 'prefer_nearest': False,
+    # 'produce_max_matching': True,
+    # 'max_matching_name': 'InterMM'
     # }, {
     #     'name': 'Inter',
     #     'dependency_model': 'k-to-n',
@@ -193,12 +220,15 @@ misc_options = [{
     'calc_node_centrality': True
 }]
 
-instances_per_type = 10
+instances_per_type = 20
 seeds = list()
 first_group = True
 
-# my_random = random.Random(257)
-my_random = random.Random(258)
+# my_random = random.Random(254)  # used for n 500 s 10
+# my_random = random.Random(255)  # used for n 500 s 20
+# my_random = random.Random(256)  # used for n 1000 s 20
+my_random = random.Random(257)  # used for n 2000 s 40
+# my_random = random.Random(258)  # used for n 2000 s 20
 
 # create directory if it does not exist, clean it if it already exists
 sf.makedirs_clean(base_dir, True)

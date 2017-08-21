@@ -292,6 +292,8 @@ def calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix
     total_centr = centrality_info['total_' + centrality_name]
     for node in attacked_nodes:
         atkd_centr_sum += centr_by_node[node]
+    stat_name = 'sum_' + result_key_suffix
+    centr_stats[stat_name] = atkd_centr_sum
     stat_name = 'p_tot_' + result_key_suffix
     centr_stats[stat_name] = sf.percent_of_part(atkd_centr_sum, total_centr)
 
@@ -313,8 +315,8 @@ def calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix
         # this is a corner case presented by graphs in which many nodes have identical centrality scores, like in
         # random regular graphs. To determine the quintile each node belong to, we check their position in our
         # ranking, that considered their centrality score as well as their id to sort them
-        logger.info('There are only {} different quintiles for centrality {}'.format(len(quintiles_set),
-                                                                                     centrality_name))
+        # logger.info('There are only {} different quintiles for centrality {}'.format(len(quintiles_set),
+        #                                                                              centrality_name))
         ranked_nodes = centrality_info[centrality_name + '_rank']
         # find the positions that separate the quintiles
         rank_of_quintiles = percentile(range(0, node_cnt), [20, 40, 60, 80]).tolist()
@@ -517,9 +519,11 @@ def run(conf_fpath, floader):
     run_stats_fpath = os.path.join(results_dir, run_stats_fname)
 
     # end_stats is a file used to save a single line (row) of statistics at the end of the simulation
-    end_stats_fpath = os.path.normpath(config.get('paths', 'end_stats_fpath'))
-    if os.path.isabs(end_stats_fpath) is False:
-        end_stats_fpath = os.path.abspath(end_stats_fpath)
+    end_stats_fpath = ''
+    # if config.has_option('paths', 'end_stats_fpath'):
+    #     end_stats_fpath = os.path.normpath(config.get('paths', 'end_stats_fpath'))
+    #     if os.path.isabs(end_stats_fpath) is False:
+    #         end_stats_fpath = os.path.abspath(end_stats_fpath)
 
     # ml_stats is similar to end_stats as it is used to write a line at the end of the simulation,
     # but it gathers statistics used for machine learning
@@ -530,17 +534,16 @@ def run(conf_fpath, floader):
             ml_stats_fpath = os.path.abspath(ml_stats_fpath)
 
     # ensure output directories exist
-    sf.ensure_dir_exists(results_dir)
-    sf.ensure_dir_exists(os.path.dirname(end_stats_fpath))
+    # sf.ensure_dir_exists(results_dir)
+    # sf.ensure_dir_exists(os.path.dirname(end_stats_fpath))
 
     # read information used to identify this simulation run
     sim_group = config.getint('misc', 'sim_group')
     instance = config.getint('misc', 'instance')
 
+    batch_conf_fpath = ''
     if config.has_option('paths', 'batch_conf_fpath'):
         batch_conf_fpath = config.get('paths', 'batch_conf_fpath')
-    else:
-        batch_conf_fpath = ''
 
     if config.has_option('misc', 'run'):
         run_num = config.getint('misc', 'run')
@@ -606,10 +609,11 @@ def run(conf_fpath, floader):
     base_node_cnt_b = B.number_of_nodes()
 
     # execute simulation of failure propagation
-    with open(run_stats_fpath, 'wb') as run_stats_file:
+    # with open(run_stats_fpath, 'wb') as run_stats_file:
+    if True:
 
-        run_stats = csv.DictWriter(run_stats_file, ['time', 'dead'], delimiter='\t', quoting=csv.QUOTE_MINIMAL)
-        run_stats.writeheader()
+        # run_stats = csv.DictWriter(run_stats_file, ['time', 'dead'], delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        # run_stats.writeheader()
         time += 1
 
         # perform initial attack
@@ -697,7 +701,7 @@ def run(conf_fpath, floader):
         I.remove_nodes_from(attacked_nodes)
 
         # save_state(time, A, B, I, results_dir)
-        run_stats.writerow({'time': time, 'dead': attacked_nodes})
+        # run_stats.writerow({'time': time, 'dead': attacked_nodes})
         updated = True
         time += 1
 
@@ -736,7 +740,7 @@ def run(conf_fpath, floader):
                 I.remove_nodes_from(unsupported_nodes_a)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                run_stats.writerow({'time': time, 'dead': unsupported_nodes_a})
+                # run_stats.writerow({'time': time, 'dead': unsupported_nodes_a})
             time += 1
 
             # intra checks for network A
@@ -757,7 +761,7 @@ def run(conf_fpath, floader):
                 I.remove_nodes_from(unsupported_nodes_a)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                run_stats.writerow({'time': time, 'dead': unsupported_nodes_a})
+                # run_stats.writerow({'time': time, 'dead': unsupported_nodes_a})
             time += 1
 
             # inter checks for network B
@@ -778,7 +782,7 @@ def run(conf_fpath, floader):
                 I.remove_nodes_from(unsupported_nodes_b)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                run_stats.writerow({'time': time, 'dead': unsupported_nodes_b})
+                # run_stats.writerow({'time': time, 'dead': unsupported_nodes_b})
             time += 1
 
             # intra checks for network B
@@ -799,38 +803,40 @@ def run(conf_fpath, floader):
                 I.remove_nodes_from(unsupported_nodes_b)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                run_stats.writerow({'time': time, 'dead': unsupported_nodes_b})
+                # run_stats.writerow({'time': time, 'dead': unsupported_nodes_b})
             time += 1
 
     # save_state('final', A, B, I, results_dir)
 
     # write statistics about the final result
 
-    end_stats_file_existed = os.path.isfile(end_stats_fpath)
-    with open(end_stats_fpath, 'ab') as end_stats_file:
-        end_stats_header = ['batch_conf_fpath', 'sim_group', 'instance', 'run', '#dead', '#dead_a', '#dead_b']
+    if end_stats_fpath:  # if this string is not empty
+        end_stats_file_existed = os.path.isfile(end_stats_fpath)
+        with open(end_stats_fpath, 'ab') as end_stats_file:
+            end_stats_header = ['batch_conf_fpath', 'sim_group', 'instance', 'run', '#dead', '#dead_a', '#dead_b']
 
-        if save_death_cause is True:
-            end_stats_header.extend(['no_intra_sup_a', 'no_inter_sup_a',
-                                     'no_intra_sup_b', 'no_inter_sup_b'])
-            if inter_support_type == 'realistic':
-                end_stats_header.extend(['no_sup_ccs', 'no_sup_relays', 'no_com_path'])
+            if save_death_cause is True:
+                end_stats_header.extend(['no_intra_sup_a', 'no_inter_sup_a',
+                                         'no_intra_sup_b', 'no_inter_sup_b'])
+                if inter_support_type == 'realistic':
+                    end_stats_header.extend(['no_sup_ccs', 'no_sup_relays', 'no_com_path'])
 
-        end_stats_writer = csv.DictWriter(end_stats_file, end_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
-        if end_stats_file_existed is False:
-            end_stats_writer.writeheader()
+            end_stats_writer = csv.DictWriter(end_stats_file, end_stats_header, delimiter='\t',
+                                              quoting=csv.QUOTE_MINIMAL)
+            if end_stats_file_existed is False:
+                end_stats_writer.writeheader()
 
-        end_stats_row = {'batch_conf_fpath': batch_conf_fpath, 'sim_group': sim_group, 'instance': instance,
-                         'run': run_num, '#dead': total_dead_a + total_dead_b,
-                         '#dead_a': total_dead_a, '#dead_b': total_dead_b}
+            end_stats_row = {'batch_conf_fpath': batch_conf_fpath, 'sim_group': sim_group, 'instance': instance,
+                             'run': run_num, '#dead': total_dead_a + total_dead_b,
+                             '#dead_a': total_dead_a, '#dead_b': total_dead_b}
 
-        if save_death_cause is True:
-            end_stats_row.update({'no_intra_sup_a': intra_sup_deaths_a, 'no_inter_sup_a': inter_sup_deaths_a,
-                                  'no_intra_sup_b': intra_sup_deaths_b, 'no_inter_sup_b': inter_sup_deaths_b})
-            if inter_support_type == 'realistic':
-                end_stats_row.update({'no_sup_ccs': no_sup_ccs_deaths, 'no_sup_relays': no_sup_relays_deaths,
-                                      'no_com_path': no_com_path_deaths})
-        end_stats_writer.writerow(end_stats_row)
+            if save_death_cause is True:
+                end_stats_row.update({'no_intra_sup_a': intra_sup_deaths_a, 'no_inter_sup_a': inter_sup_deaths_a,
+                                      'no_intra_sup_b': intra_sup_deaths_b, 'no_inter_sup_b': inter_sup_deaths_b})
+                if inter_support_type == 'realistic':
+                    end_stats_row.update({'no_sup_ccs': no_sup_ccs_deaths, 'no_sup_relays': no_sup_relays_deaths,
+                                          'no_com_path': no_com_path_deaths})
+            end_stats_writer.writerow(end_stats_row)
 
     if ml_stats_fpath:  # if this string is not empty
 

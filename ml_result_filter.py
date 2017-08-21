@@ -1,5 +1,6 @@
 import os
 import csv
+from bisect import bisect
 import random
 import shared_functions as sf
 
@@ -32,6 +33,58 @@ def merge_files_with_headers(input_file_paths, output_file_path):
                 # if there was no empty last line, add one
                 if not line.endswith('\n') and not line.endswith('\r\n'):
                     output_file.write('\n')
+
+
+# add a column containing the labels for the values in another column
+# TODO: add a parameter to specify what type to cast to
+def label_col_values(input_fpath, output_fpath, col_to_label, label_col_name, thresholds, labels):
+    with open(input_fpath, 'r') as input_file, open(output_fpath, 'w') as output_file:
+        csvreader = csv.reader(input_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        csvwriter = csv.writer(output_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        header = csvreader.next()
+        if col_to_label not in header:
+            raise ValueError('The column to label does not exist, check the value of col_to_label')
+        if label_col_name in header:
+            raise ValueError('The column to add already exist, check the value of label_col_name')
+        if len(labels) != len(thresholds) + 1:
+            raise ValueError('The number of labels must be equal to the number of thresholds + 1')
+
+        if sorted(header) == header:
+            ins_idx = bisect(header, label_col_name)
+        else:
+            ins_idx = header.index(col_to_label) + 1
+        header.insert(ins_idx, label_col_name)
+        csvwriter.writerow(header)
+        col_num = header.index(col_to_label)
+
+        # TODO: fix this code (labelling)
+        for row in csvreader:
+            col_val = float(row[col_num])  # type cast here
+            label_num = 0
+
+            for thresh in thresholds:
+                if col_val >= thresh:
+                    label_num += 1
+                else:
+                    break
+            label = labels[label_num]
+            row.insert(ins_idx, label)
+            csvwriter.writerow(row)
+
+
+# values must be a list of strings, because values are read as text
+def remove_col_values(input_fpath, output_fpath, col_name, values):
+    with open(input_fpath, 'r') as input_file, open(output_fpath, 'w') as output_file:
+        csvreader = csv.reader(input_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        csvwriter = csv.writer(output_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        header = csvreader.next()
+        csvwriter.writerow(header)
+        col_num = header.index(col_name)
+
+        for row in csvreader:
+            col_value = row[col_num]
+            if col_value not in values:
+                csvwriter.writerow(row)
 
 
 def filter_file_cols(input_fpath, output_fpath, wanted_col_names):
@@ -83,29 +136,68 @@ def filter_duplicates_on_col(input_fpath, output_fpath, duplicates_col_name):
 
 my_random = random.Random(128)
 
+# input_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/train_union.tsv'
+# output_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/equispaced_train_union.tsv'
+# col_name = '#atkd_a'
+# vals_to_remove = ['1', '2', '3', '4', '6', '7', '8', '9']
+# remove_col_values(input_fpath, output_fpath, col_name, vals_to_remove)
+# exit(0)
+
+
 # input_folder = '/home/agostino/Documents/Simulations/test_mp_10/500_nodes_10_subnets_results/'
 # batches = [0, 1]
 # input_folder = '/home/agostino/Documents/Simulations/test_mp_10/500_nodes_20_subnets_results/'
 # batches = [2, 3]
 # input_folder = '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_20_subnets_results/'
 # batches = [4, 5]
-input_folder = '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_40_subnets_results/'
-batches = [0, 1, 2]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_40_subnets_results/'
+# batches = [0, 1, 2]
+
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_11/'
+# batches = [0, 1]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_11/'
+# batches = [2, 3]
+
+input_folder = '/home/agostino/Documents/Simulations/test_mp_12/'
+batches = [0, 1, 2, 3, 4, 5, 6, 7]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_13/'
+# batches = [0]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_13/'
+# batches = [1]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_14/'
+# batches = [0, 1, 2, 3]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_14/'
+# batches = [4, 5, 6, 7]
+
 input_file_paths = []
 for batch_num in batches:
     input_file_paths.append(os.path.join(input_folder, 'ml_stats_{}.tsv'.format(batch_num)))
 
-# merged_file_name = '500_n_10_s.tsv'
-# merged_file_name = '500_n_20_s.tsv'
-# merged_file_name = '2000_n_20_s.tsv'
-merged_file_name = '2000_n_40_s.tsv'
-merged_file_path = os.path.join(input_folder, merged_file_name)
-merge_files_with_headers(input_file_paths, merged_file_path)
+merged_fname = 'merged.tsv'
+merged_fpath = os.path.join(input_folder, merged_fname)
+merge_files_with_headers(input_file_paths, merged_fpath)
 
-in_fpath = merged_file_path
-train_fpath = os.path.join(input_folder, 'train_' + merged_file_name)
-cv_fpath = os.path.join(input_folder, 'cv_' + merged_file_name)
-test_fpath = os.path.join(input_folder, 'test_' + merged_file_name)
+# col_to_label = 'p_dead'
+# label_col_name = 'dead_lvl'
+# extra_cols_fname = 'ext_2000_n_40_s.tsv'
+# extra_cols_fpath = os.path.join(input_folder, extra_cols_fname)
+# label_col_values(merged_fpath, extra_cols_fpath, col_to_label, label_col_name, [0.3], ['low', 'total'])
+#
+in_fpath = merged_fpath
+# in_fpath = extra_cols_fpath
+base_out_fname = '1000_n_20_s.tsv'
+train_fpath = os.path.join(input_folder, 'train_' + base_out_fname)
+cv_fpath = os.path.join(input_folder, 'cv_' + base_out_fname)
+test_fpath = os.path.join(input_folder, 'test_' + base_out_fname)
+#
+# with open(extra_cols_fpath, 'r') as extra_file:
+#     rdr = csv.DictReader(extra_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+#     row_cnt = 0
+#     for row in rdr:
+#         print('p_dead = {}, dead_lvl = {}'.format(row['p_dead'], row['dead_lvl']))
+#         row_cnt += 1
+#         if row_cnt > 10:
+#             break
 
 # how to subdivide the set of examples
 p_train = 0.8  # training set

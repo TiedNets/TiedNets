@@ -784,7 +784,7 @@ def clusterSmallWorld(n, avg_k, d_0, alpha, beta, q_rw, max_tries=20, deg_diff_t
 # max_tries is the maximum number of attempts at performing each step that could produce an invalid network
 # deg_diff_thresh is the maximum acceptable difference from the expected average degree in a subnetwork
 # seed is the seed used to initialize the random number generator
-def RT_nested_Smallworld(n, avg_k, d_0, alpha, beta, q_rw, subnet_cnt=None, max_tries=40, deg_diff_thresh=45,
+def RT_nested_Smallworld(n, avg_k, d_0, alpha, beta, q_rw, subnet_cnt=None, max_tries=400, deg_diff_thresh=45,
                          seed=None):
     global logger
     my_random = random.Random(seed)
@@ -1011,6 +1011,150 @@ def count_node_disjoint_paths(G, source, target):
 
 
 def calc_relay_betweenness(A, B, I):
+    # definition of betweenness centrality, but with source a distribution substation and dest its control center(s)
+    # works best for relay attached controllers situation
+
+    relays = []
+    controllers = []
+    for node_b in B.nodes():
+        if B.node[node_b]['role'] == 'relay':
+            relays.append(node_b)
+        else:
+            controllers.append(node_b)
+
+    # how many times a relay appears in a shortest path between a power node and the controller it's dependent from
+    hits_by_relay = {}
+    for relay in relays:
+        hits_by_relay[relay] = 0
+
+    # how many times a node is dependent on the couple (relay, node)
+    relay_controller_dep_cnt = {}
+
+    for node_a in A.nodes():
+        support_relays = []
+        support_ccs = []
+        # find the relays and control centers that support this power node
+        for node_b in I.successors(node_a):
+            if B.node[node_b]['role'] == 'relay':
+                support_relays.append(node_b)
+            elif B.node[node_b]['role'] == 'controller':
+                support_ccs.append(node_b)
+            else:
+                raise RuntimeError('Node in B with unrecognized role')
+
+        for relay in support_relays:
+            if relay not in relay_controller_dep_cnt:
+                relay_controller_dep_cnt[relay] = {}
+
+            for controller in support_ccs:
+                if controller not in relay_controller_dep_cnt[relay]:
+                    relay_controller_dep_cnt[relay][controller] = 0
+                relay_controller_dep_cnt[relay][controller] += 1
+
+    shortest_path_cnt = 0
+    for relay in relay_controller_dep_cnt:
+        # find all shortest paths between this relay and the relevant control centers
+        for controller in relay_controller_dep_cnt[relay]:
+            dep_cnt = relay_controller_dep_cnt[relay][controller]  # dependencies on current (relay, controller) couple
+            try:
+                paths = list(nx.all_shortest_paths(B, relay, controller))
+            except nx.NetworkXNoPath:
+                continue
+
+            shortest_path_cnt += len(paths) * dep_cnt
+
+            for path in paths:
+                for node in path:
+                    if B.node[node]['role'] == 'relay':
+                        hits_by_relay[node] += dep_cnt
+
+    print('hits_by_relay {}'.format(hits_by_relay))
+    print('shortest_path_cnt {}'.format(shortest_path_cnt))
+    betw_by_relay = {}
+    for relay in relays:
+        betw_by_relay[relay] = sf.percent_of_part(hits_by_relay[relay], shortest_path_cnt)
+
+    # for all nodes that are not relays, it's 0
+    betw_by_node = {}
+    betw_by_node.update(betw_by_relay)
+    for node_a in A.nodes():
+        betw_by_node[node_a] = 0.
+    for node_b in B.nodes():
+        if B.node[node_b]['role'] != 'relay':
+            betw_by_node[node_b] = 0.
+
+    return betw_by_node
+
+
+def calc_transm_subst_betweenness(A, B, I):
+    # definition of betweenness centrality, but with source a communication node and dest a generator
+
+    distr_subs = []
+    transm_subs = []
+    generators = []
+    for node_a in A.nodes():
+        if A.node[node_a]['role'] == 'distribution_substation':
+            distr_subs.append(node_a)
+        elif A.node[node_a]['role'] == 'transmission_substation':
+            transm_subs.append(node_a)
+        elif A.node[node_a]['role'] == 'generator':
+            generators.append(node_a)
+
+    # how many nodes are dependent on a distribution substation
+    distr_sub_dep_cnt = {}
+    for distr_sub in distr_subs:
+        distr_sub_dep_cnt[distr_sub] = 0
+
+    for node_b in B.nodes():
+        # find the distribution substations that support this communication node
+        for node_a in I.successors(node_b):
+            if A.node[node_a]['role'] == 'distribution_substation':
+                distr_sub_dep_cnt[node_a] += 1
+            else:
+                raise RuntimeError('Node in A with unexpected role')
+
+    # how many times a transmission substation appears in a shortest path between a communication node and a generator
+    hits_by_transm_sub = {}
+    for transm_sub in transm_subs:
+        hits_by_transm_sub[transm_sub] = 0
+
+    shortest_path_cnt = 0
+    for distr_sub in distr_sub_dep_cnt:
+        dep_cnt = distr_sub_dep_cnt[distr_sub]
+
+        # find all shortest paths between this distribution substation and the generators
+        for generator in generators:
+            try:
+                paths = list(nx.all_shortest_paths(A, distr_sub, generator))
+            except nx.NetworkXNoPath:
+                continue
+
+            shortest_path_cnt += len(paths) * dep_cnt
+
+            for path in paths:
+                for node in path:
+                    if A.node[node]['role'] == 'transmission_substation':
+                        hits_by_transm_sub[node] += dep_cnt
+
+    print('hits_by_transm_sub {}'.format(hits_by_transm_sub))
+    print('shortest_path_cnt {}'.format(shortest_path_cnt))
+    betw_by_transm_sub = {}
+    for transm_sub in transm_subs:
+        betw_by_transm_sub[transm_sub] = sf.percent_of_part(hits_by_transm_sub[transm_sub], shortest_path_cnt)
+
+    # for all nodes that are not transmission substations, it's 0
+    betw_by_node = {}
+    betw_by_node.update(betw_by_transm_sub)
+    for node_a in A.nodes():
+        if A.node[node_a]['role'] != 'transmission_substation':
+            betw_by_node[node_a] = 0.
+    for node_b in B.nodes():
+        betw_by_node[node_b] = 0.
+
+    return betw_by_node
+
+
+def calc_relay_betweenness_old(A, B, I):
     # old definition: the fraction of *adjective* paths in which the relay v appears between a power
     # node u and the control centers it depends from
     # new definition for relay betweennes:
@@ -1051,7 +1195,7 @@ def calc_relay_betweenness(A, B, I):
             hits_by_relay[relay] += 1
 
     nodes_a_cnt = A.number_of_nodes()
-    print(hits_by_relay)
+    # print(hits_by_relay)
     betw_by_relay = {}
     for relay in hits_by_relay:
         betw_by_relay[relay] = sf.percent_of_part(hits_by_relay[relay], nodes_a_cnt)
@@ -1068,10 +1212,13 @@ def calc_relay_betweenness(A, B, I):
     return betw_by_nodes
 
 
-def calc_transm_subst_betweenness(A, B, I):
+def calc_transm_subst_betweenness_old(A, B, I):
     # new definition for transmission substation betweennes:
-    # counts for what fraction of power nodes a relay appears in a shortest path to one of their control centers
+    # counts for what fraction of communication nodes a transmission substation appears in a shortest path between
+    # a generator and the distribution substation(s) they depend on
     # for all nodes that are not transmission substations, it's 0
+    # TODO: alternatively, apply the betweenness centrality definition, but source and dest must be generator and
+    # communication nodes (or simply distribution substations)
 
     hits_by_transm_sub = {}
     generators = []
@@ -1107,7 +1254,7 @@ def calc_transm_subst_betweenness(A, B, I):
             hits_by_transm_sub[transm_sub] += 1
 
     nodes_b_cnt = B.number_of_nodes()
-    print(hits_by_transm_sub)
+    # print(hits_by_transm_sub)
     betw_by_transm_sub = {}
     for transm_sub in hits_by_transm_sub:
         betw_by_transm_sub[transm_sub] = sf.percent_of_part(hits_by_transm_sub[transm_sub], nodes_b_cnt)

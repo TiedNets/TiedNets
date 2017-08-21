@@ -267,110 +267,214 @@ def test_calc_relay_betweenness():
     A = nx.Graph()
     nodes_a = [
         ('D0', {'role': 'distribution_substation'}),
-        ('G0', {'role': 'generator'}),
         ('T0', {'role': 'transmission_substation'}),
-        ('D1', {'role': 'distribution_substation'})
+        ('G0', {'role': 'generator'})
     ]
     A.add_nodes_from(nodes_a)
-    edges_a = [('G0', 'T0'), ('T0', 'D0'), ('T0', 'D1')]
+    edges_a = [('G0', 'T0'), ('T0', 'D0')]
     A.add_edges_from(edges_a)
 
     B = nx.Graph()
     nodes_b = [
         ('C0', {'role': 'controller'}),
         ('R0', {'role': 'relay'}),
-        ('R1', {'role': 'relay'}),
-        ('C1', {'role': 'controller'})
+        ('R1', {'role': 'relay'})
     ]
     B.add_nodes_from(nodes_b)
-    edges_b = [('R0', 'C0'), ('R1', 'C1')]
+    edges_b = [('R0', 'R1'), ('R1', 'C0')]
     B.add_edges_from(edges_b)
 
     I = nx.DiGraph()
     I.add_nodes_from(nodes_a + nodes_b)
     edges_i = [
-        ('G0', 'C0'), ('T0', 'C0'), ('D0', 'C1'), ('D1', 'C1'),
-        ('G0', 'R0'), ('T0', 'R0'), ('D0', 'R1'), ('D1', 'R1')
+        ('D0', 'C0'), ('T0', 'C0'), ('G0', 'C0'),
+        ('D0', 'R0'), ('T0', 'R0'), ('G0', 'R0')
     ]
     I.add_edges_from(edges_i)
 
-    print(nc.calc_relay_betweenness(A, B, I))
+    results = nc.calc_relay_betweenness(A, B, I)
+    expected = {'R0': 1.0, 'R1': 1.0, 'C0': 0.0, 'D0': 0.0, 'T0': 0.0, 'G0': 0.0}
+    assert results == expected
+
+    B.remove_edges_from(B.edges())
+    edges_b = [('R0', 'C0'), ('R1', 'C0')]
+    B.add_edges_from(edges_b)
+
+    I.remove_edges_from(I.edges())
+    edges_i = [
+        ('D0', 'C0'), ('T0', 'C0'), ('G0', 'C0'),
+        ('D0', 'R0'), ('T0', 'R0'), ('G0', 'R1')
+    ]
+    I.add_edges_from(edges_i)
+
+    results = nc.calc_relay_betweenness(A, B, I)
+    expected = {'R0': 2./3, 'R1': 1./3, 'C0': 0.0, 'D0': 0.0, 'T0': 0.0, 'G0': 0.0}
+    assert results == expected
 
     del B
     B = nx.Graph()
     nodes_b = [
         ('C0', {'role': 'controller'}),
+        ('C1', {'role': 'controller'}),
         ('R0', {'role': 'relay'}),
         ('R1', {'role': 'relay'}),
         ('R2', {'role': 'relay'}),
-        ('R3', {'role': 'relay'}),
-        ('C1', {'role': 'controller'})
+        ('R3', {'role': 'relay'})
     ]
     B.add_nodes_from(nodes_b)
-    edges_b = [('R0', 'C0'), ('R1', 'R2'), ('R2', 'C1'), ('R1', 'R3'), ('R3', 'C1')]
+    edges_b = [('R0', 'C0'), ('R0', 'R1'), ('R1', 'R2'), ('R2', 'C1'), ('R2', 'R3')]
     B.add_edges_from(edges_b)
-
-    print(nc.calc_relay_betweenness(A, B, I))
-
-    del B
-    B = nx.Graph()
-    nodes_b = [
-        ('C0', {'role': 'controller'}),
-        ('R0', {'role': 'relay'}),
-        ('R1', {'role': 'relay'}),
-        ('R2', {'role': 'relay'}),
-        ('C1', {'role': 'controller'})
-    ]
-    B.add_nodes_from(nodes_b)
-    edges_b = [('R0', 'C0'), ('R1', 'C1'), ('R1', 'R2'), ('R2', 'C1')]
-    B.add_edges_from(edges_b)
-
-    print(nc.calc_relay_betweenness(A, B, I))
 
     del I
     I = nx.DiGraph()
     I.add_nodes_from(nodes_a + nodes_b)
     edges_i = [
-        ('G0', 'C0'), ('T0', 'C0'), ('D0', 'C1'), ('D1', 'C1'),
-        ('G0', 'R0'), ('T0', 'R0'), ('D0', 'R1'), ('D1', 'R2')
+        ('D0', 'C0'), ('T0', 'C1'), ('G0', 'C1'),
+        ('D0', 'R0'), ('T0', 'R1'), ('G0', 'R2')
     ]
     I.add_edges_from(edges_i)
 
-    print(nc.calc_relay_betweenness(A, B, I))
+    results = nc.calc_relay_betweenness(A, B, I)
+    expected = {'R0': 1. / 3, 'R1': 1. / 3, 'R2': 2. / 3, 'R3': 0., 'C0': 0.0, 'C1': 0.0,
+                'D0': 0.0, 'T0': 0.0, 'G0': 0.0}
+    assert results == expected
+
+    I.add_edge('T0', 'C0')
+    results = nc.calc_relay_betweenness(A, B, I)
+    expected = {'R0': 0.5, 'R1': 0.5, 'R2': 0.5, 'R3': 0., 'C0': 0.0, 'C1': 0.0,
+                'D0': 0.0, 'T0': 0.0, 'G0': 0.0}
+    assert results == expected
+
+    B.remove_edges_from(B.edges())
+    edges_b = [('R0', 'C0'), ('R0', 'R1'), ('R2', 'R3'), ('R3', 'C1')]
+    B.add_edges_from(edges_b)
+
+    I.remove_edges_from(I.edges())
+    edges_i = [
+        ('D0', 'C0'), ('T0', 'C0'), ('T0', 'C1'), ('G0', 'C1'),
+        ('D0', 'R0'), ('T0', 'R0'), ('T0', 'R1'), ('T0', 'R2'), ('T0', 'R3'), ('G0', 'R3')
+    ]
+    I.add_edges_from(edges_i)
+
+    # here we see that this is is a peculiar betweenness
+    results = nc.calc_relay_betweenness(A, B, I)
+    expected = {'R0': 3. / 6, 'R1': 1. / 6, 'R2': 1. / 6, 'R3': 3. / 6, 'C0': 0.0, 'C1': 0.0,
+                'D0': 0.0, 'T0': 0.0, 'G0': 0.0}
+    assert results == expected
+
+    B.add_node('R4', {'role': 'relay'})  # an isolated node
+    I.add_edge('G0', 'R4')  # a useless dependency
+    results = nc.calc_relay_betweenness(A, B, I)
+    expected = {'R0': 3. / 6, 'R1': 1. / 6, 'R2': 1. / 6, 'R3': 3. / 6, 'R4': 0., 'C0': 0.0, 'C1': 0.0,
+                'D0': 0.0, 'T0': 0.0, 'G0': 0.0}
+    assert results == expected
 
 
 def test_calc_transm_subst_betweenness():
     A = nx.Graph()
     nodes_a = [
-        ('G0', {'role': 'generator'}),
-        ('G1', {'role': 'generator'}),
-        ('T0', {'role': 'transmission_substation'}),
-        ('T1', {'role': 'transmission_substation'}),
         ('D0', {'role': 'distribution_substation'}),
-        ('D1', {'role': 'distribution_substation'})
+        ('T0', {'role': 'transmission_substation'}),
+        ('G0', {'role': 'generator'})
     ]
     A.add_nodes_from(nodes_a)
-    edges_a = [('G0', 'T0'), ('T0', 'D0'), ('G1', 'T1'), ('T1', 'D1')]
+    edges_a = [('G0', 'T0'), ('T0', 'D0')]
     A.add_edges_from(edges_a)
 
     B = nx.Graph()
     nodes_b = [
         ('C0', {'role': 'controller'}),
-        ('R0', {'role': 'relay'}),
-        ('R1', {'role': 'relay'}),
-        ('C1', {'role': 'controller'})
+        ('R0', {'role': 'relay'})
     ]
     B.add_nodes_from(nodes_b)
-    edges_b = [('R0', 'C0'), ('R1', 'C1')]
+    edges_b = [('R0', 'C0')]
     B.add_edges_from(edges_b)
 
     I = nx.DiGraph()
     I.add_nodes_from(nodes_a + nodes_b)
     edges_i = [
-        # ('G0', 'C0'), ('T0', 'C0'), ('D0', 'C1'), ('D1', 'C1'),
-        # ('G0', 'R0'), ('T0', 'R0'), ('D0', 'R1'), ('D1', 'R1')
-        ('C0', 'D0'), ('C1', 'D0'), ('R0', 'D0'), ('R1', 'D0')
+        ('D0', 'C0'), ('T0', 'C0'), ('G0', 'C0'),
+        ('D0', 'R0'), ('T0', 'R0'), ('G0', 'R0'),
+        ('R0', 'D0'), ('C0', 'D0')
     ]
     I.add_edges_from(edges_i)
 
-    print(nc.calc_transm_subst_betweenness(A, B, I))
+    results = nc.calc_transm_subst_betweenness(A, B, I)
+    expected = {'D0': 0.0, 'T0': 1.0, 'G0': 0.0, 'R0': 0.0, 'C0': 0.0}
+    assert results == expected
+
+    del A
+    A = nx.Graph()
+    nodes_a = [
+        ('D0', {'role': 'distribution_substation'}),
+        ('D1', {'role': 'distribution_substation'}),
+        ('T0', {'role': 'transmission_substation'}),
+        ('G0', {'role': 'generator'}),
+        ('G1', {'role': 'generator'})
+    ]
+    A.add_nodes_from(nodes_a)
+    edges_a = [('D0', 'T0'), ('D1', 'T0'), ('T0', 'G0'), ('T0', 'G1')]
+    A.add_edges_from(edges_a)
+
+    I = nx.DiGraph()
+    I.add_nodes_from(nodes_a + nodes_b)
+    edges_i = [
+        ('D0', 'C0'), ('T0', 'C0'), ('G0', 'C0'), ('D1', 'C0'), ('G1', 'C0'),
+        ('D0', 'R0'), ('T0', 'R0'), ('G0', 'R0'), ('D1', 'R0'), ('G1', 'R0'),
+        ('R0', 'D0'), ('C0', 'D1')
+    ]
+    I.add_edges_from(edges_i)
+
+    results = nc.calc_transm_subst_betweenness(A, B, I)
+    expected = {'D0': 0.0, 'D1': 0.0, 'T0': 1.0, 'G0': 0.0, 'G1': 0.0, 'R0': 0.0, 'C0': 0.0}
+    assert results == expected
+
+    del A
+    A = nx.Graph()
+    nodes_a = [
+        ('D0', {'role': 'distribution_substation'}),
+        ('D1', {'role': 'distribution_substation'}),
+        ('T0', {'role': 'transmission_substation'}),
+        ('T1', {'role': 'transmission_substation'}),
+        ('G0', {'role': 'generator'}),
+        ('G1', {'role': 'generator'})
+    ]
+    A.add_nodes_from(nodes_a)
+    edges_a = [('D0', 'T0'), ('T0', 'G0'), ('T0', 'T1'), ('D1', 'T1'), ('T1', 'G1')]
+    A.add_edges_from(edges_a)
+
+    I.add_edges_from([('T1', 'C0'), ('T1', 'R0')])
+
+    results = nc.calc_transm_subst_betweenness(A, B, I)
+    expected = {'D0': 0.0, 'D1': 0.0, 'T0': 3./4, 'T1': 3./4, 'G0': 0.0, 'G1': 0.0, 'R0': 0.0, 'C0': 0.0}
+    assert results == expected
+
+    A.remove_edges_from(A.edges())
+    edges_a = [('D0', 'T0'), ('T0', 'G0'), ('T0', 'G1'), ('D1', 'T1'), ('T1', 'G1')]
+    A.add_edges_from(edges_a)
+
+    # I don't particularly like that there is a path passing through a generator, but it's allowed
+    results = nc.calc_transm_subst_betweenness(A, B, I)
+    expected = {'D0': 0.0, 'D1': 0.0, 'T0': 3./4, 'T1': 2./4, 'G0': 0.0, 'G1': 0.0, 'R0': 0.0, 'C0': 0.0}
+    assert results == expected
+
+    A.remove_edges_from(A.edges())
+    edges_a = [('D0', 'T0'), ('T0', 'G0'), ('G0', 'G1'), ('D1', 'T1'), ('T1', 'G1')]
+    A.add_edges_from(edges_a)
+
+    del B
+    B = nx.Graph()
+    nodes_b = [
+        ('C0', {'role': 'controller'}),
+        ('R0', {'role': 'relay'}),
+        ('R1', {'role': 'relay'})
+    ]
+    B.add_nodes_from(nodes_b)
+    edges_b = [('R0', 'C0'), ('R1', 'C0')]
+    B.add_edges_from(edges_b)
+
+    I.add_edge('R1', 'D0')
+
+    results = nc.calc_transm_subst_betweenness(A, B, I)
+    expected = {'D0': 0.0, 'D1': 0.0, 'T0': 4./6, 'T1': 2./6, 'G0': 0.0, 'G1': 0.0, 'R0': 0.0, 'R1': 0.0, 'C0': 0.0}
+    assert results == expected

@@ -27,17 +27,19 @@ if not os.path.isabs(parsed_graph_fpath):
     parsed_graph_fpath = os.path.abspath(parsed_graph_fpath)
 
 with open(com_lines_fpath) as com_lines_file:
-    # elec_lines = json.load(elec_lines_file, parse_float=Decimal)
+    # elec_lines = json.load(com_lines_file, parse_float=Decimal)
     com_lines = json.load(com_lines_file)
     for line in com_lines['features']:
-        line_id = line['properties']['id']  # these ids probably start from 1 and may not be continuous
+        # these ids may not start from 1 and may not be continuous, but they should be unique
+        # AFAIK, GeoJSON does not mandate a specific id property, so we just use our own
+        line_id = line['properties']['id']
 
         if line['geometry'] is None:
             print('Missing geometry for line {}'.format(line_id))  # debug
             continue
 
         if line_id in lines_by_id:
-            print('Duplicated line id {}'.format(line_id))  # debug
+            print('Duplicated line id {}, this line will be skipped!'.format(line_id))  # warning
             continue
 
         line_attrs = dict()
@@ -62,11 +64,10 @@ for line_id in lines_by_id:
             final_G.add_node(point_id, attr_dict={'x': point[0], 'y': point[1]})
 
     # connect consecutive line points to form arcs in the graph
-    for idx in range(0, len(line_points)):
-        if idx <= len(line_points) - 2:
-            node = point_to_id[line_points[idx]]
-            other_node = point_to_id[line_points[idx + 1]]
-            final_G.add_edge(node, other_node)
+    for idx in range(0, len(line_points) - 1):
+        node = point_to_id[line_points[idx]]
+        other_node = point_to_id[line_points[idx + 1]]
+        final_G.add_edge(node, other_node)
 
     lines_by_id[line_id] = line_attrs
 
@@ -107,13 +108,13 @@ for node in final_G.nodes():
         elif y < y_min:
             y_min = y
 
-margin = 0.2
+margin = 0.01
 delta_x = abs(x_max - x_min)
 delta_y = abs(y_max - y_min)
 
 print('x_min = {}\nx_max = {}\ny_min = {}\ny_max = {}'.format(x_min, x_max, y_min, y_max))
-# plt.xlim(x_min - margin * delta_x, x_max + margin * delta_x)
-# plt.xlim(y_min - margin * delta_y, y_max + margin * delta_y)
+plt.xlim(x_min - margin * delta_x, x_max + margin * delta_x)
+plt.ylim(y_min - margin * delta_y, y_max + margin * delta_y)
 nx.draw_networkx(final_G, pos, with_labels=False, node_size=2, linewidths=0.0)
 plt.show()
 plt.close()

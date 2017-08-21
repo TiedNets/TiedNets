@@ -589,7 +589,7 @@ def train_regr_model(train_X, train_y, X_col_names, var_thresh, poly_feat, stand
         clf = linear_model.ElasticNetCV(max_iter=40000)
     elif model_name == 'decisiontreeregressor':
         # other useful parameters are max_depth and min_samples_leaf
-        clf = tree.DecisionTreeRegressor(criterion='mse', min_samples_split=0.1)
+        clf = tree.DecisionTreeRegressor(criterion='mse', min_samples_split=0.05)
     else:
         raise ValueError('Unsupported value for parameter model_name')
 
@@ -787,8 +787,16 @@ def run():
     logging.config.dictConfig(config)
     logger = logging.getLogger(__name__)
 
-    train_set_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/equispaced_train_union.tsv'
-    test_set_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/test_union.tsv'
+    # train_set_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/equispaced_train_union.tsv'
+    # test_set_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/test_union.tsv'
+    # train_set_fpath = '/home/agostino/Documents/Sims/single_net_20170725/train_1000_n_20_s.tsv'
+    # test_set_fpath = '/home/agostino/Documents/Sims/single_net_20170725/test_1000_n_20_s.tsv'
+    train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_12/train_1000_n_20_s.tsv'
+    test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_12/test_1000_n_20_s.tsv'
+    # train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/train_2000_n_20_s_atkd_a.tsv'
+    # test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/test_2000_n_20_s_atkd_a.tsv'
+    # train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/train_2000_n_20_s_atkd_b.tsv'
+    # test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/test_2000_n_20_s_atkd_b.tsv'
 
     # X_col_names = ['p_atkd', 'p_atkd_a', 'p_atkd_b',
     #                   'indeg_c_ab_q_1', 'indeg_c_ab_q_2', 'indeg_c_ab_q_3', 'indeg_c_ab_q_4', 'indeg_c_ab_q_5',
@@ -834,7 +842,8 @@ def run():
     #                   'p_tot_atkd_indeg_c_i', 'p_tot_atkd_ts_betw_c'
     #                   ]
     # X_col_names = ['p_tot_atkd_betw_c_i', 'p_atkd_cc']
-    X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i']
+    X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_ts_betw_c']
+    # X_col_names = ['p_atkd_b', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_rel_betw_c']
 
     # also good for trees
     # X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_ts_betw_c', 'p_tot_atkd_betw_c_ab']
@@ -877,6 +886,10 @@ def run():
     y_col_name = 'p_dead'
     # y_col_name = 'dead_lvl'
     info_col_names = ['instance', 'seed', '#atkd_a']
+    # info_col_names = ['instance', 'seed', '#atkd_b']
+
+    atks_cnt_col = info_col_names.index('#atkd_a')
+    # atks_cnt_col = info_col_names.index('#atkd_b')
 
     model_name = 'DecisionTreeRegressor'
     model_kind = 'regression'
@@ -897,29 +910,48 @@ def run():
     learned_stuff = {'model': model, 'transformers': transformers}
     joblib.dump(learned_stuff, learned_stuff_fpath)
 
-    atks_cnt_col = info_col_names.index('#atkd_a')
     predictor = lambda x: model.predict(x)  # function we use to predict the result
 
     datasets = [
         {
-            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/500_nodes_10_subnets_results/test_500_n_10_s.tsv',
-            'relevant_atk_sizes': [3, 5, 10, 25, 50],
+        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/500_nodes_10_subnets_results/test_500_n_10_s.tsv',
+        #     'relevant_atk_sizes': [3, 5, 10, 25, 50],
+        #     'node_cnt_A': 500, 'name': '500 power nodes, 10 subnets'
+        # }, {
+        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/500_nodes_20_subnets_results/test_500_n_20_s.tsv',
+        #     'relevant_atk_sizes': [3, 5, 10, 25, 50],
+        #     'node_cnt_A': 500, 'name': '500 power nodes, 20 subnets'
+        # }, {
+        #     'dataset_fpath': test_set_fpath,
+        #     'relevant_atk_sizes': [5, 10, 20, 50, 100],
+        #     'node_cnt_A': 1000, 'name': '1000 power nodes, 20 subnets'
+        # }, {
+        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_20_subnets_results/test_2000_n_20_s.tsv',
+        #     'relevant_atk_sizes': [10, 20, 40, 100, 200],
+        #     'node_cnt_A': 2000, 'name': '2000 power nodes, 20 subnets'
+        # }, {
+        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_40_subnets_results/test_2000_n_40_s.tsv',
+        #     'relevant_atk_sizes': [10, 20, 40, 100, 200],
+        #     'node_cnt_A': 2000, 'name': '2000 power nodes, 40 subnets'
+        # }
+            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_13/test_500_n_10_s.tsv',
+            'relevant_atk_sizes': [0, 3, 5, 10, 15, 20, 25, 35, 50],
             'node_cnt_A': 500, 'name': '500 power nodes, 10 subnets'
         }, {
-            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/500_nodes_20_subnets_results/test_500_n_20_s.tsv',
-            'relevant_atk_sizes': [3, 5, 10, 25, 50],
+            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_13/test_500_n_20_s.tsv',
+            'relevant_atk_sizes': [0, 3, 5, 10, 15, 20, 25, 35, 50],
             'node_cnt_A': 500, 'name': '500 power nodes, 20 subnets'
         }, {
             'dataset_fpath': test_set_fpath,
-            'relevant_atk_sizes': [5, 10, 20, 50, 100],
+            'relevant_atk_sizes': [0, 5, 10, 20, 30, 40, 50, 70, 100],
             'node_cnt_A': 1000, 'name': '1000 power nodes, 20 subnets'
         }, {
-            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_20_subnets_results/test_2000_n_20_s.tsv',
-            'relevant_atk_sizes': [10, 20, 40, 100, 200],
+            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_14/test_2000_n_20_s.tsv',
+            'relevant_atk_sizes': [0, 10, 20, 40, 60, 80, 100, 140, 200],
             'node_cnt_A': 2000, 'name': '2000 power nodes, 20 subnets'
         }, {
-            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_40_subnets_results/test_2000_n_40_s.tsv',
-            'relevant_atk_sizes': [10, 20, 40, 100, 200],
+            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_14/test_2000_n_40_s.tsv',
+            'relevant_atk_sizes': [0, 10, 20, 40, 60, 80, 100, 140, 200],
             'node_cnt_A': 2000, 'name': '2000 power nodes, 40 subnets'
         }
     ]
@@ -937,13 +969,13 @@ def run():
         ax_x_vec, ax_x_label = plain_ds_X[:, 0], 'initial fraction of failed nodes'
         ax_y_vec, ax_y_label = plain_ds_X[:, 1], 'loss of centrality'
         ax_z_vec, ax_z_label = ds_y, 'actual resulting fraction of dead nodes'
-        plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label, True, True, False)
+        # plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label, True, True, False)
 
         # show the original features on the x and y axis; show the predictions on the z axis
         ax_z_vec, ax_z_label = predictions, 'predicted fraction of dead nodes'
-        plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label, True, False, True)
+        # plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label, True, False, True)
 
-        plot_predictions_for_2d_dataset(plain_ds_X, ds_y, transformers, predictor)
+        # plot_predictions_for_2d_dataset(plain_ds_X, ds_y, transformers, predictor)
 
         if model_kind == 'regression':
             check_prediction_bounds(plain_ds_X, ds_info, X_col_names, info_col_names, predictions, 0.0, True, 1.05, True)
@@ -987,7 +1019,8 @@ def run():
 
         # plot_all_scenario_performances(ds_X, ds_y, ds_info, info_col_names, predictor, 3, 2)
 
-    atkd_ps = [0.5, 1., 2., 5., 10.]  # TODO: calculate this
+    # atkd_ps = [0.5, 1., 2., 5., 10.]
+    atkd_ps = [0, 0.5, 1, 2, 3, 4, 5, 7, 10]  # TODO: calculate this
     colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
     markers = ['o', '^', 's', '*', 'x', '+', 'd']
     styles = ['b-o', 'g-^', 'r-s', 'c-*', 'm-x', 'y-+']

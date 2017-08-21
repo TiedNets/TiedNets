@@ -165,8 +165,8 @@ for sim_group in range(0, len(base_configs)):
                     group_index = csv.writer(group_index_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
                     group_index.writerow([instance_num, conf_fpath])
 
-                logger.info('Batch {}) Running simulation {} of {}\nsim group {}, value {}, intance {}, seed {}'
-                            .format(cur_sim_num, sim_cnt, batch_no, var_value, sim_group, seed))
+                logger.warning('Batch {}) Running simulation {} of {}\nsim group {}, value {}, instance {}, seed {}'
+                            .format(batch_no, cur_sim_num, sim_cnt, batch_no, var_value, sim_group, seed))
                 sim.run(conf_fpath, floader)  # run the simulation
                 run_num_by_inst[instance_num] += 1  # next simulation for this instance will be number + 1
                 cur_sim_num += 1

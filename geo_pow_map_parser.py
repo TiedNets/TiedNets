@@ -54,14 +54,14 @@ def add_generators(elec_gens_fpath, G):
         print('gen_cnt features = {}'.format(len(elec_gens['features'])))  # debug
 
         for gen in elec_gens['features']:
-            gen_name = gen['properties']['NAME']  # these ids probably start from 1 and may not be continuous
+            gen_name = gen['properties']['NAME']  # these names should be unique
 
             if gen['geometry'] is None:
                 print('Missing geometry for generator {}'.format(gen_name))  # debug
                 continue
 
             if gen_name in gen_names:
-                print('Duplicated generator {}'.format(gen_name))  # debug
+                print('Duplicated generator NAME {}, this generator will be skipped!'.format(gen_name))  # warning
                 continue
 
             gen_names.append(gen_name)  # remember this node id has been encountered
@@ -138,14 +138,14 @@ with open(elec_subs_fpath) as elec_subs_file:
 
     # add nodes to a temporary graph
     for sub in elec_subs['features']:
-        sub_id = sub['properties']['OBJECTID']  # these ids probably start from 1 and may not be continuous
+        sub_id = sub['properties']['OBJECTID']  # these ids may not start from 1 and may not be continuous
 
         if sub['geometry'] is None:
             print('Missing geometry for substation {}'.format(sub_id))  # debug
             continue
 
         if sub_id in sub_attrs_by_id:
-            print('Duplicated substation {}'.format(sub_id))  # debug
+            print('Duplicated substation OBJECTID {}, this substation will be skipped!'.format(sub_id))  # warning
             continue
 
         sub_attrs = dict()
@@ -184,14 +184,14 @@ with open(elec_lines_fpath) as elec_lines_file:
     voltages = list()
     elec_lines = json.load(elec_lines_file)
     for line in elec_lines['features']:
-        line_id = line['properties']['OBJECTID']  # these ids probably start from 1 and may not be continuous
+        line_id = line['properties']['OBJECTID']  # these ids may not start from 1 and may not be continuous
 
         if line['geometry'] is None:
             print('Missing geometry for line {}'.format(line_id))  # debug
             continue
 
         if line_id in line_attrs_by_id:
-            print('Duplicated line {}'.format(line_id))  # debug
+            print('Duplicated line OBJECTID {}, this line will be skipped!'.format(line_id))  # warning
             continue
 
         line_attrs = dict()
@@ -252,13 +252,12 @@ for voltage in voltages:
 
         # proceed linking consecutive points: 0 with 1, 1 with 2, etc.
         line_points = line_attrs['points']
-        for idx in range(0, len(line_points)):
-            if idx <= len(line_points) - 2:
-                node = point_to_id[line_points[idx]]
-                other_node = point_to_id[line_points[idx + 1]]
-                if not temp_G.has_edge(node, other_node):
-                    temp_G.add_edge(node, other_node, attr_dict={'line_ids': list()})
-                temp_G.edge[node][other_node]['line_ids'].append(line_id)
+        for idx in range(0, len(line_points) - 1):
+            node = point_to_id[line_points[idx]]
+            other_node = point_to_id[line_points[idx + 1]]
+            if not temp_G.has_edge(node, other_node):
+                temp_G.add_edge(node, other_node, attr_dict={'line_ids': list()})
+            temp_G.edge[node][other_node]['line_ids'].append(line_id)
 
     print('Consecutive line points linked')  # debug
 
@@ -440,13 +439,13 @@ for node in final_G.nodes():
         elif y < y_min:
             y_min = y
 
-margin = 0.2
+margin = 0.01
 delta_x = abs(x_max - x_min)
 delta_y = abs(y_max - y_min)
 
 print('x_min = {}\nx_max = {}\ny_min = {}\ny_max = {}'.format(x_min, x_max, y_min, y_max))
-# plt.xlim(x_min - margin * delta_x, x_max + margin * delta_x)
-# plt.xlim(y_min - margin * delta_y, y_max + margin * delta_y)
+plt.xlim(x_min - margin * delta_x, x_max + margin * delta_x)
+plt.ylim(y_min - margin * delta_y, y_max + margin * delta_y)
 nx.draw_networkx(final_G, pos, with_labels=False, node_color='r', node_size=8, linewidths=0.0)
 
 # remove nodes no longer in the graph
