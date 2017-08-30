@@ -276,10 +276,14 @@ def calc_atkd_percent_by_role(G, attacked_nodes, result_key_by_role):
     return atkd_perc_by_role
 
 
-# for a given centrality, calculates what percentage of nodes was attacked in each quintile and the total centrality
-# score fo the attacked nodes
-# NOTE: by "being part of the 2nd quintile" we mean "having a score having a score greater than the 1st quintile,
-# and lower than the third quintile"
+# For a given centrality, calculate:
+# - p_q_{i}_{centrality_name} the fraction of nodes in quintile {i} that were attacked
+# - p_sum_{centrality_name} the sum of the centrality scores of the attacked nodes
+# - p_tot_{centrality_name} the fraction of total centrality score that was attacked
+#
+# NOTE: we consider a node to be "part of the 2nd quintile" if it "has a centrality score greater than the 1st quintile
+# mark and lower than the 3rd quintile mark". Our definition might not be the same as the canonical definition, but it
+# is what we need to use.
 def calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix, centrality_info):
     global logger
     centr_stats = {}  # dictionary used to index statistics with shorter names
@@ -313,8 +317,8 @@ def calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix
             atkd_cnt_by_quintile[node_quintile] += 1
     else:
         # this is a corner case presented by graphs in which many nodes have identical centrality scores, like in
-        # random regular graphs. To determine the quintile each node belong to, we check their position in our
-        # ranking, that considered their centrality score as well as their id to sort them
+        # random regular graphs. To determine what quintile each node belongs to, we check their position in our
+        # deterministic ranking, where they are sorted by their centrality score first and then by their id
         # logger.info('There are only {} different quintiles for centrality {}'.format(len(quintiles_set),
         #                                                                              centrality_name))
         ranked_nodes = centrality_info[centrality_name + '_rank']
@@ -343,7 +347,7 @@ def calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix
         atkd_perc_of_quintile[i] = sf.percent_of_part(atkd_cnt_by_quintile[i], nodes_in_quintile)
     logger.debug('atkd_perc_of_quintile {}'.format(atkd_perc_of_quintile))
 
-    # p_q1 is percentage of nodes attacked in the first quintile
+    # p_q_1 is fraction of nodes attacked in the first quintile
     for i, val in enumerate(atkd_perc_of_quintile):
         stat_name = 'p_q_{}_{}'.format(i + 1, result_key_suffix)
         centr_stats[stat_name] = val
@@ -511,19 +515,26 @@ def run(conf_fpath, floader):
 
     # read output paths
 
-    # run_stats is a file used to save step-by-step details about this run
     results_dir = os.path.normpath(config.get('paths', 'results_dir'))
     if os.path.isabs(results_dir) is False:
         results_dir = os.path.abspath(results_dir)
-    run_stats_fname = config.get('paths', 'run_stats_fname')
-    run_stats_fpath = os.path.join(results_dir, run_stats_fname)
+    sf.ensure_dir_exists(results_dir)
+
+    # run_stats is a file used to save step-by-step details about this run
+    run_stats_fpath = ''
+    run_stats_file = None
+    run_stats = None
+    if config.has_option('paths', 'run_stats_fname'):
+        run_stats_fname = config.get('paths', 'run_stats_fname')
+        run_stats_fpath = os.path.join(results_dir, run_stats_fname)
 
     # end_stats is a file used to save a single line (row) of statistics at the end of the simulation
     end_stats_fpath = ''
-    # if config.has_option('paths', 'end_stats_fpath'):
-    #     end_stats_fpath = os.path.normpath(config.get('paths', 'end_stats_fpath'))
-    #     if os.path.isabs(end_stats_fpath) is False:
-    #         end_stats_fpath = os.path.abspath(end_stats_fpath)
+    if config.has_option('paths', 'end_stats_fpath'):
+        end_stats_fpath = os.path.normpath(config.get('paths', 'end_stats_fpath'))
+        if os.path.isabs(end_stats_fpath) is False:
+            end_stats_fpath = os.path.abspath(end_stats_fpath)
+        sf.ensure_dir_exists(os.path.dirname(end_stats_fpath))
 
     # ml_stats is similar to end_stats as it is used to write a line at the end of the simulation,
     # but it gathers statistics used for machine learning
@@ -532,10 +543,6 @@ def run(conf_fpath, floader):
         ml_stats_fpath = os.path.normpath(config.get('paths', 'ml_stats_fpath'))
         if os.path.isabs(ml_stats_fpath) is False:
             ml_stats_fpath = os.path.abspath(ml_stats_fpath)
-
-    # ensure output directories exist
-    # sf.ensure_dir_exists(results_dir)
-    # sf.ensure_dir_exists(os.path.dirname(end_stats_fpath))
 
     # read information used to identify this simulation run
     sim_group = config.getint('misc', 'sim_group')
@@ -609,11 +616,13 @@ def run(conf_fpath, floader):
     base_node_cnt_b = B.number_of_nodes()
 
     # execute simulation of failure propagation
-    # with open(run_stats_fpath, 'wb') as run_stats_file:
-    if True:
+    try:
+        if run_stats_fpath:
+            run_stats_file = open(run_stats_fpath, 'wb')
+            run_stats_header = ['time', 'dead']
+            run_stats = csv.DictWriter(run_stats_file, run_stats_header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+            run_stats.writeheader()
 
-        # run_stats = csv.DictWriter(run_stats_file, ['time', 'dead'], delimiter='\t', quoting=csv.QUOTE_MINIMAL)
-        # run_stats.writeheader()
         time += 1
 
         # perform initial attack
@@ -701,7 +710,9 @@ def run(conf_fpath, floader):
         I.remove_nodes_from(attacked_nodes)
 
         # save_state(time, A, B, I, results_dir)
-        # run_stats.writerow({'time': time, 'dead': attacked_nodes})
+        if run_stats is not None:
+            run_stats.writerow({'time': time, 'dead': attacked_nodes})
+
         updated = True
         time += 1
 
@@ -740,7 +751,8 @@ def run(conf_fpath, floader):
                 I.remove_nodes_from(unsupported_nodes_a)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                # run_stats.writerow({'time': time, 'dead': unsupported_nodes_a})
+                if run_stats is not None:
+                    run_stats.writerow({'time': time, 'dead': unsupported_nodes_a})
             time += 1
 
             # intra checks for network A
@@ -761,7 +773,8 @@ def run(conf_fpath, floader):
                 I.remove_nodes_from(unsupported_nodes_a)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                # run_stats.writerow({'time': time, 'dead': unsupported_nodes_a})
+                if run_stats is not None:
+                    run_stats.writerow({'time': time, 'dead': unsupported_nodes_a})
             time += 1
 
             # inter checks for network B
@@ -782,7 +795,8 @@ def run(conf_fpath, floader):
                 I.remove_nodes_from(unsupported_nodes_b)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                # run_stats.writerow({'time': time, 'dead': unsupported_nodes_b})
+                if run_stats is not None:
+                    run_stats.writerow({'time': time, 'dead': unsupported_nodes_b})
             time += 1
 
             # intra checks for network B
@@ -803,8 +817,13 @@ def run(conf_fpath, floader):
                 I.remove_nodes_from(unsupported_nodes_b)
                 updated = True
                 # save_state(time, A, B, I, results_dir)
-                # run_stats.writerow({'time': time, 'dead': unsupported_nodes_b})
+                if run_stats is not None:
+                    run_stats.writerow({'time': time, 'dead': unsupported_nodes_b})
             time += 1
+    except:
+        if run_stats_file is not None:
+            run_stats_file.close()
+        raise
 
     # save_state('final', A, B, I, results_dir)
 

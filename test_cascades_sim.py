@@ -612,7 +612,7 @@ def test_calc_stats_on_centrality():
     result_key_suffix = 'centr_a'
     attacked_nodes = ['A1', 'A4', 'A8', 'A9']
     exp_centr_stats = {'p_q_1_centr_a': 0.5, 'p_q_2_centr_a': 0.0, 'p_q_3_centr_a': 0.5, 'p_q_4_centr_a': 0.0,
-                       'p_q_5_centr_a': 1.0, 'p_tot_centr_a': 0.4}
+                       'p_q_5_centr_a': 1.0, 'p_tot_centr_a': 0.4, 'sum_centr_a': 4.0}
 
     centr_stats = cs.calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix, centrality_info)
     assert centr_stats == exp_centr_stats
@@ -621,7 +621,7 @@ def test_calc_stats_on_centrality():
     result_key_suffix = 'centr_b'
     attacked_nodes = ['A1', 'A4', 'A8', 'A9']
     exp_centr_stats = {'p_q_1_centr_b': 0.5, 'p_q_2_centr_b': 0.0, 'p_q_3_centr_b': 0.5, 'p_q_4_centr_b': 0.0,
-                       'p_q_5_centr_b': 1.0, 'p_tot_centr_b': (22.0 / 45.0)}
+                       'p_q_5_centr_b': 1.0, 'p_tot_centr_b': (22.0 / 45.0), 'sum_centr_b': 22.0}
 
     centr_stats = cs.calc_atk_centrality_stats(attacked_nodes, centrality_name, result_key_suffix, centrality_info)
     assert centr_stats == exp_centr_stats
