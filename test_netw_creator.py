@@ -30,48 +30,6 @@ def test_assign_power_roles():
     assert set.issuperset(nodes_by_role_H['distribution_substation'], nodes_by_role_G['distribution_substation'])
 
 
-# TODO: this test fails, missing function, probably outdated
-# def test_assign_power_roles_bis():
-#     G = nx.Graph()
-#     G.add_nodes_from(list(range(0, 15)))
-#     H = G.copy()
-#
-#     nc.assign_specific_roles(G, {'generator': [2, 9]})
-#     nc.assign_specific_roles(H, {'generator': [2, 9]})
-#
-#     nodes_by_role_G = dict()
-#     for node in G.nodes():
-#         if 'role' in G.node[node]:
-#             role = G.node[node]['role']
-#             if role not in nodes_by_role_G:
-#                 nodes_by_role_G[role] = list()
-#             nodes_by_role_G[role].append(node)
-#
-#     for role in nodes_by_role_G:
-#         nodes_by_role_G[role].sort()
-#
-#     assert nodes_by_role_G == {'generator': [2, 9]}
-#
-#     nc.assign_power_roles(G, 2, 6, 5, True, 128)
-#     nodes_by_role_G = defaultdict(set)
-#     for node in G.nodes():
-#         role = G.node[node]['role']
-#         nodes_by_role_G[role].add(node)
-#
-#     nc.assign_power_roles(H, 3, 3, 7, True, 128)
-#     nodes_by_role_H = defaultdict(set)
-#     for node in H.nodes():
-#         role = H.node[node]['role']
-#         nodes_by_role_H[role].add(node)
-#
-#     assert len(nodes_by_role_G['generator']) == 4
-#     assert len(nodes_by_role_G['distribution_substation']) == 5
-#     assert len(nodes_by_role_H['generator']) == 5
-#     assert len(nodes_by_role_H['distribution_substation']) == 7
-#     assert set.issuperset(nodes_by_role_H['generator'], nodes_by_role_G['generator'])
-#     assert set.issuperset(nodes_by_role_H['distribution_substation'], nodes_by_role_G['distribution_substation'])
-
-
 def test_assign_power_roles_to_subnets():
     G = nx.Graph()
     G.add_nodes_from(list(range(0, 5)), subnet=0)

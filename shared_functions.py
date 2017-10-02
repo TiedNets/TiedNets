@@ -143,8 +143,8 @@ def compare_files_by_line(fpath1, fpath2, silent=True):
 
 
 def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x_shift_a=0.0, y_shift_a=0.0,
-                      x_shift_b=0.0, y_shift_b=0.0, stretch=1.0, font_size=5.0, draw_nodes_kwargs={},
-                      draw_edges_kwargs={}):
+                      x_shift_b=0.0, y_shift_b=0.0, stretch=1.0, draw_labels=False, draw_nodes_kwargs={},
+                      draw_edges_kwargs={}, draw_labels_kwargs={}):
     # remove the arguments we are going to override for the function draw_networkx_nodes
     if len(draw_nodes_kwargs) > 0:
         draw_nodes_kwargs.pop('G', None)
@@ -194,7 +194,6 @@ def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x
         node_a_role = A.node[node_a]['role']
         node_cols_a.append(node_col_by_role[node_a_role])
     nx.draw_networkx_nodes(A, all_node_pos, node_color=node_cols_a, **draw_nodes_kwargs)
-    nx.draw_networkx_labels(A, all_node_pos, font_size=font_size)
 
     # draw nodes and node labels of B
     node_cols_b = list()
@@ -202,7 +201,10 @@ def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x
         node_b_role = B.node[node_b]['role']
         node_cols_b.append(node_col_by_role[node_b_role])
     nx.draw_networkx_nodes(B, all_node_pos, node_color=node_cols_b, **draw_nodes_kwargs)
-    nx.draw_networkx_labels(B, all_node_pos, font_size=font_size)
+
+    if draw_labels is True:
+        nx.draw_networkx_labels(A, all_node_pos, **draw_labels_kwargs)
+        nx.draw_networkx_labels(B, all_node_pos, **draw_labels_kwargs)
 
 
 def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, zoom=1, clear=False):
@@ -259,7 +261,7 @@ def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, zoom
 
     # draw edges
     nx.draw_networkx_edges(G, all_node_pos, edgelist=alive_edges, edge_color=edge_col, alpha=0.7)
-    # nx.draw_networkx_edges(original_G, all_node_pos, edgelist=dead_edges, edge_color='gray', alpha=0.7)
+    nx.draw_networkx_edges(original_G, all_node_pos, edgelist=dead_edges, edge_color='gray', alpha=0.7)
 
     # decide node colors
 
@@ -268,16 +270,12 @@ def paint_netw_graph(G, original_G, col_by_role, edge_col, pos_shifts=None, zoom
         node_role = G.node[node]['role']
         node_cols.append(col_by_role[node_role])
 
-    for node in dead_nodes:
+    for _ in dead_nodes:
         node_cols.append('gray')
 
     # draw nodes
-    # nx.draw_networkx_nodes(G, all_node_pos, nodelist=alive_nodes + dead_nodes, node_size=100,
-    #                        node_color=node_cols, alpha=0.7)
-    nx.draw_networkx_nodes(G, all_node_pos, nodelist=alive_nodes, node_size=5,
-                           node_color=node_cols, alpha=0.7, linewidths=0.0)
-    # nx.draw_networkx_nodes(G, all_node_pos, nodelist=dead_nodes, node_size=5,
-    #                        node_color='gray', alpha=0.7)
+    nx.draw_networkx_nodes(G, all_node_pos, nodelist=alive_nodes + dead_nodes, node_size=100,
+                           node_color=node_cols, alpha=0.7)
 
     # draw node labels
     nx.draw_networkx_labels(original_G, all_node_pos, font_size=1)

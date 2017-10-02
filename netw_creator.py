@@ -34,7 +34,37 @@ else:
 logger = logging.getLogger(__name__)
 
 
-def arrange_nodes(G, pos_by_node):
+def arrange_nodes(G, config, section_name):
+    layout = config.get(section_name, 'layout')
+    layout = layout.lower()
+
+    if config.has_option(section_name, 'span'):
+        span = config.getfloat(section_name, 'span')
+    else:
+        span = 1.0
+
+    if config.has_option(section_name, 'center_x'):
+        center_x = config.getfloat(section_name, 'center_x')
+        center_y = config.getfloat(section_name, 'center_y')
+        center = [center_x, center_y]
+    else:
+        center = [span / 2.0, span / 2.0]
+
+    if layout in ['random', 'uar']:
+        pos_by_node = uar_layout(G, span, center)
+    elif layout == 'circular':
+        pos_by_node = nx.circular_layout(G, dim=2, scale=span)
+    elif layout in ['spring', 'fruchterman_reingold']:
+        logger.info('This layout will produce a non-deterministic placement of nodes in {}'.format(G.graph['name']))
+        pos_by_node = nx.spring_layout(G, dim=2, scale=span)
+    else:
+        raise ValueError('Invalid value for parameter "layout" of network {}: {}'.format(G.graph['name'], layout))
+
+    if layout not in ['random', 'uar']:
+        for node in pos_by_node:
+            pos_by_node[node][0] += center[0] - center[0] * span
+            pos_by_node[node][1] += center[1] - center[1] * span
+
     for node, (x, y) in pos_by_node.items():
         G.node[node]['x'] = float(x)
         G.node[node]['y'] = float(y)
@@ -1154,123 +1184,6 @@ def calc_transm_subst_betweenness(A, B, I):
     return betw_by_node
 
 
-def calc_relay_betweenness_old(A, B, I):
-    # old definition: the fraction of *adjective* paths in which the relay v appears between a power
-    # node u and the control centers it depends from
-    # new definition for relay betweennes:
-    # counts for what fraction of power nodes a relay appears in a shortest path to one of their control centers
-    # for all nodes that are not relays, it's 0
-
-    hits_by_relay = {}
-    for node_b in B.nodes():
-        if B.node[node_b]['role'] == 'relay':
-            hits_by_relay[node_b] = 0
-
-    # find for how many power nodes each relay appears in a shortest path to a control center
-    for node_a in A.nodes():
-        support_relays = []
-        support_ccs = []
-        # find the relays and control centers that support this power node
-        for node_b in I.successors(node_a):
-            if B.node[node_b]['role'] == 'relay':
-                support_relays.append(node_b)
-            elif B.node[node_b]['role'] == 'controller':
-                support_ccs.append(node_b)
-            else:
-                raise RuntimeError('Node in B with unrecognized role')
-        # remembers what relays appear in the shortest paths between this power node its control centers
-        relays_on_path = set()
-        for relay in support_relays:
-            for controller in support_ccs:
-                # find all shortest paths between this relay and the control centers
-                try:
-                    paths = list(nx.all_shortest_paths(B, relay, controller))
-                except nx.NetworkXNoPath:
-                    continue
-                for path in paths:
-                    for node in path:
-                        if B.node[node]['role'] == 'relay':
-                            relays_on_path.add(node)  # added only if not already present
-        for relay in relays_on_path:
-            hits_by_relay[relay] += 1
-
-    nodes_a_cnt = A.number_of_nodes()
-    # print(hits_by_relay)
-    betw_by_relay = {}
-    for relay in hits_by_relay:
-        betw_by_relay[relay] = sf.percent_of_part(hits_by_relay[relay], nodes_a_cnt)
-
-    # for all nodes that are not relays, it's 0
-    betw_by_nodes = {}
-    betw_by_nodes.update(betw_by_relay)
-    for node_a in A.nodes():
-        betw_by_nodes[node_a] = 0.
-    for node_b in B.nodes():
-        if B.node[node_b]['role'] != 'relay':
-            betw_by_nodes[node_b] = 0.
-
-    return betw_by_nodes
-
-
-def calc_transm_subst_betweenness_old(A, B, I):
-    # new definition for transmission substation betweennes:
-    # counts for what fraction of communication nodes a transmission substation appears in a shortest path between
-    # a generator and the distribution substation(s) they depend on
-    # for all nodes that are not transmission substations, it's 0
-    # TODO: alternatively, apply the betweenness centrality definition, but source and dest must be generator and
-    # communication nodes (or simply distribution substations)
-
-    hits_by_transm_sub = {}
-    generators = []
-    for node_a in A.nodes():
-        if A.node[node_a]['role'] == 'transmission_substation':
-            hits_by_transm_sub[node_a] = 0
-        elif A.node[node_a]['role'] == 'generator':
-            generators.append(node_a)
-
-    # find for how many communication nodes each transmission substation appears in a shortest path to a generator
-    for node_b in B.nodes():
-        support_distr_sub = []
-        # find the distribution substations that support this communication nodes
-        for node_a in I.successors(node_b):
-            if A.node[node_a]['role'] == 'distribution_substation':  # redundant check
-                support_distr_sub.append(node_a)
-        # remembers what transmission substations appear in the shortest paths between this distribution substation
-        # and the generators
-        transm_sub_on_path = set()
-        for distr_sub in support_distr_sub:
-            for generator in generators:
-                # find all shortest paths between this distribution substation and this generator
-                try:
-                    paths = list(nx.all_shortest_paths(A, distr_sub, generator))
-                except nx.NetworkXNoPath:
-                    continue
-                for path in paths:
-                    # find the transmission substations on this path
-                    for node in path:
-                        if A.node[node]['role'] == 'transmission_substation':
-                            transm_sub_on_path.add(node)  # added only if not already present
-        for transm_sub in transm_sub_on_path:
-            hits_by_transm_sub[transm_sub] += 1
-
-    nodes_b_cnt = B.number_of_nodes()
-    # print(hits_by_transm_sub)
-    betw_by_transm_sub = {}
-    for transm_sub in hits_by_transm_sub:
-        betw_by_transm_sub[transm_sub] = sf.percent_of_part(hits_by_transm_sub[transm_sub], nodes_b_cnt)
-
-    # for all nodes that are not transmission substations, it's 0
-    betw_by_nodes = {}
-    betw_by_nodes.update(betw_by_transm_sub)
-    for node_a in A.nodes():
-        if A.node[node_a]['role'] != 'transmission_substation':
-            betw_by_nodes[node_a] = 0.
-    for node_b in B.nodes():
-        betw_by_nodes[node_b] = 0.
-
-    return betw_by_nodes
-
-
 def save_misc_centralities(A, B, I, file_dir):
     centrality_info = {}
     percentile_pos = [20, 40, 60, 80]
@@ -1310,6 +1223,19 @@ def save_misc_centralities(A, B, I, file_dir):
     file_path = os.path.join(file_dir, file_name)
     with open(file_path, 'wb') as centr_file:
         json.dump(centrality_info, centr_file)
+
+
+def all_positions_defined(G, excluding=[]):
+    undefined_pos_found = False
+    for node in G.nodes():
+        node_inst = G.node[node]
+        if node_inst in excluding:
+            continue
+        if 'x' not in node_inst or 'y' not in node_inst:
+            undefined_pos_found = True
+            break
+
+    return not undefined_pos_found
 
 
 def run(conf_fpath):
@@ -1364,6 +1290,11 @@ def run(conf_fpath):
     elif netw_a_model in ['ba', 'barabasi_albert', 'barabasi-albert']:
         m = config.getint('build_a', 'm')
         A = nx.barabasi_albert_graph(node_cnt, m, seed=netw_a_seed)
+        logger.warning('Barabasi-Albert networks are more suited to model communications networks than power grids')
+    elif netw_a_model in ['ws', 'watts_strogatz', 'watts-strogatz']:
+        k = config.getint('build_a', 'k')
+        p = config.getfloat('build_a', 'p')
+        A = nx.watts_strogatz_graph(node_cnt, k, p, seed=netw_a_seed)
     elif netw_a_model in ['rt-nested-smallworld', 'rt_nested_smallworld']:
         avg_k = config.getfloat('build_a', 'avg_k')
         d_0 = config.getint('build_a', 'd_0')
@@ -1437,37 +1368,7 @@ def run(conf_fpath):
     if config.has_option('build_a', 'layout'):
         if netw_a_model == 'user_defined_graph':
             logger.warning('Specifying a graph layout will override node positions specified in user defined graph A')
-        layout = config.get('build_a', 'layout')
-        layout = layout.lower()
-
-        if config.has_option('build_a', 'span'):
-            span = config.getfloat('build_a', 'span')
-        else:
-            span = 1.0
-
-        if config.has_option('build_a', 'center_x'):
-            center_x = config.getfloat('build_a', 'center_x')
-            center_y = config.getfloat('build_a', 'center_y')
-            center = [center_x, center_y]
-        else:
-            center = [span / 2.0, span / 2.0]
-
-        if layout in ['random', 'uar']:
-            pos_by_node = uar_layout(A, span, center)
-        elif layout == 'circular':
-            pos_by_node = nx.circular_layout(A, dim=2, scale=span)
-        elif layout in ['spring', 'fruchterman_reingold']:
-            logger.info('This layout will produce a non-deterministic placement of A nodes')
-            pos_by_node = nx.spring_layout(A, dim=2, scale=span)
-        else:
-            raise ValueError('Invalid value for parameter "layout" of network A: ' + layout)
-
-        if layout not in ['random', 'uar']:
-            for node in pos_by_node:
-                pos_by_node[node][0] += center[0] - center[0] * span
-                pos_by_node[node][1] += center[1] - center[1] * span
-
-        arrange_nodes(A, pos_by_node)
+        arrange_nodes(A, config, 'build_a')
 
     # create the communication network
 
@@ -1495,6 +1396,11 @@ def run(conf_fpath):
     elif netw_b_model in ['ba', 'barabasi_albert', 'barabasi-albert']:
         m = config.getint('build_b', 'm')
         B = nx.barabasi_albert_graph(node_cnt, m, seed=netw_b_seed)
+    elif netw_a_model in ['ws', 'watts_strogatz', 'watts-strogatz']:
+        k = config.getint('build_b', 'k')
+        p = config.getfloat('build_b', 'p')
+        B = nx.watts_strogatz_graph(node_cnt, k, p, seed=netw_b_seed)
+        logger.warning('Watts-Strogatz networks are more suited to model power grids than communications networks')
     elif netw_b_model == 'user_defined_graph':
         user_graph_fpath_b = config.get('build_b', 'user_graph_fpath')
         if os.path.isabs(user_graph_fpath_b) is False:
@@ -1534,136 +1440,129 @@ def run(conf_fpath):
         for node in nodes:
             B.node[node]['role'] = 'relay'
 
-        # done in case IDs are not continuous
+        # find free ids for the new controller nodes we will create
+        free_ids = []
         if isinstance(nodes[0], string_types):
-            largest_id = max(B.nodes(), key=sf.natural_sort_key())  # works for strings
+            largest_id = max(B.nodes(), key=sf.natural_sort_key)  # works for strings
+            for i in range(0, controller_cnt):
+                free_ids.append('{}_{}'.format(largest_id, i))
         else:
             largest_id = max(B.nodes())  # works for numbers
+            for i in range(0, controller_cnt):
+                free_ids.append(largest_id + 1 + i)
 
-        for i in range(0, controller_cnt):  # add control nodes attaching them to existing relays
-            if isinstance(largest_id, string_types):
-                free_id = largest_id.join('_', i)
-            else:
-                free_id = largest_id + 1 + i
+        for free_id in free_ids:
             B.add_node(free_id, {'role': 'controller'})
 
         relabel_nodes_by_role(B, role_prefixes_b)
+    else:
+        raise ValueError('Invalid value for parameter "roles" of network B: ' + roles_b)
 
-        # create list of nodes by role
-        relays = list()
-        controllers = list()  # this will be used to position new controllers
+    if roles_b in ['random_relay_controller', 'relay_attached_controllers']:
+        relays = []
+        controllers = []
         for node in B.nodes():
             if B.node[node]['role'] == 'relay':
                 relays.append(node)
             elif B.node[node]['role'] == 'controller':
                 controllers.append(node)
-    else:
-        raise ValueError('Invalid value for parameter "roles" of network B: ' + roles_b)
 
     # assign positions to nodes
 
-    undefined_pos = True
+    controller_attachment = None
+    controller_placement = None
+    if roles_b == 'relay_attached_controllers':
+        if config.has_option('build_b', 'controller_attachment'):
+            controller_attachment = config.get('build_b', 'controller_attachment')
+            if controller_attachment not in ['random', 'prefer_nearest']:
+                raise ValueError('Invalid value for parameter "controller_attachment of network B: ' +
+                                 controller_attachment)
+
+        if controller_attachment is None:
+            raise ValueError('Parameter "roles_b" of network B set to "relay_attached_controllers", but parameter '
+                             '"controller_attachment" was left undefined. Please specify a value for it.')
+
+        if config.has_option('build_b', 'controller_placement'):
+            controller_placement = config.get('build_b', 'controller_placement')
+            if controller_placement not in ['random', 'center']:
+                raise ValueError('Invalid value for parameter "controller_placement of network B: ' +
+                                 controller_placement)
+
+        if controller_attachment == 'prefer_nearest' and controller_placement is None:
+            raise ValueError('Parameter "controller_attachment" of network B set to "prefer_nearest", but parameter '
+                             '"controller placement" was left undefined. Please specify a value for it.')
+
+        if controller_placement is None and config.has_option('build_b', 'layout'):
+            raise ValueError('Parameter "layout" of network B is set, but parameter "controller placement" was left '
+                             'undefined. Please specify a value for it.')
+
     if config.has_option('build_b', 'layout'):
         if netw_b_model == 'user_defined_graph':
             logger.warning('Specifying a graph layout will override node positions specified in user defined graph B')
-        undefined_pos = False
-        layout = config.get('build_b', 'layout')
-        layout = layout.lower()
-
-        if config.has_option('build_b', 'span'):
-            span = config.getfloat('build_b', 'span')
-        else:
-            span = 5.0
-
-        if config.has_option('build_b', 'center_x'):
-            center_x = config.getfloat('build_b', 'center_x')
-            center_y = config.getfloat('build_b', 'center_y')
-            center = [center_x, center_y]
-            half_span = span / 2.0
-            x_min = center_x - half_span
-            x_max = center_x + half_span
-            y_min = center_y - half_span
-            y_max = center_y + half_span
-        else:
-            center = [span / 2.0, span / 2.0]
-            x_min = 0
-            x_max = span
-            y_min = 0
-            y_max = span
-
-        if layout in ['random', 'uar']:
-            pos_by_node = uar_layout(B, span, center)
-        elif layout == 'circular':
-            pos_by_node = nx.circular_layout(B, dim=2, scale=span)
-        elif layout in ['spring', 'fruchterman_reingold']:
-            logger.info('This layout will produce a non-deterministic placement of B nodes')
-            pos_by_node = nx.spring_layout(B, dim=2, scale=span)
-        else:
-            raise ValueError('Invalid value for parameter "layout" of network B: ' + layout)
-
-        if layout not in ['random', 'uar']:
-            for node in pos_by_node:
-                pos_by_node[node][0] += center[0] - center[0] * span
-                pos_by_node[node][1] += center[1] - center[1] * span
-
-        arrange_nodes(B, pos_by_node)
-
-    elif netw_b_model == 'user_defined_graph':
-        undefined_pos = False
-        first_it = True
-        for node in B.nodes():
-            node_inst = B.node[node]
-            x = node_inst['x']
-            y = node_inst['y']
-            if first_it is True:
-                x_min = x
-                x_max = x
-                y_min = y
-                y_max = y
-                first_it = False
-            else:
-                if x > x_max:
-                    x_max = x
-                elif x < x_min:
-                    x_min = x
-                if y > y_max:
-                    y_max = y
-                elif y < y_min:
-                    y_min = y
-        span = max(x_max - x_min, y_max - y_min)
+        arrange_nodes(B, config, 'build_b')
 
     if roles_b == 'relay_attached_controllers':
-        # this is still half an hack
-        if config.has_option('build_b', 'special_controller_placement'):
-            special_controller_placement = config.getboolean('build_b', 'special_controller_placement')
-        else:
-            special_controller_placement = False
+        # if we need to assign a position to controllers, we need to know the perimeter of the network
+        if controller_placement is not None:
+            if not all_positions_defined(B, excluding=controllers):
+                raise RuntimeError('A node in your graph does not have a defined (x, y) position. Cannot place '
+                                   'new controllers if not all the positions of other nodes are specified.')
+            first_it = True
+            for node in B.nodes():
+                node_inst = B.node[node]  # get the node data from the node id
+                # if this node does not have a position
+                if 'x' not in node_inst or 'y' not in node_inst:
+                    # this is a new controller we added, skip it
+                    if node_inst['role'] == 'controller':
+                        continue
+                x = node_inst['x']
+                y = node_inst['y']
+                if first_it is True:
+                    x_min = x
+                    x_max = x
+                    y_min = y
+                    y_max = y
+                    first_it = False
+                else:
+                    if x > x_max:
+                        x_max = x
+                    elif x < x_min:
+                        x_min = x
+                    if y > y_max:
+                        y_max = y
+                    elif y < y_min:
+                        y_min = y
 
-        if special_controller_placement is True:
+        if controller_placement == 'random':
+            for controller in controllers:
+                B.node[controller]['x'] = my_random.uniform(x_min, x_max)
+                B.node[controller]['y'] = my_random.uniform(y_min, y_max)
+        elif controller_placement == 'center':
             if len(controllers) == 1:
-                node = controllers[0]
-                B.node[node]['x'] = x_min + (x_max - x_min) / 2
-                B.node[node]['y'] = y_min + (y_max - y_min) / 2
-            else:  # TODO: implement this
-                raise ValueError('special controller placement not implemented for more than 1 controller')
-        elif undefined_pos is False:
-            for node in controllers:
-                B.node[node]['x'] = my_random.uniform(x_min, x_max)
-                B.node[node]['y'] = my_random.uniform(y_min, y_max)
-
-        if config.has_option('build_b', 'controller_attachment'):
-            controller_attachment = config.get('build_b', 'controller_attachment')
+                controller = controllers[0]
+                B.node[controller]['x'] = x_min + (x_max - x_min) / 2
+                B.node[controller]['y'] = y_min + (y_max - y_min) / 2
+            else:
+                raise ValueError('Parameter "controller_placement" can be set to "center" only when there is a '
+                                 'single controller')
         else:
-            controller_attachment = 'random'
+            logger.info('New controllers will not be assigned a position')
 
         if controller_attachment == 'random':
             for controller in controllers:
                 B.add_edge(controller, my_random.choice(relays))
-        elif controller_attachment == 'prefer_nearest':  # TODO: implement this
-            raise ValueError('controller option not implemented yet')
-        else:
-            raise ValueError('Invalid value for parameter "controller_attachment" of network B: {}.'.format(
-                controller_attachment))
+        elif controller_attachment == 'prefer_nearest':
+            for controller in controllers:
+                closest = relays[0]
+                shortest_dist = math.hypot(B.node[controller]['x'] - B.node[closest]['x'],
+                                           B.node[controller]['y'] - B.node[closest]['y'])
+                for relay in relays:
+                    dist = math.hypot(B.node[controller]['x'] - B.node[relay]['x'],
+                                      B.node[controller]['y'] - B.node[relay]['y'])
+                    if dist < shortest_dist:
+                        shortest_dist = dist
+                        closest = relay
+                B.add_edge(controller, closest)
 
     # create the interdependency network
 
@@ -1774,6 +1673,12 @@ def run(conf_fpath):
 
     if config.has_option('misc', 'calc_node_centrality'):
         calc_node_centrality = config.getboolean('misc', 'calc_node_centrality')
+        if config.has_option('misc', 'calc_misc_centralities'):
+            calc_misc_centralities = config.getboolean('misc', 'calc_misc_centralities')
+            if calc_misc_centralities is True and (roles_a == 'same' or roles_b == 'same'):
+                logger.warning('Cannot calculate misc centralities if a graph has parameter "roles" set to "same".')
+        else:
+            calc_misc_centralities = False
     else:
         calc_node_centrality = False
 
@@ -1781,10 +1686,10 @@ def run(conf_fpath):
         save_graph_centralities(A, output_dir)
         save_graph_centralities(B, output_dir)
         save_graph_centralities(I, output_dir)
-        if roles_a != 'same' and roles_b != 'same':
+        if calc_misc_centralities is True:
             save_misc_centralities(A, B, I, output_dir)
         else:
-            logger.info('Only basic centrality measures were calculated')
+            logger.info('Only basic centrality metrics were calculated')
         if produce_max_matching is True:
             save_graph_centralities(mm_I, output_dir)
         if produce_union is True:
@@ -1792,11 +1697,9 @@ def run(conf_fpath):
 
     # draw networks
 
-    if undefined_pos is True:
-        logger.warning('No layout or positions specified for nodes. Graph will not be draw')
+    if not all_positions_defined(A) or not all_positions_defined(B):
+        logger.warning('Some nodes do not have an assigned position. Graph will not be draw')
     else:
-        # plt.axis('off')
-        plt.tick_params(labeltop=True, labelright=True)
         # shifts used to position the drawings of the network graphs respective to the plot
         x_shift_a = 0.0
         y_shift_a = 0.0
@@ -1804,18 +1707,24 @@ def run(conf_fpath):
         y_shift_b = 0.0
 
         stretch = 1.0  # multiplier used to stretch the plot over a wider area (useful for dense graphs)
-        font_size = 15.0  # value for the parameter of networkx.networkx_draw_labels
         node_col_by_role = {'power': 'r', 'generator': 'r', 'transmission_substation': 'plum',
                             'distribution_substation': 'magenta',
                             'communication': 'dodgerblue', 'controller': 'c', 'relay': 'dodgerblue'}
-        # value for the parameters of networkx.networkx_draw_nodes
-        draw_nodes_kwargs = {'node_size': 70, 'alpha': 0.7, 'linewidths': 0.0}
-        # value for the parameters of networkx.networkx_draw_edges
-        draw_edges_kwargs = {'width': 1.0, 'arrows': True, 'alpha': 0.7}
-        sf.paint_netw_graphs(A, B, I, node_col_by_role, 'r', 'b', x_shift_a, y_shift_a, x_shift_b, y_shift_b, stretch,
-                             font_size, draw_nodes_kwargs, draw_edges_kwargs)
 
-        logger.info('output_dir = ' + output_dir)
-        plt.savefig(os.path.join(output_dir, '_full.pdf'), bbox_inches="tight")
-        # plt.show()
+        # values for the named parameters of networkx.networkx_draw_nodes
+        draw_nodes_kwargs = {'node_size': 5, 'alpha': 0.7, 'linewidths': 0.0}
+
+        # values for the named parameters of networkx.networkx_draw_edges
+        draw_edges_kwargs = {'width': 1.0, 'arrows': True, 'alpha': 0.7}
+
+        # values for the named parameters of networkx.networkx_draw_labels
+        draw_labels_kwargs = {'font_size': 4}
+
+        sf.paint_netw_graphs(A, B, I, node_col_by_role, 'r', 'b', x_shift_a, y_shift_a, x_shift_b, y_shift_b, stretch,
+                             False, draw_nodes_kwargs, draw_edges_kwargs, draw_labels_kwargs)
+
+        plt.axis('off')
+        netw_plot_fpath = os.path.join(output_dir, '_full.pdf')
+        plt.savefig(netw_plot_fpath, bbox_inches="tight")
+        logger.info('Network plot saved here\n{}'.format(netw_plot_fpath))
         plt.close()  # free memory

@@ -1,3 +1,4 @@
+import os
 import csv
 import json
 import random
@@ -517,7 +518,7 @@ def solve_and_test(train_set_fpath, test_set_fpath, X_col_names, y_col_name, inf
         plot_scenario_performances(indep_var_vals, results, predictions, '# attacked nodes', '% dead nodes')
 
 
-# iterately apply SelectFromModel.transform changing the threshold until we get the desired number of features
+# iteratively apply SelectFromModel.transform changing the threshold until we get the desired number of features
 # If you have a test set, just use the returned fitted_sfm to transform it
 def iterate_sfm_transform(fitted_sfm, train_X, max_feature_cnt, max_rounds, base_thresh, thresh_incr):
     temp_train_X = fitted_sfm.transform(train_X)
@@ -589,7 +590,7 @@ def train_regr_model(train_X, train_y, X_col_names, var_thresh, poly_feat, stand
         clf = linear_model.ElasticNetCV(max_iter=40000)
     elif model_name == 'decisiontreeregressor':
         # other useful parameters are max_depth and min_samples_leaf
-        clf = tree.DecisionTreeRegressor(criterion='mse', min_samples_split=0.05)
+        clf = tree.DecisionTreeRegressor(criterion='mse', max_depth=5)
     else:
         raise ValueError('Unsupported value for parameter model_name')
 
@@ -791,12 +792,16 @@ def run():
     # test_set_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/test_union.tsv'
     # train_set_fpath = '/home/agostino/Documents/Sims/single_net_20170725/train_1000_n_20_s.tsv'
     # test_set_fpath = '/home/agostino/Documents/Sims/single_net_20170725/test_1000_n_20_s.tsv'
-    train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_12/train_1000_n_20_s.tsv'
-    test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_12/test_1000_n_20_s.tsv'
+    # train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_12/train_1000_n_20_s.tsv'
+    # test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_12/test_1000_n_20_s.tsv'
     # train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/train_2000_n_20_s_atkd_a.tsv'
     # test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/test_2000_n_20_s_atkd_a.tsv'
     # train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/train_2000_n_20_s_atkd_b.tsv'
     # test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/test_2000_n_20_s_atkd_b.tsv'
+    train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_mn/train_mn.tsv'
+    test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_mn/test_mn.tsv'
+
+    output_dir = '/home/agostino/Documents/Simulations/test_mp_mn'
 
     # X_col_names = ['p_atkd', 'p_atkd_a', 'p_atkd_b',
     #                   'indeg_c_ab_q_1', 'indeg_c_ab_q_2', 'indeg_c_ab_q_3', 'indeg_c_ab_q_4', 'indeg_c_ab_q_5',
@@ -842,7 +847,8 @@ def run():
     #                   'p_tot_atkd_indeg_c_i', 'p_tot_atkd_ts_betw_c'
     #                   ]
     # X_col_names = ['p_tot_atkd_betw_c_i', 'p_atkd_cc']
-    X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_ts_betw_c']
+    X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i']
+    # X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_ts_betw_c']
     # X_col_names = ['p_atkd_b', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_rel_betw_c']
 
     # also good for trees
@@ -902,11 +908,14 @@ def run():
         train_regr_model(train_X, train_y, X_col_names, False, False, False, model_name, None)
 
     if 'tree' in model_name.lower():
-        with open("/home/agostino/whatever.dot", 'w') as f:
+        # save a representation of the learned decision tree, to plot it, install graphviz
+        # it can be turned into an image by running a command like the following
+        # dot -Tpng decision_tree.dot -o decision_tree.png
+        with open(os.path.join(output_dir, 'decision_tree.dot'), 'w') as f:
             tree.export_graphviz(model, feature_names=X_col_names, out_file=f)
 
-    # save the model
-    learned_stuff_fpath = '/home/agostino/Documents/Sims/results_compare/model_1000.pkl'
+    # save the learned model and what is needed to adapt the data to it
+    learned_stuff_fpath = os.path.join(output_dir, 'model.pkl')
     learned_stuff = {'model': model, 'transformers': transformers}
     joblib.dump(learned_stuff, learned_stuff_fpath)
 
@@ -934,25 +943,32 @@ def run():
         #     'relevant_atk_sizes': [10, 20, 40, 100, 200],
         #     'node_cnt_A': 2000, 'name': '2000 power nodes, 40 subnets'
         # }
-            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_13/test_500_n_10_s.tsv',
-            'relevant_atk_sizes': [0, 3, 5, 10, 15, 20, 25, 35, 50],
-            'node_cnt_A': 500, 'name': '500 power nodes, 10 subnets'
-        }, {
-            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_13/test_500_n_20_s.tsv',
-            'relevant_atk_sizes': [0, 3, 5, 10, 15, 20, 25, 35, 50],
-            'node_cnt_A': 500, 'name': '500 power nodes, 20 subnets'
-        }, {
+        #
+        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_13/test_500_n_10_s.tsv',
+        #     'relevant_atk_sizes': [0, 3, 5, 10, 15, 20, 25, 35, 50],
+        #     'node_cnt_A': 500, 'name': '500 power nodes, 10 subnets'
+        # }, {
+        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_13/test_500_n_20_s.tsv',
+        #     'relevant_atk_sizes': [0, 3, 5, 10, 15, 20, 25, 35, 50],
+        #     'node_cnt_A': 500, 'name': '500 power nodes, 20 subnets'
+        # }, {
+        #     'dataset_fpath': test_set_fpath,
+        #     'relevant_atk_sizes': [0, 5, 10, 20, 30, 40, 50, 70, 100],
+        #     'node_cnt_A': 1000, 'name': '1000 power nodes, 20 subnets'
+        # }, {
+        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_14/test_2000_n_20_s.tsv',
+        #     'relevant_atk_sizes': [0, 10, 20, 40, 60, 80, 100, 140, 200],
+        #     'node_cnt_A': 2000, 'name': '2000 power nodes, 20 subnets'
+        # }, {
+        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_14/test_2000_n_40_s.tsv',
+        #     'relevant_atk_sizes': [0, 10, 20, 40, 60, 80, 100, 140, 200],
+        #     'node_cnt_A': 2000, 'name': '2000 power nodes, 40 subnets'
+        # }
+        #
             'dataset_fpath': test_set_fpath,
-            'relevant_atk_sizes': [0, 5, 10, 20, 30, 40, 50, 70, 100],
-            'node_cnt_A': 1000, 'name': '1000 power nodes, 20 subnets'
-        }, {
-            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_14/test_2000_n_20_s.tsv',
-            'relevant_atk_sizes': [0, 10, 20, 40, 60, 80, 100, 140, 200],
-            'node_cnt_A': 2000, 'name': '2000 power nodes, 20 subnets'
-        }, {
-            'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_14/test_2000_n_40_s.tsv',
-            'relevant_atk_sizes': [0, 10, 20, 40, 60, 80, 100, 140, 200],
-            'node_cnt_A': 2000, 'name': '2000 power nodes, 40 subnets'
+            'relevant_atk_sizes': [0, 6, 11, 22, 33, 44, 55, 77, 88, 99, 109, 120, 131, 142, 153, 164, 175, 186, 197,
+                                   208, 218, 229, 240, 251, 262, 273, 284, 295, 306, 317, 327],
+            'node_cnt_A': 1091, 'name': 'MN power grid'
         }
     ]
 
@@ -1019,8 +1035,11 @@ def run():
 
         # plot_all_scenario_performances(ds_X, ds_y, ds_info, info_col_names, predictor, 3, 2)
 
+    # TODO: calculate these, they are the fractions of attacked nodes
     # atkd_ps = [0.5, 1., 2., 5., 10.]
-    atkd_ps = [0, 0.5, 1, 2, 3, 4, 5, 7, 10]  # TODO: calculate this
+    # atkd_ps = [0, 0.5, 1, 2, 3, 4, 5, 7, 10]
+    atkd_ps = [0.0, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16,
+               0.17, 0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.3]
     colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
     markers = ['o', '^', 's', '*', 'x', '+', 'd']
     styles = ['b-o', 'g-^', 'r-s', 'c-*', 'm-x', 'y-+']

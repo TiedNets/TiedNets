@@ -43,24 +43,25 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-base_dir = os.path.normpath('../Simulations/test_mp_/2000_nodes_40_subnets')
+base_dir = os.path.normpath('../Simulations/test_mp_/MN')
 # base_dir = os.path.normpath('../Simulations/test_mp/2cc_2ap')
 
 # remember to increase d_0 for bigger networks
 build_a_options = [{
-    'name': 'A',
-    'model': 'rt_nested_smallworld',
-    'nodes': 2000,
-    'subnets': 40,
-    'beta': 0.2,
-    'alpha': 0.2,
-    'd_0': 14,
-    'avg_k': 4,
-    'q_rw': 0.5,
-    'roles': 'subnet_gen_transm_distr',
-    'generators': 200,
-    'transmission_substations': 270,
-    'distribution_substations': 1260
+    # 'name': 'A',
+    # 'model': 'rt_nested_smallworld',
+    # 'nodes': 2000,
+    # 'subnets': 40,
+    # 'beta': 0.2,
+    # 'alpha': 0.2,
+    # 'd_0': 14,
+    # 'avg_k': 4,
+    # 'q_rw': 0.5,
+    # 'roles': 'subnet_gen_transm_distr',
+    # 'generators': 200,
+    # 'transmission_substations': 270,
+    # 'distribution_substations': 1260
+    #
     # 'name': 'A',
     # 'model': 'rt_nested_smallworld',
     # 'nodes': 1000,
@@ -74,34 +75,24 @@ build_a_options = [{
     # 'generators': 100,
     # 'transmission_substations': 270,
     # 'distribution_substations': 630
-    # 'name': 'A',
-    # 'model': 'rt_nested_smallworld',
-    # 'nodes': 500,
-    # 'subnets': 20,
-    # 'beta': 0.2,
-    # 'alpha': 0.2,
-    # 'd_0': 7,
-    # 'avg_k': 4,
-    # 'q_rw': 0.5,
-    # 'roles': 'subnet_gen_transm_distr',
-    # 'generators': 50,
-    # 'transmission_substations': 135,
-    # 'distribution_substations': 315
-    # }, {
-    #     'name': 'A',
-    #     'model': 'rt_nested_smallworld',
-    #     'nodes': 1000,
-    #     'subnets': 20,
-    #     'beta': 0.2,
-    #     'alpha': 0.2,
-    #     'd_0': 7,
-    #     'avg_k': 4,
-    #     'q_rw': 0.5,
-    #     'roles': 'subnet_gen_transm_distr',
-    #     'generators': 100,
-    #     'transmission_substations': 270,
-    #     'distribution_substations': 630
-
+    #
+    'name': 'A',
+    'model': 'rt_nested_smallworld',
+    'nodes': 500,
+    'subnets': 20,
+    'beta': 0.2,
+    'alpha': 0.2,
+    'd_0': 7,
+    'avg_k': 4,
+    'q_rw': 0.5,
+    'roles': 'subnet_gen_transm_distr',
+    'generators': 50,
+    'transmission_substations': 135,
+    'distribution_substations': 315,
+    'layout': 'spring',
+    'controller_attachment': 'random',
+    'controller_placement': 'random'
+    #
     # 'name': 'A',
     # 'model': 'user_defined_graph',
     # 'user_graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
@@ -110,66 +101,52 @@ build_a_options = [{
     # 'generators': 0,
     # 'distribution_substations': 0,
     # 'transmission_substations': 0
-    # }, {
-    #     'name': 'A',
-    #     'model': 'user_defined_graph',
-    #     'user_graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
-    #     'roles': 'random_gen_transm_distr',
-    #     'preassigned_roles_fpath': '../Simulations/MN_data/MN_pow_roles.json',
-    #     'generators': 0,
-    #     'distribution_substations': 714,
-    #     'transmission_substations': 306
 }]
 
 build_b_options = [{
-    'name': 'B',
-    'model': 'barabasi_albert',
-    'm': 3,
-    'roles': 'relay_attached_controllers',
-    'controllers': 1,
-    'relays': 1999
+    # 'name': 'B',
+    # 'model': 'barabasi_albert',
+    # 'm': 3,
+    # 'roles': 'relay_attached_controllers',
+    # 'controllers': 1,
+    # 'relays': 1999
+    #
     # 'name': 'B',
     # 'model': 'barabasi_albert',
     # 'm': 3,
     # 'roles': 'relay_attached_controllers',
     # 'controllers': 1,
     # 'relays': 999
+    #
+    'name': 'B',
+    'model': 'barabasi_albert',
+    'm': 3,
+    'roles': 'relay_attached_controllers',
+    'controllers': 1,
+    'relays': 499,
+    'layout': 'spring',
+    'controller_attachment': 'random',
+    'controller_placement': 'random'
+    #
     # 'name': 'B',
-    # 'model': 'barabasi_albert',
-    # 'm': 3,
+    # 'model': 'user_defined_graph',
+    # 'user_graph_fpath': '../Simulations/MN_data/MN_com.graphml',
     # 'roles': 'relay_attached_controllers',
     # 'controllers': 1,
-    # 'relays': 499
-    # }, {
-    #     'name': 'B',
-    #     'model': 'barabasi_albert',
-    #     'm': 3,
-    #     'roles': 'relay_attached_controllers',
-    #     'controllers': 2,
-    #     'relays': 999
-    # }, {
-    #     'name': 'B',
-    #     'model': 'user_defined_graph',
-    #     'user_graph_fpath': '../Simulations/MN_data/MN_com.graphml',
-    #     'roles': 'relay_attached_controllers',
-    #     'controllers': 1
-    # }, {
-    #     'name': 'B',
-    #     'model': 'user_defined_graph',
-    #     'user_graph_fpath': '../Simulations/MN_data/MN_com.graphml',
-    #     'roles': 'relay_attached_controllers',
-    #     'controllers': 2
+    # 'controller_placement': 'center',
+    # 'controller_attachment': 'prefer_nearest'
 }]
 
 build_inter_options = [{
-    'name': 'Inter',
-    'dependency_model': 'k-to-n',
-    'k': 1,
-    'n': 2000,
-    'com_access_points': 1,
-    'prefer_nearest': False,
-    'produce_max_matching': True,
-    'max_matching_name': 'InterMM'
+    # 'name': 'Inter',
+    # 'dependency_model': 'k-to-n',
+    # 'k': 1,
+    # 'n': 2000,
+    # 'com_access_points': 1,
+    # 'prefer_nearest': False,
+    # 'produce_max_matching': True,
+    # 'max_matching_name': 'InterMM'
+    #
     # 'name': 'Inter',
     # 'dependency_model': 'k-to-n',
     # 'k': 1,
@@ -178,57 +155,43 @@ build_inter_options = [{
     # 'prefer_nearest': False,
     # 'produce_max_matching': True,
     # 'max_matching_name': 'InterMM'
+    #
+    'name': 'Inter',
+    'dependency_model': 'k-to-n',
+    'k': 1,
+    'n': 500,
+    'com_access_points': 1,
+    'prefer_nearest': False,
+    'produce_max_matching': True,
+    'max_matching_name': 'InterMM'
+    #
     # 'name': 'Inter',
     # 'dependency_model': 'k-to-n',
     # 'k': 1,
-    # 'n': 500,
+    # 'n': 1091,
     # 'com_access_points': 1,
-    # 'prefer_nearest': False,
+    # 'prefer_nearest': True,  # geographical attachment
     # 'produce_max_matching': True,
     # 'max_matching_name': 'InterMM'
-    # }, {
-    #     'name': 'Inter',
-    #     'dependency_model': 'k-to-n',
-    #     'k': 2,
-    #     'n': 1000,
-    #     'com_access_points': 2,
-    #     'produce_max_matching': True,
-    #     'max_matching_name': 'InterMM'
-    # }, {
-    #     'name': 'Inter',
-    #     'dependency_model': 'k-to-n',
-    #     'k': 1,
-    #     'n': 1091,
-    #     'com_access_points': 2,
-    #     'prefer_nearest': True,  # geographical attachment
-    #     'produce_max_matching': True,
-    #     'max_matching_name': 'InterMM'
-    # }, {
-    #     'name': 'Inter',
-    #     'dependency_model': 'k-to-n',
-    #     'k': 2,
-    #     'n': 1091,
-    #     'com_access_points': 2,
-    #     'prefer_nearest': True,  # geographical attachment
-    #     'produce_max_matching': True,
-    #     'max_matching_name': 'InterMM'
 }]
 
 misc_options = [{
     'produce_ab_union': True,
     'ab_union_name': 'UnionAB',
-    'calc_node_centrality': True
+    'calc_node_centrality': True,
+    'calc_misc_centralities': False
 }]
 
-instances_per_type = 20
+instances_per_type = 1
 seeds = list()
 first_group = True
 
 # my_random = random.Random(254)  # used for n 500 s 10
 # my_random = random.Random(255)  # used for n 500 s 20
 # my_random = random.Random(256)  # used for n 1000 s 20
-my_random = random.Random(257)  # used for n 2000 s 40
+# my_random = random.Random(257)  # used for n 2000 s 40
 # my_random = random.Random(258)  # used for n 2000 s 20
+my_random = random.Random(259)  # used for MN nets
 
 # create directory if it does not exist, clean it if it already exists
 sf.makedirs_clean(base_dir, True)
