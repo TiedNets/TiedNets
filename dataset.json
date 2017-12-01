@@ -1,0 +1,133 @@
+{
+  "datasets": [
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn/train_mn.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i",
+        "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn/test_mn.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i",
+        "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    }
+  ],
+  "model_trainings": [
+    {
+      "dataset_num": 0,
+      "output_dir": "/home/agostino/Documents/Simulations/test_mp_mn",
+      "model_name": "DecisionTreeRegressor",
+      "model_kind": "regression",
+      "variance_threshold": true,
+      "polynomial_features": false,
+      "standardize": true,
+      "feature_selection": "rfe"
+    },
+    {
+      "dataset_num": 0,
+      "output_dir": "/home/agostino/Documents/Simulations/test_mp_mn",
+      "model_name": "ridgecv",
+      "model_kind": "regression",
+      "variance_threshold": true,
+      "polynomial_features": true,
+      "standardize": true,
+      "feature_selection": "rfe"
+    }
+  ],
+
+  "plots": [
+    {
+      "name": "features_xy_results_z",
+      "dataset_num": 0,
+      "ax_x_feature": "p_atkd_a",
+      "ax_y_feature": "p_tot_atkd_betw_c_i",
+      "ax_x_label": "initial fraction of failed nodes",
+      "ax_y_label": "loss of centrality",
+      "ax_z_label": "actual resulting fraction of dead nodes",
+      "scatter": true,
+      "project": true,
+      "surface": false
+    },
+    {
+      "name": "plot_rnd_scenarios",
+      "dataset_num": 0,
+      "model_num": 0,
+      "ax_x_label": "# of attacked power nodes",
+      "ax_y_label": "% dead nodes",
+      "rnd_inst_cnt": 1,
+      "rnd_seed_cnt": 1
+    },
+    {
+      "name": "cost_by_atk_size",
+      "dataset_num": 0,
+      "model_num": 0
+    },
+    {
+      "name": "deaths_and_preds_by_atk_size",
+      "model_num": 0,
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn/test_mn.tsv"
+    },
+    {
+      "name": "cost_by_atk_size_many",
+      "ax_x_label": "# of attacked power nodes",
+      "ax_y_label": "Measured fraction",
+      "overlays": [
+        {
+          "dataset_num": 0,
+          "model_num": 0,
+          "label": "train_mn",
+          "fmt": "-o",
+          "color": "b"
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 0,
+          "label": "test_mn",
+          "fmt": "-o",
+          "color": "r"
+        }
+      ]
+    },
+    {
+      "name": "deaths_and_preds_by_atk_size_many",
+      "ax_x_label": "Number of attacked power nodes",
+      "ax_y_label": "Average fraction of resulting dead nodes",
+      "overlays": [
+        {
+          "dataset_num": 1,
+          "label": "Actual fraction from simulation",
+          "style": "r-o"
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 0,
+          "label": "Fraction predicted by regression tree",
+          "style": "g-^"
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 1,
+          "label": "Fraction predicted by polynomial regression",
+          "style": "b-x"
+        }
+      ]
+    }
+  ]
+}

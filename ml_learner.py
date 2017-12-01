@@ -25,59 +25,12 @@ __author__ = 'Agostino Sturaro'
 logger = None
 
 
-# find the parameters used to "standardize" the features of our examples
-def find_mu_and_sigma(X, col_names):
+def setup_logging(log_conf_path):
     global logger
-    if X.shape[1] != len(col_names):
-        raise ValueError('The number of columns in X and the number'
-                         'of column names do not match, {} != {}'.format(X.shape[1], len(col_names)))
-    mu = np.mean(X, 0)  # mean of each column
-    sigma = np.std(X, 0, ddof=1)
-    logger.debug('mu shape = {} mu = {}\nsigma shape = {} sigma = {}'.format(mu.shape, mu, sigma.shape, sigma))
-
-    for i in range(sigma.size):
-        if sigma[i] == 0:
-            logger.info('Column {} of X is full of identical values {}'.format(col_names[i], X[0, i]))
-            sigma[i] = 1
-
-    return mu, sigma
-
-
-def find_mu_and_sigma_bis(X):
-    global logger
-    mu = np.mean(X, 0)  # mean of each column
-    sigma = np.std(X, 0, ddof=1)
-    logger.debug('mu shape = {} mu = {}\nsigma shape = {} sigma = {}'.format(mu.shape, mu, sigma.shape, sigma))
-
-    for i in range(sigma.size):
-        if sigma[i] == 0:
-            logger.info('Column {} of X is full of identical values {}'.format(i, X[0, i]))
-            sigma[i] = 1
-
-    return mu, sigma
-
-
-# Applies the pre-calculated standardization parameters to X
-# the mean value of each feature becomes 0 and the standard deviation becomes 1
-# The proper term for this operation is "standardization", but in ML we have this frequent misnomer
-# do not confuse standardization (works by column) with normalization (works by row)
-def apply_standardization(X, mu, sigma):
-    global logger
-    logger.debug('X.dtype = {}, sigma.dtype = {}'.format(X.dtype, sigma.dtype))
-    if 0.0 in sigma:
-        raise RuntimeError('The sigma vector should not contain zeros')
-
-    return (X - mu) / sigma
-
-
-# the gradient descent update function is derived from this cost function
-def calc_cost(X, y, theta):
-    m = y.size  # number of examples given
-    predictions = X.dot(theta)
-    errors = (predictions - y)
-    cost = (1.0 / (2 * m)) * errors.T.dot(errors)  # half the average of squared errors
-
-    return cost
+    with open(log_conf_path, 'rt') as f:
+        config = json.load(f)
+    logging.config.dictConfig(config)
+    logger = logging.getLogger(__name__)
 
 
 # cost function is used in some plots to better visualize the prediction error and its standard deviation
@@ -96,48 +49,8 @@ def normal_equation(X, y):
     return np.linalg.pinv(X.T.dot(X)).dot(X.T).dot(y)
 
 
-# the gradient descent algorithm changes theta by steps, improving it little by little
-# alpha is the "learning rate", it's in the range (0, 1], and it limits the size of the correction happening each step
-# it learns the multivariate linear regression that best fits our datapoints
-# since multivariate linear regressions happens in an n dimensional space (n = #variables), the polynomial solution we
-# will find, the "hypothesis" used to fit the data, will not represent a simple 2D line
-# what we learn is not guaranteed to be the optimal (best possible) linear regression, but on larger datasets it's
-# much faster to find a good enough solution than to calculate the analytical solution
-def gradient_descent_ext(train_X, train_y, theta, alpha, num_iters):
-    global logger
-    m = train_y.size
-    theta_history = np.zeros((num_iters, train_X.shape[1]))
-
-    # n is the number of features (the columns of X)
-    # X has size (m x n), theta has size (n x 1), so their product is (m x 1)
-    logger.debug('X.shape = {}, y.shape = {}, theta.shape = {}'.format(train_X.shape, train_y.shape, theta.shape))
-
-    for i in range(num_iters):
-        h_predicts = train_X.dot(theta)
-        errors = h_predicts - train_y  # note that errors are not squared here
-        # aside from alpha, this function is derived from the cost function
-        theta_change = alpha * train_X.T.dot(errors) / m
-        theta -= theta_change
-        theta_history[i] = theta
-
-    return theta_history
-
-
-def calc_cost_histories(train_X, train_y, test_X, test_y, theta_history, cost_function):
-    num_iters = theta_history.shape[0]
-    train_cost_history = np.zeros(num_iters)
-    test_cost_history = np.zeros(num_iters)
-
-    for i in range(num_iters):
-        theta = theta_history[i]
-        train_cost_history[i] = cost_function(train_X, train_y, theta)
-        test_cost_history[i] = cost_function(test_X, test_y, theta)
-
-    return train_cost_history, test_cost_history
-
-
 def setup_2d_axes(xlabel, ylabel, xlim=None, ylim=None, xticks=None, yticks=None):
-    ax = plt.axes()
+    fig, ax = plt.subplots()
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
@@ -151,7 +64,7 @@ def setup_2d_axes(xlabel, ylabel, xlim=None, ylim=None, xticks=None, yticks=None
     if yticks is not None:
         ax.set_yticks(yticks)
 
-    return ax
+    return fig, ax
 
 
 def setup_3d_axes(xlabel, ylabel, zlabel, xlim=None, ylim=None, zlim=None):
@@ -169,27 +82,7 @@ def setup_3d_axes(xlabel, ylabel, zlabel, xlim=None, ylim=None, zlim=None):
     if zlim is not None:
         ax.set_zlim(zlim)
 
-    return ax
-
-
-def plot_cost_history(train_cost_history, test_cost_history, xlabel, ylabel):
-    setup_2d_axes(xlabel, ylabel)
-
-    num_iters = train_cost_history.size
-    plt.plot(range(num_iters), train_cost_history, label='training set')
-    plt.plot(range(num_iters), test_cost_history, label='test set')
-
-    plt.tight_layout()  # make sure everything is showing
-    plt.show()
-
-
-def plot_2d_line(x, y, xlabel, ylabel, line_label, std_devs=None):
-    setup_2d_axes(xlabel, ylabel)
-    plt.plot(x, y, 'b-o', label=line_label)
-    if std_devs is not None:
-        plt.errorbar(x, y, std_devs)
-    plt.tight_layout()  # make sure everything is showing
-    plt.show()
+    return fig, ax
 
 
 # lines is a list of dictionaries [{x, y, line_style, line_label}, {...}, ...]
@@ -198,15 +91,17 @@ def plot_2d_lines(lines, ax):
         plt.plot(line['x'], line['y'], line['style'], label=line['label'])
 
     ax.grid(linestyle='-', linewidth=0.5)
+    ax.legend()
     plt.tight_layout()  # make sure everything is showing
     plt.show()
 
 
 def plot_scenario_performances(x_values, results, predictions, xlabel, ylabel):
-    setup_2d_axes(xlabel, ylabel)
+    fig, ax = setup_2d_axes(xlabel, ylabel)
 
-    plt.plot(x_values, results, 'g-o', label='results')
-    plt.plot(x_values, predictions, 'r-o', label='predictions')
+    ax.plot(x_values, results, 'g-o', label='results')
+    ax.plot(x_values, predictions, 'r-o', label='predictions')
+    ax.legend()
 
     plt.tight_layout()  # make sure everything is showing
     plt.show()
@@ -251,7 +146,7 @@ def plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label,
     min_y, max_y = np.min(ax_y_vec), np.max(ax_y_vec)
     min_z, max_z = np.min(ax_z_vec), np.max(ax_z_vec)
 
-    ax = setup_3d_axes(ax_x_label, ax_y_label, ax_z_label,
+    fig, ax = setup_3d_axes(ax_x_label, ax_y_label, ax_z_label,
                        xlim=(min_x, max_x), ylim=(min_y, max_y), zlim=(min_z, max_z))
 
     if surface is True:
@@ -280,8 +175,8 @@ def plot_3d_lots(ax_x_label, ax_y_label, ax_z_label, ax_x_vec, ax_y_vec, ax_z_ve
     min_y, max_y = np.min(ax_y_vec), np.max(ax_y_vec)
     min_z, max_z = np.min(ax_z_vec), np.max(ax_z_vec)
 
-    ax = setup_3d_axes(ax_x_label, ax_y_label, ax_z_label,
-                       xlim=(min_x, max_x), ylim=(min_y, max_y), zlim=(min_z, max_z))
+    fig, ax = setup_3d_axes(ax_x_label, ax_y_label, ax_z_label,
+                            xlim=(min_x, max_x), ylim=(min_y, max_y), zlim=(min_z, max_z))
 
     if surface is True:
         ax.plot_surface(x_grid, y_grid, z_grid, cmap=cm.jet, linewidth=0)
@@ -336,14 +231,14 @@ def find_scenario_results_and_predictions(data_X, results_y, data_info, info_fil
     subset_y = results_y[mask]
     subset_info = data_info[mask]
     if subset_X.shape[0] == 0:
-        raise ValueError('No simulation in the dataset passed by parameter "data_X" matches the conditions specified by'
-                         'the parameter "info_filter"\n{}'.format(info_filter))
+        raise ValueError('No simulation in the dataset passed by parameter "data_X" matches the conditions specified '
+                         'by the parameter "info_filter"\n{}'.format(info_filter))
 
     # we are under the assumption that each scenario only has a simulation for each number of attacks
     atk_counts = subset_info[:, atks_cnt_col]
     if atk_counts.shape != (np.unique(atk_counts)).shape:
-        raise RuntimeError('This function assumes that, for a given scenario, only one simulation for each quantity of'
-                           'attacks. Check the value of the parameter "atks_cnt_col", then check your dataset.')
+        raise RuntimeError('This function assumes that, for a given scenario, only one simulation was done for each '
+                           'quantity of attacks. Check the value of the parameter "atks_cnt_col" and your dataset.')
 
     # these 3 vectors should be treated as a single matrix and never sorted separately
     sorted_atk_counts = np.zeros(atk_counts.shape, dtype=atk_counts.dtype)
@@ -433,16 +328,20 @@ def calc_scores_by_atk_size(data_X, data_y, data_info, atks_cnt_col, predictor):
 def avg_deaths_and_preds_by_atk_size(data_X, data_y, data_info, atks_cnt_col, predictor):
     # pick unique values on the column with the number of attacks
     atk_sizes = np.sort(np.unique(data_info[:, atks_cnt_col]))
-    avg_preds = np.zeros(atk_sizes.size)
     avg_deaths = np.zeros(atk_sizes.size)
+    if predictor is not None:
+        avg_preds = np.zeros(atk_sizes.size)
+    else:
+        avg_preds = None
     # create the mask (row y/n) using the info matrix, but apply it to the data matrix
     # this way we can filter data rows using information not provided to the learning alg
     for i, atk_size in enumerate(atk_sizes):
         relevant_test_idx = data_info[:, atks_cnt_col] == atk_size
         relevant_data_X = data_X[relevant_test_idx, :]
         relevant_data_y = data_y[relevant_test_idx]
-        avg_preds[i] = np.mean(predictor(relevant_data_X))
         avg_deaths[i] = np.mean(relevant_data_y)
+        if predictor is not None:
+            avg_preds[i] = np.mean(predictor(relevant_data_X))
     return atk_sizes, avg_deaths, avg_preds
 
 
@@ -464,79 +363,25 @@ def count_actual_and_pred_labellings_by_atk_size(data_X, data_y, data_info, atks
     return atk_sizes, actual_cnt, pred_cnt
 
 
-# TODO: refactor to take a single, loaded dataset and return the solution
-# uses normal equations
-def solve_and_test(train_set_fpath, test_set_fpath, X_col_names, y_col_name, info_col_names):
-    # from each file we load load 3 sets of data, the examples (X), the labels (y) and another with related info
-    # for each array we remember the correlation column name -> column number
-    with open(train_set_fpath, 'r') as header_file:
-        csvreader = csv.reader(header_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
-        header = csvreader.next()
-
-    result_col = header.index(y_col_name)
-    train_X = load_named_cols(train_set_fpath, X_col_names, header)
-    train_y = np.loadtxt(train_set_fpath, delimiter='\t', skiprows=1, usecols=[result_col])
-    train_info = load_named_cols(train_set_fpath, info_col_names, header)
-    m = train_y.size  # number of training examples
-
-    # print('train_X (first 2 rows)\n{}'.format(train_X[range(2), :]))  # debug
-    # print('train_y (first 2 rows)\n{}'.format(train_y[range(2)]))  # debug
-    print('train_info (first 2 rows)\n{}'.format(train_info[range(2), :]))  # debug
-
-    test_X = load_named_cols(test_set_fpath, X_col_names, header)
-    test_y = np.loadtxt(test_set_fpath, delimiter='\t', skiprows=1, usecols=[result_col])
-    test_info = load_named_cols(test_set_fpath, info_col_names, header)
-
-    # print('test_X (first 2 rows)\n{}'.format(test_X[range(2), :]))  # debug
-    # print('test_y (first 2 rows)\n{}'.format(test_y[range(2)]))  # debug
-
-    train_X = np.c_[np.ones(m, dtype=train_X.dtype), train_X]  # add intercept term (first column of ones)
-    # print('train_X with intercept (first 2 rows)\n{}'.format(train_X[range(2), :]))  # debug
-
-    X_col_names.insert(0, '')  # prepend empty label to keep column names aligned
-
-    test_X = np.c_[np.ones(test_X.shape[0], dtype=test_X.dtype), test_X]  # add intercept term
-    # print('test_X (first 2 rows)\n{}'.format(test_X[range(2), :]))  # debug
-
-    theta = normal_equation(train_X, train_y)
-    predictor = lambda x: x.dot(theta)
-
-    # draw a graph showing the mean error for each #attacks
-    atks_cnt_col = info_col_names.index('#atkd_a')  # TODO: this should not be hardcoded
-    atk_sizes, test_costs = calc_cost_by_atk_size(test_X, test_y, test_info, atks_cnt_col, predictor)
-    logger.debug('atk_sizes = {}'.format(atk_sizes))
-    plot_2d_line(atk_sizes, test_costs, '# of attacked power nodes', 'Avg abs prediction error', 'test set')
-
-    full_X = np.append(train_X, test_X, axis=0)
-    full_y = np.append(train_y, test_y, axis=0)
-    full_info = np.append(train_info, test_info, axis=0)
-
-    for cur_seed in range(20):
-        info_filter = {info_col_names.index('instance'): 0, info_col_names.index('seed'): cur_seed}
-        indep_var_vals, results, predictions = \
-            find_scenario_results_and_predictions(full_X, full_y, full_info, info_filter, atks_cnt_col, predictor)
-        plot_scenario_performances(indep_var_vals, results, predictions, '# attacked nodes', '% dead nodes')
-
-
 # iteratively apply SelectFromModel.transform changing the threshold until we get the desired number of features
 # If you have a test set, just use the returned fitted_sfm to transform it
-def iterate_sfm_transform(fitted_sfm, train_X, max_feature_cnt, max_rounds, base_thresh, thresh_incr):
-    temp_train_X = fitted_sfm.transform(train_X)
+def iterate_sfm_transform(fitted_sfm, unfitted_X, max_feature_cnt, max_rounds, base_thresh, thresh_incr):
+    temp_train_X = fitted_sfm.transform(unfitted_X)
     sel_feature_cnt = temp_train_X.shape[1]
 
     if sel_feature_cnt > max_feature_cnt:
         rounds = 0
         fitted_sfm.threshold = base_thresh
-        temp_train_X = fitted_sfm.transform(train_X)
+        temp_train_X = fitted_sfm.transform(unfitted_X)
         sel_feature_cnt = temp_train_X.shape[1]
         while sel_feature_cnt > max_feature_cnt and rounds < max_rounds:
             fitted_sfm.threshold += thresh_incr
-            temp_train_X = fitted_sfm.transform(train_X)
+            temp_train_X = fitted_sfm.transform(unfitted_X)
             sel_feature_cnt = temp_train_X.shape[1]
             rounds += 1
-    train_X = temp_train_X
+    fitted_X = temp_train_X
 
-    return train_X, fitted_sfm
+    return fitted_X, fitted_sfm
 
 
 def train_regr_model(train_X, train_y, X_col_names, var_thresh, poly_feat, standardize, model_name, feat_sel_name):
@@ -582,22 +427,21 @@ def train_regr_model(train_X, train_y, X_col_names, var_thresh, poly_feat, stand
     # # regularization is used to lower the weight given to less important and useless features
     # # cross validation is used to tune the hyperparameters, like alpha
     elif model_name == 'ridgecv':
-        alphas = (0.1, 0.5, 1.0, 5.0, 10.0, 25.0, 50.0)
+        alphas = (0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 25.0, 50.0)
         clf = linear_model.RidgeCV(alphas)
     elif model_name == 'lassocv':
         clf = linear_model.LassoCV(max_iter=100000)
     elif model_name == 'elasticnetcv':
-        clf = linear_model.ElasticNetCV(max_iter=40000)
+        l1_ratios = [.01, .05, .1, .3, .5, .7, .9, .95, .99, 1]
+        clf = linear_model.ElasticNetCV(l1_ratio=l1_ratios, cv=5, max_iter=40000)
     elif model_name == 'decisiontreeregressor':
         # other useful parameters are max_depth and min_samples_leaf
-        clf = tree.DecisionTreeRegressor(criterion='mse', max_depth=5)
+        clf = tree.DecisionTreeRegressor(criterion='mse', max_depth=3)
     else:
         raise ValueError('Unsupported value for parameter model_name')
 
     # model selection by feature selection
-    if feat_sel_name in [None, '']:
-        clf.fit(train_X, train_y)
-    else:
+    if feat_sel_name not in [None, '']:
         feat_sel_name = feat_sel_name.lower()
         if feat_sel_name == 'rfe':
             selector = RFE(clf, step=1, n_features_to_select=20)
@@ -612,14 +456,26 @@ def train_regr_model(train_X, train_y, X_col_names, var_thresh, poly_feat, stand
 
         if feat_sel_name == 'selectfrommodel':
             train_X, selector = iterate_sfm_transform(selector, train_X, 20, 100, 0.01, 0.01)
+        else:
+            train_X = selector.transform(train_X)
 
         sel_feature_mask = selector.get_support()
-        sel_features_names = [item for item_num, item in enumerate(X_col_names) if sel_feature_mask[item_num]]
-        logger.debug('sel_features_names = {}'.format(sel_features_names))
-        logger.debug('after transform train_X.shape[1] = {}'.format(train_X.shape[1]))
+        X_col_names = [item for item_num, item in enumerate(X_col_names) if sel_feature_mask[item_num]]
+        logger.info('Selected features = {}'.format(X_col_names))
+        logger.debug('After final transform, train_X.shape[1] = {}'.format(train_X.shape[1]))
 
         # TODO: make sure this is correct, maybe prediction can only be done with selector and not with clf
         transformers.append(selector)
+
+    clf.fit(train_X, train_y)
+    if model_name in ['linearregression', 'ridgecv', 'lassocv', 'elasticnetcv']:
+        learned_eq = '{:+.3f}'.format(clf.intercept_)
+        coefficients = clf.coef_
+        for i in range(0, len(coefficients)):
+            learned_eq += ' {:+.3f} {}'.format(coefficients[i], X_col_names[i])
+        logger.info('Learned equation = {}'.format(learned_eq))
+    if model_name in ['ridgecv', 'lassocv', 'elasticnetcv']:
+        logger.info('alpha = {}'.format(clf.alpha_))
 
     logger.debug('learning done')
 
@@ -652,63 +508,67 @@ def check_prediction_bounds(plain_X, info, X_col_names, info_col_names, predicti
         logger.info('{}\n{}'.format(info_col_names, info[over_mask]))
 
 
-def plot_predictions_for_2d_dataset(X, y, transformers, predictor):
+def interpolate_xy_predict_z_plot_3d(X, y, transformers, predictor, ax_x_label, ax_y_label, ax_z_label, res_x, res_y):
+    global logger
     if X.shape[1] != 2:
         raise ValueError('This function only works for datasets with exactly 2 features.')
 
     # create a dataset with uniformly spaced points
-    x_grid, y_grid = make_uniform_grid_xy(X[:, 0], X[:, 1], 100, 100)
+    x_grid, y_grid = make_uniform_grid_xy(X[:, 0], X[:, 1], res_x, res_y)
 
     # this is why we need X to only have 2 features, we need to recreate it
     uniform_X = np.c_[x_grid.ravel(), y_grid.ravel()]
 
     for transformer in transformers:
+        logger.debug('Applying {}.transform'.format(type(transformer).__name__))
         uniform_X = transformer.transform(uniform_X)
 
     predictions = predictor(uniform_X)
     z_grid = np.reshape(predictions, x_grid.shape)
 
-    ax_x_label = 'initial fraction of failed nodes'
-    ax_y_label = 'loss of centrality'
-    ax_z_label = 'predicted fraction of dead nodes'
-
     ax_x_vec, ax_y_vec, ax_z_vec = X[:, 0], X[:, 1], y
     plot_3d_lots(ax_x_label, ax_y_label, ax_z_label, ax_x_vec, ax_y_vec, ax_z_vec, x_grid, y_grid, z_grid)
 
 
-def plot_all_scenario_performances(X, y, info, info_col_names, predictor, rnd_inst_cnt, rnd_seed_cnt):
+def plot_rnd_scenarios(X, y, info, info_col_names, predictor, xlabel, ylabel, rnd_inst_cnt, rnd_seed_cnt, seed=None):
     global logger
 
+    # TODO: rework these hardcoded names
     atks_cnt_col = info_col_names.index('#atkd_a')
-    instances = np.sort(np.unique(info[:, info_col_names.index('instance')]))
-    sim_seeds = np.sort(np.unique(info[:, info_col_names.index('seed')]))
+    instances_col = info_col_names.index('instance')
+    seeds_col = info_col_names.index('seed')
+
+    instances = np.sort(np.unique(info[:, instances_col]))
+    sim_seeds = np.sort(np.unique(info[:, seeds_col]))
     logger.debug('All instances = {}\nAll sim seeds {}'.format(instances, sim_seeds))
 
-    # TODO: pass the seed/shuffler from outside
-    np.random.shuffle(instances)
-    np.random.shuffle(sim_seeds)
+    my_random = random.Random(seed)
+    my_random.shuffle(instances)
+    my_random.shuffle(sim_seeds)
 
     for cur_inst in instances[0:rnd_inst_cnt]:
         logger.info('instance = {}'.format(cur_inst))
         for cur_seed in sim_seeds[0:rnd_seed_cnt]:
             logger.info('seed = {}'.format(cur_seed))
-            info_filter = {info_col_names.index('instance'): cur_inst, info_col_names.index('seed'): cur_seed}
+            info_filter = {instances_col: cur_inst, seeds_col: cur_seed}
             indep_var_vals, results, predictions = \
                 find_scenario_results_and_predictions(X, y, info, info_filter, atks_cnt_col, predictor)
-            plot_scenario_performances(indep_var_vals, results, predictions, '# of attacked power nodes', '% dead nodes')
+            plot_scenario_performances(indep_var_vals, results, predictions, xlabel, ylabel)
 
 
 # draw a graph showing the mean error for each #attacks, and the standard deviation of this error
-def plot_cost_by_atk_size(atk_sizes, costs, error_stdevs):
+def plot_cost_by_atk_size(atk_sizes, costs, std_devs):
+    fig, ax = setup_2d_axes('# of attacked power nodes', 'Measured fraction', ylim=(0, 1))
     line_1 = {'x': atk_sizes, 'y': costs, 'style': 'b-o', 'label': 'Avg abs prediction error'}
-    line_2 = {'x': atk_sizes, 'y': error_stdevs, 'style': 'r-o', 'label': 'Standard deviation'}
-    plot_2d_lines([line_1, line_2], setup_2d_axes('# of attacked power nodes', 'Measured fraction', ylim=(0, 0.5)))
+    line_2 = {'x': atk_sizes, 'y': std_devs, 'style': 'r-o', 'label': 'Standard deviation'}
+    plot_2d_lines([line_1, line_2], ax)
 
 
 def plot_deaths_and_preds_by_atk_size(atk_sizes, avg_deaths, avg_preds):
     line_1 = {'x': atk_sizes, 'y': avg_deaths, 'style': 'g-o', 'label': 'Actual'}
     line_2 = {'x': atk_sizes, 'y': avg_preds, 'style': 'b-o', 'label': 'Predicted'}
-    plot_2d_lines([line_1, line_2], setup_2d_axes('# of attacked power nodes', 'Average fraction of dead nodes'))
+    fig, ax = setup_2d_axes('# of attacked power nodes', 'Average fraction of dead nodes')
+    plot_2d_lines([line_1, line_2], ax)
 
 
 def plot_actual_and_pred_cnts_by_atk_size(atk_sizes, actual_cnt, pred_cnt):
@@ -779,14 +639,188 @@ def plot_label_cnts_by_atk_size(labels, atk_sizes, label_cnts):
     plt.show()
 
 
+def train_model_on_dataset(config, model_num):
+    model_conf = config['model_trainings'][model_num]
+    dataset_num = model_conf['dataset_num']
+    output_dir = model_conf['output_dir']
+    model_name = model_conf['model_name']
+    var_thresh = model_conf['variance_threshold']
+    poly_feat = model_conf['polynomial_features']
+    standardize = model_conf['standardize']
+    feat_sel_name = model_conf['feature_selection']
+
+    dataset = config['datasets'][dataset_num]
+    dataset_fpath = dataset['fpath']
+    X_col_names = dataset['X_col_names']
+    y_col_name = dataset['y_col_name']
+    info_col_names = dataset['info_col_names']
+
+    # find columns
+    train_X, train_y, train_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
+
+    model, transformers, train_X, transf_X_col_names = \
+        train_regr_model(train_X, train_y, X_col_names, var_thresh, poly_feat, standardize, model_name, feat_sel_name)
+
+    if 'tree' in model_name.lower():
+        # save a representation of the learned decision tree, to plot it, install graphviz
+        # it can be turned into an image by running a command like the following
+        # dot -T png decision_tree.dot -o decision_tree.png
+        with open(os.path.join(output_dir, 'decision_tree_{}_.dot'.format(model_num)), 'w') as f:
+            tree.export_graphviz(model, feature_names=transf_X_col_names, out_file=f)
+
+    # save the learned model and what is needed to adapt the data to it
+    learned_stuff_fpath = os.path.join(output_dir, 'model_{}_.pkl'.format(model_num))
+    learned_stuff = {'model': model, 'transformers': transformers}
+    joblib.dump(learned_stuff, learned_stuff_fpath)
+
+    return model, transformers, transf_X_col_names
+
+
+def make_plots(config, models):
+
+    plots = config['plots']
+    for plot_conf in plots:
+        plot_name = plot_conf['name']
+
+        if 'dataset_num' in plot_conf:
+            dataset_num = plot_conf['dataset_num']
+            dataset = config['datasets'][dataset_num]
+            dataset_fpath = dataset['fpath']
+            X_col_names = dataset['X_col_names']
+            y_col_name = dataset['y_col_name']
+            info_col_names = dataset['info_col_names']
+
+            # TODO: refactor this, most functions could simply use the info column instead of its index
+            atks_cnt_col = info_col_names.index('#atkd_a')
+            plain_ds_X, ds_y, ds_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
+
+            if 'model_num' in plot_conf:
+                model_num = plot_conf['model_num']
+                model = models[model_num]['model']
+                transformers = models[model_num]['transformers']
+                ds_X = plain_ds_X.copy()
+                for transformer in transformers:
+                    logger.debug('Applying {}.transform'.format(type(transformer).__name__))
+                    ds_X = transformer.transform(ds_X)
+                predictor = lambda x: model.predict(x)
+            else:
+                model, transformers, ds_X, predictor = None, None, None, None
+                if plot_name != 'features_xy_results_z':
+                    raise ValueError('Plot {} needs a "model_num" configuration parameter'.format(plot_name))
+
+        # visualize how two features, on axis x and y, affect the results and the predictions on axis z
+        if plot_name in ['features_xy_results_z', 'features_xy_predictions_z']:
+            ax_x_vec = plain_ds_X[:, X_col_names.index(plot_conf['ax_x_feature'])]
+            ax_y_vec = plain_ds_X[:, X_col_names.index(plot_conf['ax_y_feature'])]
+            if plot_name == 'features_xy_results_z':
+                ax_z_vec = ds_y
+            else:
+                ax_z_vec = predictor(ds_X)
+            ax_x_label = plot_conf['ax_x_label']
+            ax_y_label = plot_conf['ax_y_label']
+            ax_z_label = plot_conf['ax_z_label']
+            plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label,
+                                   plot_conf['scatter'], plot_conf['project'], plot_conf['surface'])
+
+        # make some plots comparing results and predictions on different scenarios
+        if plot_name == 'plot_rnd_scenarios':
+            ax_x_label = plot_conf['ax_x_label']
+            ax_y_label = plot_conf['ax_y_label']
+            plot_rnd_scenarios(ds_X, ds_y, ds_info, info_col_names, predictor, ax_x_label, ax_y_label,
+                               plot_conf['rnd_inst_cnt'], plot_conf['rnd_seed_cnt'], plot_conf.get('seed'))
+
+        # this only works for datasets with only 2 features
+        if plot_name == 'interpolate_xy_predict_z':
+            ax_x_label = plot_conf['ax_x_label']
+            ax_y_label = plot_conf['ax_y_label']
+            ax_z_label = plot_conf['ax_z_label']
+            res_x = plot_conf['res_x']
+            res_y = plot_conf['res_y']
+            interpolate_xy_predict_z_plot_3d(plain_ds_X, ds_y, transformers, predictor,
+                                             ax_x_label, ax_y_label, ax_z_label, res_x, res_y)
+
+        # add plot type that plots datasets together on the same figure
+        if plot_name == 'cost_by_atk_size':
+            atk_sizes, costs, error_stdevs = calc_cost_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+            plot_cost_by_atk_size(atk_sizes, costs, error_stdevs)
+
+        if plot_name == 'deaths_and_preds_by_atk_size':
+            atk_sizes, avg_deaths, avg_preds = \
+                avg_deaths_and_preds_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+            plot_deaths_and_preds_by_atk_size(atk_sizes, avg_deaths, avg_preds)
+
+        if 'overlays' in plot_conf:
+            overlays = plot_conf['overlays']
+
+            if plot_name in ['cost_by_atk_size_many', 'deaths_and_preds_by_atk_size_many']:
+                ax_x_label = plot_conf['ax_x_label']
+                ax_y_label = plot_conf['ax_y_label']
+                fig, ax = setup_2d_axes(ax_x_label, ax_y_label)
+                ax.grid(linestyle='-', linewidth=0.5)
+
+            for overlay in overlays:
+                data_label = overlay['label']
+                dataset_num = overlay['dataset_num']
+                dataset = config['datasets'][dataset_num]
+                X_col_names = dataset['X_col_names']
+                y_col_name = dataset['y_col_name']
+                info_col_names = dataset['info_col_names']
+                dataset_fpath = dataset['fpath']
+
+                # TODO: refactor this, most functions could simply use the info column instead of its index
+                atks_cnt_col = info_col_names.index('#atkd_a')
+                plain_ds_X, ds_y, ds_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
+
+                if 'model_num' in overlay:
+                    model_num = overlay['model_num']
+                    model = models[model_num]['model']
+                    transformers = models[model_num]['transformers']
+                    ds_X = plain_ds_X.copy()
+                    for transformer in transformers:
+                        logger.debug('Applying {}.transform'.format(type(transformer).__name__))
+                        ds_X = transformer.transform(ds_X)
+                    predictor = lambda x: model.predict(x)
+                else:
+                    model, transformers, ds_X, predictor = None, None, None, None
+
+                if plot_name == 'cost_by_atk_size_many':
+                    atk_sizes, costs, error_stdevs = calc_cost_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+                    color = overlay['color']
+                    fmt = overlay['fmt']
+                    ax.errorbar(atk_sizes, costs, error_stdevs, fmt=fmt, color=color, linewidth=1, capsize=3,
+                                label=data_label)
+
+                if plot_name == 'deaths_and_preds_by_atk_size_many':
+                    style = overlay['style']
+                    if 'model_num' in overlay:
+                        atk_sizes, avg_deaths, avg_preds = \
+                            avg_deaths_and_preds_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+                        plt.plot(atk_sizes, avg_preds, style, label=data_label)
+                    else:
+                        atk_sizes, avg_deaths, avg_preds = \
+                            avg_deaths_and_preds_by_atk_size(plain_ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+                        plt.plot(atk_sizes, avg_deaths, style, label=data_label)
+
+            ax.legend()
+            plt.tight_layout()
+            plt.show()
+
+
 def run():
-    # setup logging
-    global logger
-    log_conf_path = 'logging_base_conf.json'
-    with open(log_conf_path, 'rt') as f:
-        config = json.load(f)
-    logging.config.dictConfig(config)
-    logger = logging.getLogger(__name__)
+    conf_fpath = './dataset.json'
+    with open(conf_fpath) as conf_file:
+        config = json.load(conf_file)
+
+    models = []
+    model_trainings = config['model_trainings']
+    for model_num in range(0, len(model_trainings)):
+        model, transformers, transf_X_col_names = train_model_on_dataset(config, model_num)
+        models.append({'model': model, 'transformers': transformers})
+
+    make_plots(config, models)
+
+
+def run_old():
 
     # train_set_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/equispaced_train_union.tsv'
     # test_set_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/test_union.tsv'
@@ -802,6 +836,7 @@ def run():
     test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_mn/test_mn.tsv'
 
     output_dir = '/home/agostino/Documents/Simulations/test_mp_mn'
+    # output_dir = '/home/agostino/Documents/Simulations/test_mp_12/'
 
     # X_col_names = ['p_atkd', 'p_atkd_a', 'p_atkd_b',
     #                   'indeg_c_ab_q_1', 'indeg_c_ab_q_2', 'indeg_c_ab_q_3', 'indeg_c_ab_q_4', 'indeg_c_ab_q_5',
@@ -847,8 +882,8 @@ def run():
     #                   'p_tot_atkd_indeg_c_i', 'p_tot_atkd_ts_betw_c'
     #                   ]
     # X_col_names = ['p_tot_atkd_betw_c_i', 'p_atkd_cc']
-    X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i']
-    # X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_ts_betw_c']
+    # X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i']
+    X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_ts_betw_c']
     # X_col_names = ['p_atkd_b', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_rel_betw_c']
 
     # also good for trees
@@ -898,21 +933,24 @@ def run():
     # atks_cnt_col = info_col_names.index('#atkd_b')
 
     model_name = 'DecisionTreeRegressor'
+    # model_name = 'elasticnetcv'
+    # model_name = 'ridgecv'
     model_kind = 'regression'
 
     # find columns
     train_X, train_y, train_info = load_dataset(train_set_fpath, X_col_names, y_col_name, info_col_names)
 
-    # solve_and_test(train_set_fpath, test_set_fpath, X_col_names, y_col_name, info_col_names)
-    model, transformers, transf_train_X, transf_X_col_names =\
-        train_regr_model(train_X, train_y, X_col_names, False, False, False, model_name, None)
+    # model, transformers, transf_train_X, transf_X_col_names = \
+    #     train_regr_model(train_X, train_y, X_col_names, True, True, True, model_name, 'rfecv')
+    model, transformers, transf_train_X, transf_X_col_names = \
+        train_regr_model(train_X, train_y, X_col_names, True, False, True, model_name, None)
 
     if 'tree' in model_name.lower():
         # save a representation of the learned decision tree, to plot it, install graphviz
         # it can be turned into an image by running a command like the following
-        # dot -Tpng decision_tree.dot -o decision_tree.png
+        # dot -T png decision_tree.dot -o decision_tree.png
         with open(os.path.join(output_dir, 'decision_tree.dot'), 'w') as f:
-            tree.export_graphviz(model, feature_names=X_col_names, out_file=f)
+            tree.export_graphviz(model, feature_names=transf_X_col_names, out_file=f)
 
     # save the learned model and what is needed to adapt the data to it
     learned_stuff_fpath = os.path.join(output_dir, 'model.pkl')
@@ -923,27 +961,6 @@ def run():
 
     datasets = [
         {
-        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/500_nodes_10_subnets_results/test_500_n_10_s.tsv',
-        #     'relevant_atk_sizes': [3, 5, 10, 25, 50],
-        #     'node_cnt_A': 500, 'name': '500 power nodes, 10 subnets'
-        # }, {
-        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/500_nodes_20_subnets_results/test_500_n_20_s.tsv',
-        #     'relevant_atk_sizes': [3, 5, 10, 25, 50],
-        #     'node_cnt_A': 500, 'name': '500 power nodes, 20 subnets'
-        # }, {
-        #     'dataset_fpath': test_set_fpath,
-        #     'relevant_atk_sizes': [5, 10, 20, 50, 100],
-        #     'node_cnt_A': 1000, 'name': '1000 power nodes, 20 subnets'
-        # }, {
-        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_20_subnets_results/test_2000_n_20_s.tsv',
-        #     'relevant_atk_sizes': [10, 20, 40, 100, 200],
-        #     'node_cnt_A': 2000, 'name': '2000 power nodes, 20 subnets'
-        # }, {
-        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_10/2000_nodes_40_subnets_results/test_2000_n_40_s.tsv',
-        #     'relevant_atk_sizes': [10, 20, 40, 100, 200],
-        #     'node_cnt_A': 2000, 'name': '2000 power nodes, 40 subnets'
-        # }
-        #
         #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_13/test_500_n_10_s.tsv',
         #     'relevant_atk_sizes': [0, 3, 5, 10, 15, 20, 25, 35, 50],
         #     'node_cnt_A': 500, 'name': '500 power nodes, 10 subnets'
@@ -982,6 +999,7 @@ def run():
         predictions = predictor(ds_X)
 
         # visualize how two features affect the results
+        # TODO: find the columns of these features by name, instead of hardcoding their position!
         ax_x_vec, ax_x_label = plain_ds_X[:, 0], 'initial fraction of failed nodes'
         ax_y_vec, ax_y_label = plain_ds_X[:, 1], 'loss of centrality'
         ax_z_vec, ax_z_label = ds_y, 'actual resulting fraction of dead nodes'
@@ -1093,4 +1111,5 @@ def test_plot():
 
 # test_plot()
 
+setup_logging('logging_base_conf.json')
 run()
