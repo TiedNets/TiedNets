@@ -3,10 +3,10 @@ import sys
 import csv
 import json
 import logging
-import random
 import file_loader as fl
 import shared_functions as sf
 import cascades_sim as sim
+from collections import OrderedDict
 
 try:
     from configparser import ConfigParser
@@ -16,7 +16,7 @@ except ImportError:
 __author__ = 'Agostino Sturaro'
 
 
-def write_conf(conf_fpath, paths, run_options, misc):
+def write_conf(conf_fpath, paths, run_options, misc, safe_nodes_opts):
     config = ConfigParser()
 
     config.add_section('paths')
@@ -26,6 +26,11 @@ def write_conf(conf_fpath, paths, run_options, misc):
     config.add_section('run_opts')
     for opt_name in run_options:
         config.set('run_opts', opt_name, str(run_options[opt_name]))
+
+    if safe_nodes_opts is not None:
+        config.add_section('safe_nodes_opts')
+        for opt_name in safe_nodes_opts:
+            config.set('safe_nodes_opts', opt_name, str(safe_nodes_opts[opt_name]))
 
     config.add_section('misc')
     for opt_name in misc:
@@ -81,7 +86,7 @@ batch_no = int(sys.argv[1])
 batch_conf_fpath = sys.argv[2]
 
 with open(batch_conf_fpath) as batch_conf_file:
-    batch_conf = json.load(batch_conf_file)
+    batch_conf = json.load(batch_conf_file, object_pairs_hook=OrderedDict)
 
 logging.config.dictConfig(batch_conf['logging_config'])
 logger = logging.getLogger(__name__)
@@ -101,6 +106,13 @@ logger.info('last_instance = {}'.format(last_instance))
 # If we want to use a group of simulations to draw a 2D plot, showing the behavior obtained by changing a variable, then
 # we need to specify the name of the independent variable and the values we want it to assume.
 
+# The options section containing of the independent variable of the simulation
+if 'opts_section_of_indep_var' in batch_conf:
+    indep_var_section = batch_conf['opts_section_of_indep_var']
+else:
+    indep_var_section = 'run_opts'
+logger.info('indep_var_opts = {}'.format(indep_var_section))
+
 # name of the independent variable of the simulation
 indep_var_name = batch_conf['indep_var_name']
 logger.info('indep_var_name = {}'.format(indep_var_name))
@@ -119,6 +131,7 @@ cur_sim_num = 0
 floader = fl.FileLoader()
 
 for sim_group in range(0, len(base_configs)):
+    run_num_by_inst = {}  # number of simulations we ran for each instance i
     paths = base_configs[sim_group]['paths']
     run_options = base_configs[sim_group]['run_opts']
     group_results_dir = os.path.normpath(paths['results_dir'])
@@ -126,7 +139,10 @@ for sim_group in range(0, len(base_configs)):
     misc = base_configs[sim_group]['misc']
     misc['sim_group'] = sim_group
     paths['batch_conf_fpath'] = batch_conf_fpath
-    run_num_by_inst = {}  # number of simulations we ran for each instance i
+    safe_nodes_opts = None
+    if 'safe_nodes_opts' in base_configs[sim_group]:
+        safe_nodes_opts = base_configs[sim_group]['safe_nodes_opts']
+    changing_options = base_configs[sim_group][indep_var_section]
 
     # group_index will be the index of the config files for each simulation of that group
     group_index_fpath = os.path.join(group_results_dir, 'sim_group_{}_index.tsv'.format(sim_group))
@@ -136,7 +152,7 @@ for sim_group in range(0, len(base_configs)):
 
     # outer cycle ranging over values of the independent variable
     for var_value in indep_var_vals:
-        run_options[indep_var_name] = var_value
+        changing_options[indep_var_name] = var_value
         paths['end_stats_fpath'] = os.path.join(group_results_dir,
                                                 'batch_no_{}_sim_group_{}_stats.tsv'.format(batch_no, sim_group))
 
@@ -160,13 +176,13 @@ for sim_group in range(0, len(base_configs)):
                 conf_fpath = os.path.join(group_results_dir, 'instance_' + str(instance_num),
                                           'run_' + str(run_num) + '.ini')
 
-                write_conf(conf_fpath, paths, run_options, misc)
+                write_conf(conf_fpath, paths, run_options, misc, safe_nodes_opts)
                 with open(group_index_fpath, 'ab') as group_index_file:
                     group_index = csv.writer(group_index_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
                     group_index.writerow([instance_num, conf_fpath])
 
                 logger.warning('Batch {}) Running simulation {} of {}\nsim group {}, value {}, instance {}, seed {}'
-                            .format(batch_no, cur_sim_num, sim_cnt, batch_no, var_value, sim_group, seed))
+                               .format(batch_no, cur_sim_num, sim_cnt, batch_no, var_value, sim_group, seed))
                 sim.run(conf_fpath, floader)  # run the simulation
                 run_num_by_inst[instance_num] += 1  # next simulation for this instance will be number + 1
                 cur_sim_num += 1

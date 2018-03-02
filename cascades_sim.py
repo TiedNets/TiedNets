@@ -30,36 +30,87 @@ def choose_random_nodes(G, node_cnt, seed=None):
     return chosen_nodes
 
 
+def choose_random_nodes_except(G, node_cnt, excluded, seed=None):
+    candidates = G.nodes()
+    my_random = random.Random(seed)
+    my_random.shuffle(candidates)
+    chosen_nodes = list()
+    idx = 0
+    while len(chosen_nodes) < node_cnt:
+        node = candidates[idx]
+        if node not in excluded:
+            chosen_nodes.append(node)
+        idx += 1
+    return chosen_nodes
+
+
 def pick_ith_node(G, node_rank):
     nodes = G.nodes()
     nodes.sort()
     return nodes[node_rank]
 
 
-# ranked_nodes is a list of nodes, sorted in a deterministic way
+# ranked_nodes is a list of nodes, which can be from both A and B, sorted in a deterministic way
 # [node with lowest rank, ..., node with highest rank]
 # node_cnt is the number of nodes to pick
-# min_rank is the rank of the first node to pick
-def pick_nodes_by_rank(ranked_nodes, node_cnt, min_rank):
+# from_netw is the name of the network we want to pick nodes from
+# I is the graph of interconnections between A and B
+# bottom_skips is the number of ranks to skip from the bottom ranks, to avoid picking nodes with those ranks
+def pick_nodes_by_rank_from_bottom(ranked_nodes, node_cnt, from_netw, I, bottom_skips):
     chosen_nodes = list()
-    for i in range(min_rank, min_rank + node_cnt):
-        node = ranked_nodes[i]
-        chosen_nodes.append(node)
+    if from_netw == 'both':
+        for i in range(bottom_skips, bottom_skips + node_cnt):
+            node = ranked_nodes[i]
+            chosen_nodes.append(node)
+    else:
+        idx = bottom_skips
+        while len(chosen_nodes) < node_cnt:
+            node = ranked_nodes[idx]
+            node_netw = I.node[node]['network']
+            if node_netw == from_netw:
+                chosen_nodes.append(node)
+            idx += 1
+
     return chosen_nodes
 
 
-def pick_nodes_by_role(G, role, only_nodes_in=None):
+def pick_nodes_by_rank_from_top(ranked_nodes, node_cnt, from_netw, I, top_skips):
     chosen_nodes = list()
-    if only_nodes_in is None:
-        for node in G.nodes():
-            node_role = G.node[node]['role']
-            if node_role == role:
-                chosen_nodes.append(node)
+    top_pos = len(ranked_nodes) - 1
+    start_pos = top_pos - top_skips
+    if from_netw == 'both':
+        for i in range(start_pos, start_pos - node_cnt, -1):
+            node = ranked_nodes[i]
+            chosen_nodes.append(node)
     else:
-        for node in only_nodes_in:
-            node_role = G.node[node]['role']
-            if node_role == role:
+        idx = start_pos
+        while len(chosen_nodes) < node_cnt:
+            node = ranked_nodes[idx]
+            node_netw = I.node[node]['network']
+            if node_netw == from_netw:
                 chosen_nodes.append(node)
+            idx -= 1
+
+    return chosen_nodes
+
+
+def pick_random_nodes_in_rank_range(ranked_nodes, node_cnt, from_netw, I, bottom_skips, top_skips, seed=None):
+    my_random = random.Random(seed)
+    chosen_nodes = list()
+    nodes_in_range = ranked_nodes[bottom_skips:-top_skips]
+    my_random.shuffle(nodes_in_range)
+    if from_netw == 'both':
+        for i in range(0, node_cnt):
+            chosen_nodes.append(nodes_in_range[i])
+    else:
+        idx = 0
+        while len(chosen_nodes) < node_cnt:
+            node = nodes_in_range[idx]
+            node_netw = I.node[node]['network']
+            if node_netw == from_netw:
+                chosen_nodes.append(node)
+            idx += 1
+
     return chosen_nodes
 
 
@@ -81,14 +132,22 @@ def pick_nodes_by_score(score_node_pairs, node_cnt):
 def choose_most_inter_used_nodes(G, I, node_cnt, role):
     # select nodes with the specified role from graph G and create a list of tuples with their in-degree in graph I
     rank_node_pairs = list()
-    for node in G.nodes():
-        node_role = G.node[node]['role']
-        if node_role == role:
+    if role == 'any':
+        for node in G.nodes():
             if nx.is_directed(I):
                 rank = I.in_degree(node)
             else:
                 rank = I.degree(node)
             rank_node_pairs.append((rank, node))
+    else:
+        for node in G.nodes():
+            node_role = G.node[node]['role']
+            if node_role == role:
+                if nx.is_directed(I):
+                    rank = I.in_degree(node)
+                else:
+                    rank = I.degree(node)
+                rank_node_pairs.append((rank, node))
 
     return pick_nodes_by_score(rank_node_pairs, node_cnt)
 
@@ -97,11 +156,16 @@ def choose_most_intra_used_nodes(G, node_cnt, role):
     # select nodes from G, get their degree
     # make that a list of tuples
     rank_node_pairs = list()
-    for node in G.nodes():
-        node_role = G.node[node]['role']
-        if node_role == role:
+    if role == 'any':
+        for node in G.nodes():
             rank = G.degree(node)
             rank_node_pairs.append((rank, node))
+    else:
+        for node in G.nodes():
+            node_role = G.node[node]['role']
+            if node_role == role:
+                rank = G.degree(node)
+                rank_node_pairs.append((rank, node))
 
     return pick_nodes_by_score(rank_node_pairs, node_cnt)
 
@@ -252,9 +316,9 @@ def save_state(time, A, B, I, results_dir):
 # calculate the percentage of nodes attacked for each role
 # result_key_by_role is a dictionary {name of the node role: key to use for the corresponding metric in the result}
 def calc_atkd_percent_by_role(G, attacked_nodes, result_key_by_role):
-    atkd_perc_by_role = dict()
+    atkd_perc_by_role = {}
 
-    node_cnt_by_role = dict()
+    node_cnt_by_role = {}
     node_roles = result_key_by_role.keys()
     for node_role in node_roles:
         node_cnt_by_role[node_role] = 0
@@ -418,6 +482,104 @@ def calc_atk_centr_stats(name_A, name_B, name_I, name_AB, attacked_nodes_a, atta
     return centr_stats
 
 
+def get_ranked_nodes(config, section, floader, netw_dir):
+    bottom_skips = 0
+    if config.has_option(section, 'bottom_ranks_to_skip'):
+        bottom_skips = config.getint(section, 'bottom_ranks_to_skip')
+
+    top_skips = 0
+    if config.has_option(section, 'top_ranks_to_skip'):
+        top_skips = config.getint(section, 'top_ranks_to_skip')
+
+    # the name of the network file to pick centrality measures from
+    centr_fname = config.get(section, 'centrality_fname')
+
+    # load file with precalculated centrality metrics
+    centr_fpath = os.path.join(netw_dir, centr_fname)
+    centrality_info = floader.fetch_json(centr_fpath)
+
+    # load the list of ranked nodes
+    centrality_name = config.get(section, 'centrality_name')
+    ranked_nodes = centrality_info[centrality_name + '_centrality_rank']
+
+    return ranked_nodes, bottom_skips, top_skips
+
+
+# either returns the same list or a filtered copy (not the best interface)
+def remove_list_items(list_to_filter, items):
+    if len(items) == 0 or len(list_to_filter) == 0:
+        return list_to_filter
+    else:
+        return [item for item in list_to_filter if item not in items]
+
+
+def remove_items_from_lists_in_dict(dict_of_lists, items):
+    if len(items) > 0:
+        for key in dict_of_lists:
+            list_to_filter = dict_of_lists[key]
+            list_to_filter = [item for item in list_to_filter if item not in items]
+            dict_of_lists[key] = list_to_filter
+
+
+def choose_nodes_by_config(config, section, target_netw, method, A, B, I, ab_union, floader, netw_dir, seed):
+    if target_netw == A.graph['name']:
+        target_G = A
+    elif target_netw == B.graph['name']:
+        target_G = B
+    elif target_netw.lower() == 'both':
+        if ab_union is None:
+            raise ValueError('A union graph is needed, specify "netw_union_fname" and make sure the file exists')
+        target_G = ab_union
+    else:
+        raise ValueError('Invalid value for parameter "target_netw": ' + target_netw)
+
+    centr_atk_tactics = ['centrality_rank_from_bottom', 'centrality_rank_from_top', 'random_in_centrality_rank_range']
+
+    if config.has_option(section, 'attacks'):
+        node_cnt = config.getint(section, 'attacks')
+    elif config.has_option(section, 'node_count'):
+        node_cnt = config.getint(section, 'node_count')
+
+    if method in centr_atk_tactics:
+        ranked_nodes, bottom_skips, top_skips = \
+            get_ranked_nodes(config, section, floader, netw_dir)
+
+    if method == 'random':
+        chosen_nodes = choose_random_nodes(target_G, node_cnt, seed)
+    elif method == 'ith_node':
+        node_rank = config.getint(section, 'node_rank')
+        chosen_nodes = [pick_ith_node(target_G, node_rank)]
+    elif method == 'targeted':
+        target_nodes = config.get(section, 'target_nodes')
+        # TODO: understand why this returns unicode even if it should not
+        if (2, 7, 9) < sys.version_info < (3, 0, 0):
+            target_nodes = str(target_nodes)
+        chosen_nodes = [node for node in target_nodes.split()]  # split list on space
+    elif method == 'centrality_rank_from_bottom':
+        chosen_nodes = pick_nodes_by_rank_from_bottom(ranked_nodes, node_cnt, target_netw, I, bottom_skips)
+    elif method == 'centrality_rank_from_top':
+        chosen_nodes = pick_nodes_by_rank_from_top(ranked_nodes, node_cnt, target_netw, I, top_skips)
+    elif method == 'random_in_centrality_rank_range':
+        chosen_nodes = pick_random_nodes_in_rank_range(ranked_nodes, node_cnt, target_netw, I, bottom_skips,
+                                                       top_skips, seed)
+    elif method == 'most_inter_used':
+        chosen_nodes = choose_most_inter_used_nodes(target_G, I, node_cnt, 'any')
+    elif method == 'most_inter_used_distr_subs':
+        chosen_nodes = choose_most_inter_used_nodes(target_G, I, node_cnt, 'distribution_substation')
+    elif method == 'most_intra_used':
+        chosen_nodes = choose_most_intra_used_nodes(target_G, node_cnt, 'any')
+    elif method == 'most_intra_used_distr_subs':
+        chosen_nodes = choose_most_intra_used_nodes(target_G, node_cnt, 'distribution_substation')
+    elif method == 'most_intra_used_transm_subs':
+        chosen_nodes = choose_most_intra_used_nodes(target_G, node_cnt, 'transmission_substation')
+    elif method == 'most_intra_used_generators':
+        chosen_nodes = choose_most_intra_used_nodes(target_G, node_cnt, 'generator')
+    else:
+        raise ValueError('Invalid value for parameter "attack_tactic": ' + method)
+
+    return chosen_nodes
+
+
 # this function will be called from another script, each time with a different configuration fpath
 def run(conf_fpath, floader):
     global logger
@@ -469,49 +631,37 @@ def run(conf_fpath, floader):
 
     # read run options
 
+    # nodes that must remain alive no matter what
+    safe_nodes = []
+    safe_nodes_a = set()
+    safe_nodes_b = set()
+    if config.has_section('safe_nodes_opts'):
+        from_netw = config.get('safe_nodes_opts', 'from_netw')
+        safe_sel_tactic = config.get('safe_nodes_opts', 'selection_tactic')
+        safe_nodes = choose_nodes_by_config(config, 'safe_nodes_opts', from_netw, safe_sel_tactic, A, B, I, ab_union,
+                                            floader, netw_dir, seed)
+
+        for node in safe_nodes:
+            node_netw = I.node[node]['network']
+            if node_netw == A.graph['name']:
+                # put the node name in a list, or each char becomes a separate set element
+                safe_nodes_a.update([node])
+            elif node_netw == B.graph['name']:
+                safe_nodes_b.update([node])
+
+    if len(safe_nodes) > 0 and config.has_option('run_opts', 'attacks'):
+        logger.info('Nodes marked as safe will not be attacked, so if they get selected to be attacked, the number '
+                    'of attacked nodes will be lower than specified!')
+
     attacked_netw = config.get('run_opts', 'attacked_netw')
     attack_tactic = config.get('run_opts', 'attack_tactic')
-    if attack_tactic not in ['targeted', 'ith_node']:
-        attack_cnt = config.getint('run_opts', 'attacks')
+    attacked_nodes = choose_nodes_by_config(config, 'run_opts', attacked_netw, attack_tactic, A, B, I, ab_union,
+                                            floader, netw_dir, seed)
+
     intra_support_type = config.get('run_opts', 'intra_support_type')
     if intra_support_type == 'cluster_size':
         min_cluster_size = config.getint('run_opts', 'min_cluster_size')
     inter_support_type = config.get('run_opts', 'inter_support_type')
-
-    if attacked_netw == A.graph['name']:
-        attacked_G = A
-    elif attacked_netw == B.graph['name']:
-        attacked_G = B
-    elif attacked_netw.lower() == 'both':
-        if ab_union is None:
-            raise ValueError('A union graph is needed, specify "netw_union_fname" and make sure the file exists')
-        attacked_G = ab_union
-    else:
-        raise ValueError('Invalid value for parameter "attacked_netw": ' + attacked_netw)
-
-    attacks_for_A_only = ['most_inter_used_distr_subs', 'most_intra_used_distr_subs', 'most_intra_used_transm_subs',
-                          'most_intra_used_generators']
-    if attack_tactic in attacks_for_A_only and attacked_netw != A.graph['name']:
-        raise ValueError('Attack {} can only be used on the power network A'.format(attack_tactic))
-
-    centrality_attacks = ['betweenness_centrality_rank', 'closeness_centrality_rank', 'indegree_centrality_rank',
-                          'katz_centrality_rank']
-
-    if attack_tactic in centrality_attacks:
-        min_rank = config.getint('run_opts', 'min_rank')
-        calc_centr_on = config.get('run_opts', 'calc_centrality_on')
-        if calc_centr_on.lower() == 'attacked_netw':
-            G_for_centr = attacked_G
-        elif calc_centr_on.lower() == 'netw_inter':
-            # note that calculating centrality on the inter graph is not the same as calculating it on the union graph
-            G_for_centr = I
-        else:
-            raise ValueError('Invalid value for parameter "calc_centr_on": ' + calc_centr_on)
-
-        # load file with precalculated centrality metrics
-        centr_fname = 'node_centrality_{}.json'.format(G_for_centr.graph['name'])
-        centr_fpath = os.path.join(netw_dir, centr_fname)
-        centrality_info = floader.fetch_json(centr_fpath)
 
     # read output paths
 
@@ -596,6 +746,10 @@ def run(conf_fpath, floader):
     # elif intra_support_type == 'realistic':
     #     unstable_nodes.update(list())
 
+    # remove nodes that can't fail
+    if len(safe_nodes_a) > 0 or len(safe_nodes_b) > 0:
+        unstable_nodes -= safe_nodes_a.union(safe_nodes_b)
+
     if len(unstable_nodes) > 0:
         logger.debug('Time {}) {} nodes unstable before the initial attack: {}'.format(
             time, len(unstable_nodes), sorted(unstable_nodes, key=sf.natural_sort_key)))
@@ -627,45 +781,12 @@ def run(conf_fpath, floader):
 
         # perform initial attack
 
-        if attack_tactic == 'random':
-            attacked_nodes = choose_random_nodes(attacked_G, attack_cnt, seed)
-        elif attack_tactic == 'ith_node':
-            node_rank = config.getint('run_opts', 'node_rank')
-            attacked_nodes = [pick_ith_node(attacked_G, node_rank)]
-        elif attack_tactic == 'targeted':
-            target_nodes = config.get('run_opts', 'target_nodes')
-            # TODO: understand why this returns unicode even if it should not
-            if (2, 7, 9) < sys.version_info < (3, 0, 0):
-                target_nodes = str(target_nodes)
-            attacked_nodes = [node for node in target_nodes.split()]  # split list on space
-        elif attack_tactic == 'betweenness_centrality_rank':
-            ranked_nodes = centrality_info['betweenness_centrality_rank']
-            attacked_nodes = pick_nodes_by_rank(ranked_nodes, attack_cnt, min_rank)
-        elif attack_tactic == 'closeness_centrality_rank':
-            ranked_nodes = centrality_info['closeness_centrality_rank']
-            attacked_nodes = pick_nodes_by_rank(ranked_nodes, attack_cnt, min_rank)
-        elif attack_tactic == 'indegree_centrality_rank':
-            ranked_nodes = centrality_info['indegree_centrality_rank']
-            attacked_nodes = pick_nodes_by_rank(ranked_nodes, attack_cnt, min_rank)
-        elif attack_tactic == 'katz_centrality_rank':
-            ranked_nodes = centrality_info['katz_centrality_rank']
-            attacked_nodes = pick_nodes_by_rank(ranked_nodes, attack_cnt, min_rank)
-        elif attack_tactic == 'most_inter_used_distr_subs':
-            attacked_nodes = choose_most_inter_used_nodes(attacked_G, I, attack_cnt, 'distribution_substation')
-        elif attack_tactic == 'most_intra_used_distr_subs':
-            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'distribution_substation')
-        elif attack_tactic == 'most_intra_used_transm_subs':
-            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'transmission_substation')
-        elif attack_tactic == 'most_intra_used_generators':
-            attacked_nodes = choose_most_intra_used_nodes(attacked_G, attack_cnt, 'generator')
-        else:
-            raise ValueError('Invalid value for parameter "attack_tactic": ' + attack_tactic)
-
         attacked_nodes_a = []  # nodes in network A hit by the initial attack
         attacked_nodes_b = []  # nodes in network B hit by the initial attack
         dead_nodes_a = []
         dead_nodes_b = []
         for node in attacked_nodes:
+            # TODO: fix this for maximum matching graphs
             node_netw = I.node[node]['network']
             if node_netw == A.graph['name']:
                 attacked_nodes_a.append(node)
@@ -729,14 +850,15 @@ def run(conf_fpath, floader):
             elif inter_support_type == 'realistic':
                 unsupported_nodes_a = find_uncontrolled_pow_nodes(A, B, I, save_death_cause)
 
-            if save_death_cause is True and inter_support_type == 'realistic':
+            if save_death_cause is False:
+                unsupported_nodes_a = remove_list_items(unsupported_nodes_a, safe_nodes_a)
+            elif inter_support_type == 'realistic':  # save_death_cause is True
+                remove_items_from_lists_in_dict(unsupported_nodes_a, safe_nodes_a)
                 no_sup_ccs_deaths += len(unsupported_nodes_a['no_sup_ccs'])
                 no_sup_relays_deaths += len(unsupported_nodes_a['no_sup_relays'])
                 no_com_path_deaths += len(unsupported_nodes_a['no_com_path'])
-                temp_list = list()
-
-                # convert dictionary of lists to simple list
-                for node_list in unsupported_nodes_a.values():
+                temp_list = []
+                for node_list in unsupported_nodes_a.values():  # convert dictionary of lists into a simple list
                     temp_list.extend(node_list)
                 unsupported_nodes_a = temp_list
 
@@ -762,6 +884,8 @@ def run(conf_fpath, floader):
                 unsupported_nodes_a = find_nodes_in_smaller_clusters(A, min_cluster_size)
             elif intra_support_type == 'realistic':
                 unsupported_nodes_a = find_unpowered_substations(A)
+
+            unsupported_nodes_a = remove_list_items(unsupported_nodes_a, safe_nodes_a)
             failed_cnt_a = len(unsupported_nodes_a)
             if failed_cnt_a > 0:
                 logger.info('Time {}) {} nodes of network {} failed for lack of intra support: {}'.format(
@@ -784,6 +908,8 @@ def run(conf_fpath, floader):
             #     unsupported_nodes_b = find_nodes_in_unsupported_clusters(B, I)
             elif inter_support_type == 'realistic':
                 unsupported_nodes_b = find_nodes_without_inter_links(B, I)
+
+            unsupported_nodes_b = remove_list_items(unsupported_nodes_b, safe_nodes_b)
             failed_cnt_b = len(unsupported_nodes_b)
             if failed_cnt_b > 0:
                 logger.info('Time {}) {} nodes of network {} failed for lack of inter support: {}'.format(
@@ -805,7 +931,10 @@ def run(conf_fpath, floader):
             elif intra_support_type == 'cluster_size':
                 unsupported_nodes_b = find_nodes_in_smaller_clusters(B, min_cluster_size)
             elif intra_support_type == 'realistic':
-                unsupported_nodes_b = list()
+                # in the realistic model, telecom nodes can survive without intra support, they just cant't communicate
+                unsupported_nodes_b = []
+
+            unsupported_nodes_b = remove_list_items(unsupported_nodes_b, safe_nodes_b)
             failed_cnt_b = len(unsupported_nodes_b)
             if failed_cnt_b > 0:
                 logger.info('Time {}) {} nodes of network {} failed for lack of intra support: {}'.format(
@@ -865,6 +994,9 @@ def run(conf_fpath, floader):
         ml_stats['p_dead'] = sf.percent_of_part(total_dead_a + total_dead_b, base_node_cnt_a + base_node_cnt_b)
         ml_stats['dead_nodes_a'] = dead_nodes_a
         ml_stats['dead_nodes_b'] = dead_nodes_b
+        ml_stats['dead_count_a'] = len(dead_nodes_a)
+        ml_stats['dead_count_b'] = len(dead_nodes_b)
+        ml_stats['dead_count'] = len(dead_nodes_a) + len(dead_nodes_b)
 
         ml_stats_file_existed = os.path.isfile(ml_stats_fpath)
         with open(ml_stats_fpath, 'ab') as ml_stats_file:

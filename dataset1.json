@@ -1,0 +1,122 @@
+{
+  "datasets": [
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn/train_mn.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_ka/ml_stats_0.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_ka/ml_stats_2.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_ka/ml_stats_3.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_ka/ml_stats_4.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_ka/ml_stats_6.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_ka/ml_stats_7.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a"
+      ]
+    }
+  ],
+  "model_trainings": [
+
+  ],
+
+  "plots": [
+    {
+      "name": "deaths_and_preds_by_atk_size_many",
+      "ax_x_label": "Number of attacked power nodes",
+      "ax_y_label": "Average fraction of resulting dead nodes",
+      "overlays": [
+        {
+          "dataset_num": 0,
+          "label": "All nodes can fail",
+          "style": "r-o"
+        },
+        {
+          "dataset_num": 1,
+          "label": "All except top 10 nodes by inter-betweenness",
+          "style": "g-^"
+        },
+        {
+          "dataset_num": 2,
+          "label": "All except top 50 nodes by inter-betweenness",
+          "style": "g-x"
+        },
+        {
+          "dataset_num": 3,
+          "label": "All except top 100 nodes by inter-betweenness",
+          "style": "g-o"
+        },
+        {
+          "dataset_num": 4,
+          "label": "All except for 10 random nodes",
+          "style": "b-^"
+        },
+        {
+          "dataset_num": 5,
+          "label": "All except for 50 random nodes",
+          "style": "b-x"
+        },
+        {
+          "dataset_num": 6,
+          "label": "All except for 100 random nodes",
+          "style": "b-o"
+        }
+      ]
+    }
+  ]
+}

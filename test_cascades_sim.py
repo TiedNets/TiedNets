@@ -36,6 +36,80 @@ def test_choose_nodes_by_rank():
     assert chosen_nodes == []
 
 
+def test_pick_random_nodes_except():
+    G = nx.Graph()
+    G.add_nodes_from(range(0, 10, 1))
+    node_cnt = 9
+    excluded = set([2])
+    seed = 128
+    # internally, the shuffled list should be [3, 1, 7, 8, 5, 6, 0, 4, 2, 9]
+    chosen_nodes = cs.choose_random_nodes_except(G, node_cnt, excluded, seed)
+    assert chosen_nodes == [3, 1, 7, 8, 5, 6, 0, 4, 9]
+
+
+def test_pick_nodes_by_rank_from_top():
+    ranked_nodes = ['A1', 'A2', 'B1', 'A3', 'B2', 'B3']
+    I = nx.Graph()
+    I.add_nodes_from([('A1', {'network': 'A'}), ('A2', {'network': 'A'}), ('A3', {'network': 'A'}),
+                      ('B1', {'network': 'B'}), ('B2', {'network': 'B'}), ('B3', {'network': 'B'})])
+
+    from_netw = 'B'
+    node_cnt = 2
+    top_skips = 1
+    chosen_nodes = cs.pick_nodes_by_rank_from_top(ranked_nodes, node_cnt, from_netw, I, top_skips)
+    assert chosen_nodes == ['B2', 'B1']
+
+    top_skips = 0
+    chosen_nodes = cs.pick_nodes_by_rank_from_top(ranked_nodes, node_cnt, from_netw, I, top_skips)
+    assert chosen_nodes == ['B3', 'B2']
+
+    from_netw = 'A'
+    top_skips = 0
+    chosen_nodes = cs.pick_nodes_by_rank_from_top(ranked_nodes, node_cnt, from_netw, I, top_skips)
+    assert chosen_nodes == ['A3', 'A2']
+
+    top_skips = 2
+    chosen_nodes = cs.pick_nodes_by_rank_from_top(ranked_nodes, node_cnt, from_netw, I, top_skips)
+    assert chosen_nodes == ['A3', 'A2']
+
+    from_netw = 'both'
+    top_skips = 1
+    chosen_nodes = cs.pick_nodes_by_rank_from_top(ranked_nodes, node_cnt, from_netw, I, top_skips)
+    assert chosen_nodes == ['B2', 'A3']
+
+
+def test_pick_random_nodes_in_rank_range():
+    ranked_nodes = ['A1', 'A2', 'B1', 'A3', 'B2', 'B3']
+    I = nx.Graph()
+    I.add_nodes_from([('A1', {'network': 'A'}), ('A2', {'network': 'A'}), ('A3', {'network': 'A'}),
+                      ('B1', {'network': 'B'}), ('B2', {'network': 'B'}), ('B3', {'network': 'B'})])
+
+    from_netw = 'A'
+    node_cnt = 2
+    btm_skips = 0
+    top_skips = 1
+    seed = 128
+    # internally, the shuffled list should be ['B1', 'A3', 'A2', 'A1', 'B2']
+    chosen_nodes = cs.pick_random_nodes_in_rank_range(ranked_nodes, node_cnt, from_netw, I, btm_skips, top_skips, seed)
+    assert chosen_nodes == ['A3', 'A2']
+
+    from_netw = 'B'
+    chosen_nodes = cs.pick_random_nodes_in_rank_range(ranked_nodes, node_cnt, from_netw, I, btm_skips, top_skips, seed)
+    assert chosen_nodes == ['B1', 'B2']
+
+    from_netw = 'both'
+    chosen_nodes = cs.pick_random_nodes_in_rank_range(ranked_nodes, node_cnt, from_netw, I, btm_skips, top_skips, seed)
+    assert chosen_nodes == ['B1', 'A3']
+
+
+def test_remove_items_from_lists_in_dict():
+    dict_of_lists = {'a': [3, 2, 1], 'b': [1], 'c': [], 'd': [0, 2, 4, 5], 'e': [-2, -1]}
+    items = set([1, 2])
+
+    cs.remove_items_from_lists_in_dict(dict_of_lists, items)
+    assert dict_of_lists == {'a': [3], 'b': [], 'c': [], 'd': [0, 4, 5], 'e': [-2, -1]}
+
+
 # tests for example 1
 
 def test_run_ex_1_realistic():

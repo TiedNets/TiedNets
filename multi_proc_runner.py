@@ -15,8 +15,8 @@ def run_batches(batches):
             try:
                 with open(batch_conf_fpath, 'rt') as f:
                     config = json.load(f)
-            except Exception as exc:
-                raise ValueError('The batch configuration file {} is not a valid json file'.format(batch_conf_fpath, exc))
+            except Exception:
+                raise ValueError('The batch configuration file {} is not a valid json file'.format(batch_conf_fpath))
         else:
             raise RuntimeError('The batch configuration file {} does not exist'.format(batch_conf_fpath))
 
@@ -32,8 +32,9 @@ def run_batches(batches):
     for proc in procs:
         proc.wait()
 
+
 # TODO: ask before overwrite
 # each of these processes must have its own configuration file
 # if we need them to run concurrently, all of their output files must be different
-run_batches(range(0, 4))
+run_batches(range(0, 8))
 # run_batches(range(8, 16))

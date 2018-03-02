@@ -38,7 +38,7 @@
       "variance_threshold": true,
       "polynomial_features": false,
       "standardize": true,
-      "feature_selection": "rfe"
+      "feature_selection": "rfecv"
     },
     {
       "dataset_num": 0,
@@ -48,7 +48,7 @@
       "variance_threshold": true,
       "polynomial_features": true,
       "standardize": true,
-      "feature_selection": "rfe"
+      "feature_selection": "rfecv"
     }
   ],
 

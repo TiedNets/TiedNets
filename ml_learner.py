@@ -5,7 +5,6 @@ import random
 import logging.config
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from sklearn import preprocessing
 from sklearn import linear_model
@@ -285,82 +284,119 @@ def load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names):
     return X, y, info
 
 
-def calc_cost_by_atk_size(data_X, data_y, data_info, atks_cnt_col, predictor):
-    # pick unique values on the column with the number of attacks
-    atk_sizes = np.sort(np.unique(data_info[:, atks_cnt_col]))
-    var_costs = np.zeros(atk_sizes.size)
-    error_std_devs = np.zeros(atk_sizes.size)
+def filter_dataset(X, y, info, X_col_names, info_col_names, filter_conf):
+    filter_col_group = filter_conf['col_group']
+    filter_values = filter_conf['col_values']
+
+    if filter_col_group == 'X_col_names':
+        col_names = X_col_names
+        data = X
+    elif filter_col_group == 'info_col_names':
+        col_names = info_col_names
+        data = info
+    elif filter_col_group == 'y_col_name':
+        data = y
+    else:
+        raise ValueError('The possible values for the "col_group" option of a filter are: '
+                         '"X_col_names", "info_col_names", "y_col_name".')
+
+    relevant_idx = np.zeros(data.shape[0], dtype=bool)
+    if data.ndim == 1:
+        for i in range(0, data.shape[0]):
+            relevant_idx[i] = data[i] in filter_values
+    else:
+        filter_col_name = filter_conf['col_name']
+        col_num = col_names.index(filter_col_name)
+        for i in range(0, data.shape[0]):
+            relevant_idx[i] = data[i, col_num] in filter_values
+
+    return X[relevant_idx], y[relevant_idx], info[relevant_idx]
+
+
+# Returns costs and std dev of costs for each group of examples it finds
+# group_by_col is the index of a column of data_info
+# For each unique value found on the column "group_by_col", a separate cost value is returned.
+# To calculate each cost value, we use the examples that have the same value on the column "group_by_col".
+def calc_cost_group_by(data_X, data_y, data_info, group_by_col, predictor):
+    unique_vals = np.sort(np.unique(data_info[:, group_by_col]))
+    var_costs = np.zeros(unique_vals.size)
+    error_std_devs = np.zeros(unique_vals.size)
     # create the mask (row y/n) using the info matrix, but apply it to the data matrix
     # this way we can filter data rows using information not provided to the learning alg
-    for i, atk_size in enumerate(atk_sizes):
-        relevant_test_idx = data_info[:, atks_cnt_col] == atk_size
-        relevant_data_X = data_X[relevant_test_idx, :]
-        relevant_data_y = data_y[relevant_test_idx]
+    for i, val in enumerate(unique_vals):
+        relevant_idx = data_info[:, group_by_col] == val
+        relevant_data_X = data_X[relevant_idx, :]
+        relevant_data_y = data_y[relevant_idx]
         var_costs[i], error_std_devs[i] = calc_my_cost(relevant_data_X, relevant_data_y, predictor)
-    return atk_sizes, var_costs, error_std_devs
+    return unique_vals, var_costs, error_std_devs
 
 
-# possible improvement, refactor to accept a list of score functions and return a list of scores for each atk size,
-# or just accept a list of functions to apply and return a list of results
-def calc_scores_by_atk_size(data_X, data_y, data_info, atks_cnt_col, predictor):
-    # pick unique values on the column with the number of attacks
-    atk_sizes = np.sort(np.unique(data_info[:, atks_cnt_col]))
-    accuracies = np.zeros(atk_sizes.size)
-    f1_scores = np.zeros(atk_sizes.size)
+# Returns accuracies and F1 scores for each group of examples it finds
+# group_by_col is the index of a column of data_info
+# For each unique value found on the column "group_by_col", a separate cost value is returned.
+# To calculate each cost value, we use the examples that have the same value on the column "group_by_col".
+def calc_scores_group_by(data_X, data_y, data_info, group_by_col, predictor):
+    unique_vals = np.sort(np.unique(data_info[:, group_by_col]))
+    accuracies = np.zeros(unique_vals.size)
+    f1_scores = np.zeros(unique_vals.size)
     # create the mask (row y/n) using the info matrix, but apply it to the data matrix
     # this way we can filter data rows using information not provided to the learning alg
-    for i, atk_size in enumerate(atk_sizes):
-        relevant_test_idx = data_info[:, atks_cnt_col] == atk_size
-        relevant_data_X = data_X[relevant_test_idx, :]
-        relevant_data_y = data_y[relevant_test_idx]
+    for i, val in enumerate(unique_vals):
+        relevant_idx = data_info[:, group_by_col] == val
+        relevant_data_X = data_X[relevant_idx, :]
+        relevant_data_y = data_y[relevant_idx]
         predictions = predictor(relevant_data_X)
         accuracies[i] = accuracy_score(relevant_data_y, predictions)
         # change if this is not a binary classification
         f1_scores[i] = f1_score(relevant_data_y, predictions, pos_label='low', average='binary')
-    return atk_sizes, accuracies, f1_scores
+    return unique_vals, accuracies, f1_scores
 
 
 # returns three arrays:
-# 1) atk_sizes, the different numbers of attacks operated on the network, from lowest to highest
-# 2) avg_deaths, the average fraction of dead nodes after the attacks
-# 3) avg_preds, the average of the predicted fractions of dead nodes after the attacks
-# The ith cells of avg_deaths and avg_preds are related to the number of attacks in atk_sizes[i]
-def avg_deaths_and_preds_by_atk_size(data_X, data_y, data_info, atks_cnt_col, predictor):
+# 1) unique_vals, the unique values found on the group_by_col, from lowest to highest
+#    e.g. the list of attack sizes
+# 2) avg_labels, the average labels of the examples of each group
+#    e.g. for each attack size, the average fraction of dead nodes
+# 3) avg_preds,
+#    e.g. for each attack size, the average predicted fraction of dead nodes
+# The returned arrays should never be sorted separately, because
+# unique_vals[i], avg_labels[i] and avg_preds[i] work together
+def avg_labels_and_preds_group_by(data_X, data_y, data_info, group_by_col, predictor):
     # pick unique values on the column with the number of attacks
-    atk_sizes = np.sort(np.unique(data_info[:, atks_cnt_col]))
-    avg_deaths = np.zeros(atk_sizes.size)
+    unique_vals = np.sort(np.unique(data_info[:, group_by_col]))
+    avg_labels = np.zeros(unique_vals.size)
     if predictor is not None:
-        avg_preds = np.zeros(atk_sizes.size)
+        avg_preds = np.zeros(unique_vals.size)
     else:
         avg_preds = None
     # create the mask (row y/n) using the info matrix, but apply it to the data matrix
     # this way we can filter data rows using information not provided to the learning alg
-    for i, atk_size in enumerate(atk_sizes):
-        relevant_test_idx = data_info[:, atks_cnt_col] == atk_size
-        relevant_data_X = data_X[relevant_test_idx, :]
-        relevant_data_y = data_y[relevant_test_idx]
-        avg_deaths[i] = np.mean(relevant_data_y)
+    for i, val in enumerate(unique_vals):
+        relevant_idx = data_info[:, group_by_col] == val
+        relevant_data_X = data_X[relevant_idx, :]
+        relevant_data_y = data_y[relevant_idx]
+        avg_labels[i] = np.mean(relevant_data_y)
         if predictor is not None:
             avg_preds[i] = np.mean(predictor(relevant_data_X))
-    return atk_sizes, avg_deaths, avg_preds
+    return unique_vals, avg_labels, avg_preds
 
 
-# counts the total occurrences of a label for each attack size
-def count_actual_and_pred_labellings_by_atk_size(data_X, data_y, data_info, atks_cnt_col, predictor, label):
-    # pick unique values on the column with the number of attacks
-    atk_sizes = np.sort(np.unique(data_info[:, atks_cnt_col]))
-    actual_cnt = np.zeros(atk_sizes.size)
-    pred_cnt = np.zeros(atk_sizes.size)
+# for each group of examples it finds, returns the occurrences of the specified label in the actual results
+# and in the predicted results
+def count_label_in_labels_and_preds_group_by(data_X, data_y, data_info, group_by_col, predictor, label):
+    unique_vals = np.sort(np.unique(data_info[:, group_by_col]))
+    actual_cnt = np.zeros(unique_vals.size)
+    pred_cnt = np.zeros(unique_vals.size)
     # create the mask (row y/n) using the info matrix, but apply it to the data matrix
     # this way we can filter data rows using information not provided to the learning alg
-    for i, atk_size in enumerate(atk_sizes):
-        relevant_test_idx = data_info[:, atks_cnt_col] == atk_size
-        relevant_data_X = data_X[relevant_test_idx, :]
-        relevant_data_y = data_y[relevant_test_idx]
+    for i, val in enumerate(unique_vals):
+        relevant_idx = data_info[:, group_by_col] == val
+        relevant_data_X = data_X[relevant_idx, :]
+        relevant_data_y = data_y[relevant_idx]
         predictions = predictor(relevant_data_X)
         actual_cnt[i] = np.count_nonzero(relevant_data_y == label)
         pred_cnt[i] = np.count_nonzero(predictions == label)
-    return atk_sizes, actual_cnt, pred_cnt
+    return unique_vals, actual_cnt, pred_cnt
 
 
 # iteratively apply SelectFromModel.transform changing the threshold until we get the desired number of features
@@ -676,6 +712,27 @@ def train_model_on_dataset(config, model_num):
     return model, transformers, transf_X_col_names
 
 
+# Type of plots by name:
+# - features_xy_results_z, 3D plot, represents two features of a dataset, one on X and one on Y, and the corresponding
+# simulation results on Z. Useful to check how any two features affect simulation results.
+# - features_xy_predictions_z, 3D plot, same as features_xy_results_z, but with predicted results on Z. Useful to check
+# how any two features affect predicted results.
+# - interpolate_xy_predict_z, 3D plot, similar to features_xy_predictions_z, but only works for predictions that need
+# exactly two features. It interpolates points on X and Y to get a smoother drawing.
+# - plot_rnd_scenarios, 2D plot, picks a few random scenarios from a dataset, and for each one, it plots two lines,
+# one with the simulation results, and the other with the predicted results. Useful to test different predictors and
+# find out how they perform on individual scenarios, rather than evaluating performances on a whole dataset.
+# - cost_by_atk_size, 2D plot, draws a single line for a given dataset. Values on the X axis are the initial attack
+# sizes, while values on Y are measures of the prediction error calculated by a cost function. The line has error bars
+# representing the standard deviation of the error. Useful to visualize prediction performances on a whole dataset.
+# - cost_by_atk_size_many, 2D plot, same as cost_by_atk_size, but also works for multiple datasets, drawing a different
+# line for each dataset.
+# - deaths_and_preds_by_atk_size, 2D plot, plots two lines, one representing the average simulation results and one
+# representing the predicted results for different initial attack sizes. Values on the X axis represent the fraction of
+# attacked nodes, while values on Y represent the resulting fraction of failed nodes.
+# - deaths_and_preds_by_atk_size_many, 2D plot, similar to deaths_and_preds_by_atk_size_many, but also works for
+# multiple datasets, drawing a different pair of lines for each dataset. Additionally, it can plot only the simulation
+# results for a dataset. Just omit the model_num option for that dataset.
 def make_plots(config, models):
 
     plots = config['plots']
@@ -693,6 +750,11 @@ def make_plots(config, models):
             # TODO: refactor this, most functions could simply use the info column instead of its index
             atks_cnt_col = info_col_names.index('#atkd_a')
             plain_ds_X, ds_y, ds_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
+
+            if 'filter' in plot_conf:
+                filter_conf = plot_conf['filter']
+                plain_ds_X, ds_y, ds_info =\
+                    filter_dataset(plain_ds_X, ds_y, ds_info, X_col_names, info_col_names, filter_conf)
 
             if 'model_num' in plot_conf:
                 model_num = plot_conf['model_num']
@@ -741,12 +803,12 @@ def make_plots(config, models):
 
         # add plot type that plots datasets together on the same figure
         if plot_name == 'cost_by_atk_size':
-            atk_sizes, costs, error_stdevs = calc_cost_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+            atk_sizes, costs, error_stdevs = calc_cost_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
             plot_cost_by_atk_size(atk_sizes, costs, error_stdevs)
 
         if plot_name == 'deaths_and_preds_by_atk_size':
             atk_sizes, avg_deaths, avg_preds = \
-                avg_deaths_and_preds_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+                avg_labels_and_preds_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
             plot_deaths_and_preds_by_atk_size(atk_sizes, avg_deaths, avg_preds)
 
         if 'overlays' in plot_conf:
@@ -771,6 +833,13 @@ def make_plots(config, models):
                 atks_cnt_col = info_col_names.index('#atkd_a')
                 plain_ds_X, ds_y, ds_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
 
+                x_multiplier = 1
+                if 'x_multiplier' in overlay:
+                    x_multiplier = overlay['x_multiplier']
+                y_multiplier = 1
+                if 'y_multiplier' in overlay:
+                    y_multiplier = overlay['y_multiplier']
+
                 if 'model_num' in overlay:
                     model_num = overlay['model_num']
                     model = models[model_num]['model']
@@ -784,22 +853,37 @@ def make_plots(config, models):
                     model, transformers, ds_X, predictor = None, None, None, None
 
                 if plot_name == 'cost_by_atk_size_many':
-                    atk_sizes, costs, error_stdevs = calc_cost_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+                    atk_sizes, costs, error_stdevs = calc_cost_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
                     color = overlay['color']
                     fmt = overlay['fmt']
-                    ax.errorbar(atk_sizes, costs, error_stdevs, fmt=fmt, color=color, linewidth=1, capsize=3,
-                                label=data_label)
+                    if x_multiplier != 1 or y_multiplier != 1:
+                        ax.errorbar(x_multiplier * atk_sizes, y_multiplier * costs, y_multiplier * error_stdevs,
+                                    fmt=fmt, color=color, linewidth=1, capsize=3, label=data_label)
+                    else:
+                        ax.errorbar(atk_sizes, costs, error_stdevs, fmt=fmt, color=color, linewidth=1, capsize=3,
+                                    label=data_label)
 
                 if plot_name == 'deaths_and_preds_by_atk_size_many':
                     style = overlay['style']
+
                     if 'model_num' in overlay:
                         atk_sizes, avg_deaths, avg_preds = \
-                            avg_deaths_and_preds_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
-                        plt.plot(atk_sizes, avg_preds, style, label=data_label)
+                            avg_labels_and_preds_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+                        if x_multiplier != 1 or y_multiplier != 1:
+                            plt.plot(x_multiplier * atk_sizes, y_multiplier * avg_preds, style, label=data_label)
+                        else:
+                            plt.plot(atk_sizes, avg_preds, style, label=data_label)
                     else:
                         atk_sizes, avg_deaths, avg_preds = \
-                            avg_deaths_and_preds_by_atk_size(plain_ds_X, ds_y, ds_info, atks_cnt_col, predictor)
-                        plt.plot(atk_sizes, avg_deaths, style, label=data_label)
+                            avg_labels_and_preds_group_by(plain_ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+                        if x_multiplier != 1 or y_multiplier != 1:
+                            plt.plot(x_multiplier * atk_sizes, y_multiplier * avg_deaths, style, label=data_label)
+                        else:
+                            plt.plot(atk_sizes, avg_deaths, style, label=data_label)
+                        # if avg_deaths.shape[0] == 1:
+                        #     plt.axhline(avg_deaths[0], color='red', linestyle='--', label=data_label)
+                        # else:
+                        #     plt.plot(atk_sizes, avg_deaths, style, label=data_label)
 
             ax.legend()
             plt.tight_layout()
@@ -807,7 +891,7 @@ def make_plots(config, models):
 
 
 def run():
-    conf_fpath = './dataset.json'
+    conf_fpath = './dataset2.json'
     with open(conf_fpath) as conf_file:
         config = json.load(conf_file)
 
@@ -1014,18 +1098,18 @@ def run_old():
         if model_kind == 'regression':
             check_prediction_bounds(plain_ds_X, ds_info, X_col_names, info_col_names, predictions, 0.0, True, 1.05, True)
 
-            atk_sizes, costs, error_stdevs = calc_cost_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+            atk_sizes, costs, error_stdevs = calc_cost_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
             plot_cost_by_atk_size(atk_sizes, costs, error_stdevs)
 
             atk_sizes, avg_deaths, avg_preds = \
-                avg_deaths_and_preds_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+                avg_labels_and_preds_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
             plot_deaths_and_preds_by_atk_size(atk_sizes, avg_deaths, avg_preds)
 
         else:
             atk_sizes, accuracies, f1_scores =\
-                calc_scores_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
+                calc_scores_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
             atk_sizes, actual_cnt, pred_cnt =\
-                count_actual_and_pred_labellings_by_atk_size(ds_X, ds_y, ds_info, atks_cnt_col, predictor, 'total')
+                count_label_in_labels_and_preds_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor, 'total')
 
         # only keep the data we want
         relevant_idx = []

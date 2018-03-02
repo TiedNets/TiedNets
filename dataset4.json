@@ -1,0 +1,77 @@
+{
+  "datasets": [
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_mix_fix/ml_stats_fix_cut_0.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a", "safe_nodes_count"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_mix_fix/ml_stats_fix_cut_1.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a", "safe_nodes_count"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_mix_fix/ml_stats_fix_cut_2.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a", "safe_nodes_count"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_mix_fix/ml_stats_fix_6.tsv",
+      "X_col_names": [
+        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance", "seed", "#atkd_a", "safe_nodes_count"
+      ]
+    }
+  ],
+  "model_trainings": [
+
+  ],
+
+  "plots": [
+    {
+      "name": "deaths_and_preds_by_atk_size_many",
+      "ax_x_label": "Nr. of resilient nodes",
+      "ax_y_label": "Average nr. of total failed nodes",
+      "overlays": [
+        {
+          "dataset_num": 0,
+          "label": "Inter-betweenness",
+          "style": "g-^"
+        },
+        {
+          "dataset_num": 1,
+          "label": "Inter-Degree",
+          "style": "b-x"
+        },
+        {
+          "dataset_num": 2,
+          "label": "Random",
+          "style": "m-o"
+        },
+        {
+          "dataset_num": 3,
+          "label": "No resilient nodes",
+          "style": "c-o"
+        }
+      ]
+    }
+  ]
+}

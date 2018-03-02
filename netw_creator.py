@@ -1225,12 +1225,12 @@ def save_misc_centralities(A, B, I, file_dir):
         json.dump(centrality_info, centr_file)
 
 
-def all_positions_defined(G, excluding=[]):
+def all_positions_defined(G, excluded=[]):
     undefined_pos_found = False
     for node in G.nodes():
-        node_inst = G.node[node]
-        if node_inst in excluding:
+        if node in excluded:
             continue
+        node_inst = G.node[node]
         if 'x' not in node_inst or 'y' not in node_inst:
             undefined_pos_found = True
             break
@@ -1490,10 +1490,10 @@ def run(conf_fpath):
 
         if controller_attachment == 'prefer_nearest' and controller_placement is None:
             raise ValueError('Parameter "controller_attachment" of network B set to "prefer_nearest", but parameter '
-                             '"controller placement" was left undefined. Please specify a value for it.')
+                             '"controller_placement" was left undefined. Please specify a value for it.')
 
         if controller_placement is None and config.has_option('build_b', 'layout'):
-            raise ValueError('Parameter "layout" of network B is set, but parameter "controller placement" was left '
+            raise ValueError('Parameter "layout" of network B is set, but parameter "controller_placement" was left '
                              'undefined. Please specify a value for it.')
 
     if config.has_option('build_b', 'layout'):
@@ -1504,7 +1504,7 @@ def run(conf_fpath):
     if roles_b == 'relay_attached_controllers':
         # if we need to assign a position to controllers, we need to know the perimeter of the network
         if controller_placement is not None:
-            if not all_positions_defined(B, excluding=controllers):
+            if not all_positions_defined(B, excluded=controllers):
                 raise RuntimeError('A node in your graph does not have a defined (x, y) position. Cannot place '
                                    'new controllers if not all the positions of other nodes are specified.')
             first_it = True
@@ -1658,7 +1658,7 @@ def run(conf_fpath):
         # create directed copies of A, B and I, add their edges to an empty directed graph,
         # do not use the nx.compose function to create this graph, it's bugged!
         # TODO: the union graph is always directed, we might not want this
-        ab_union = nx.DiGraph();
+        ab_union = nx.DiGraph()
         ab_union.graph['name'] = ab_union_name
         ab_union.add_edges_from(A.to_directed().edges())
         ab_union.add_edges_from(B.to_directed().edges())
