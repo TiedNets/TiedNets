@@ -1,12 +1,15 @@
 {
   "datasets": [
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_12/train_1000_n_20_s.tsv",
-      "X_col_names": [
-        "p_atkd_a",
-        "p_tot_atkd_betw_c_i",
-        "p_tot_atkd_ts_betw_c"
-      ],
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn/train_mn.tsv",
+      "X_col_names": ["p_atkd_a", "p_atkd_ds", "p_atkd_ts",
+                      "p_q_4_atkd_betw_c_ab", "p_q_4_atkd_betw_c_i",
+                      "p_q_4_atkd_indeg_c_i", "p_q_4_atkd_ts_betw_c",
+                      "p_q_5_atkd_betw_c_ab", "p_q_5_atkd_betw_c_i",
+                      "p_q_5_atkd_indeg_c_i", "p_q_5_atkd_ts_betw_c",
+                      "p_tot_atkd_betw_c_ab", "p_tot_atkd_betw_c_i",
+                      "p_tot_atkd_indeg_c_i", "p_tot_atkd_ts_betw_c"
+                      ],
       "y_col_name": "p_dead",
       "info_col_names": [
         "instance",
@@ -15,12 +18,15 @@
       ]
     },
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_12/test_1000_n_20_s.tsv",
-      "X_col_names": [
-        "p_atkd_a",
-        "p_tot_atkd_betw_c_i",
-        "p_tot_atkd_ts_betw_c"
-      ],
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn/test_mn.tsv",
+      "X_col_names": ["p_atkd_a", "p_atkd_ds", "p_atkd_ts",
+                      "p_q_4_atkd_betw_c_ab", "p_q_4_atkd_betw_c_i",
+                      "p_q_4_atkd_indeg_c_i", "p_q_4_atkd_ts_betw_c",
+                      "p_q_5_atkd_betw_c_ab", "p_q_5_atkd_betw_c_i",
+                      "p_q_5_atkd_indeg_c_i", "p_q_5_atkd_ts_betw_c",
+                      "p_tot_atkd_betw_c_ab", "p_tot_atkd_betw_c_i",
+                      "p_tot_atkd_indeg_c_i", "p_tot_atkd_ts_betw_c"
+                      ],
       "y_col_name": "p_dead",
       "info_col_names": [
         "instance",
@@ -32,7 +38,7 @@
   "model_trainings": [
     {
       "dataset_num": 0,
-      "output_dir": "/home/agostino/Documents/Simulations/test_mp_12",
+      "output_dir": "/home/agostino/Documents/Simulations/test_mp_mn",
       "model_name": "ridgecv",
       "model_kind": "regression",
       "variance_threshold": true,
@@ -42,7 +48,7 @@
     },
     {
       "dataset_num": 0,
-      "output_dir": "/home/agostino/Documents/Simulations/test_mp_12",
+      "output_dir": "/home/agostino/Documents/Simulations/test_mp_mn",
       "model_name": "DecisionTreeRegressor",
       "model_kind": "regression",
       "variance_threshold": true,
@@ -55,6 +61,7 @@
   "plots": [
     {
       "name": "cost_by_atk_size_many",
+      "output_fpath": "",
       "ax_x_label": "No. of attacked power nodes",
       "ax_y_label": "Measured fraction",
       "overlays": [

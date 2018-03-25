@@ -82,24 +82,6 @@ def uar_layout(G, span, center, seed=None):
     return pos_by_node
 
 
-def create_1to1_dep(G1, G2):
-    if G1.number_of_nodes() != G2.number_of_nodes():
-        raise ValueError('Networks have a different number of nodes, cannot create a symmetric 1-to-1 dependency')
-
-    Inter_G = nx.Graph()
-    Inter_G.add_nodes_from(G1.nodes(data=True))
-    Inter_G.add_nodes_from(G2.nodes(data=True))
-
-    sorted_G1_nodes = sorted(G1.nodes(), key=sf.natural_sort_key)
-    sorted_G2_nodes = sorted(G2.nodes(), key=sf.natural_sort_key)
-
-    # for node1, node2 in zip(G1.nodes(), G2.nodes()):
-    for node1, node2 in zip(sorted_G1_nodes, sorted_G2_nodes):
-        Inter_G.add_edge(node1, node2)
-
-    return Inter_G
-
-
 def create_n_to_n_dep(G1, G2, n, max_tries=10, seed=None):
     if not isinstance(n, integer_types):
         raise TypeError("n is not an integer")
@@ -253,8 +235,6 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
     elif com_access_pts < 0:
         raise ValueError('com_access_pts is not a positive number')
 
-    # logger.info('create_k_to_n_dep start')
-
     my_random = random.Random(seed)
 
     Inter_G = nx.DiGraph()
@@ -384,12 +364,10 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
             for chosen_other in chosen_other_nodes:
                 Inter_G.add_edge(chosen_other, node)  # a relay provides the service
 
-    # in the k-n description, an arc (a, b) means a offers services to be
-    # usually though, we want (a, b) to mean a depends from b
+    # in the k-n description, an arc (a, b) means "a supports b", but this is not very convenient
+    # we prefer to represent the same dependencies with reversed arcs, so that (a, b) means "a depends from b"
     if arc_dir == 'dependeds_from':
         nx.reverse(Inter_G, copy=False)
-
-    # logger.info('create_k_to_n_dep finish')
 
     return Inter_G
 
@@ -890,7 +868,7 @@ def RT_nested_Smallworld(n, avg_k, d_0, alpha, beta, q_rw, subnet_cnt=None, max_
                 tries += 1
 
         if tries == max_tries:
-            raise RuntimeError("Could not generate a connected sub-network of size "
+            raise RuntimeError("Could not generate a connected sub-network of size {} "
                                "in {} attempts.".format(subnet_size, max_tries))
 
     # relabel sub-networks so their node ids are distinct and copy them to a single graph
@@ -1636,16 +1614,13 @@ def run(conf_fpath):
         max_matching_name = config.get('build_inter', 'max_matching_name')
         mm_I = nx.Graph()
         mm_I.graph['name'] = max_matching_name
+        for node in A.nodes():
+            mm_I.add_node(node, {'network': A.graph['name']})
+        for node in B.nodes():
+            mm_I.add_node(node, {'network': B.graph['name']})
         matching_edge_dict = nx.max_weight_matching(I.to_undirected())
         matching_adjlist = list(matching_edge_dict.items())
         mm_I.add_edges_from(matching_adjlist)
-
-        for node in mm_I.nodes():
-            if A.has_node(node):
-                mm_I.node[node]['network'] = A.graph['name']
-            else:
-                mm_I.node[node]['network'] = B.graph['name']
-
         nx.write_graphml(mm_I, os.path.join(output_dir, max_matching_name + '.graphml'))
 
     if config.has_option('misc', 'produce_ab_union'):

@@ -142,6 +142,200 @@ def compare_files_by_line(fpath1, fpath2, silent=True):
     return not found_diff
 
 
+def is_graph_equal(G1, G2, data=False):
+    if G1.is_directed() != G2.is_directed():
+        return False
+
+    if G1.is_multigraph() != G2.is_multigraph():
+        return False
+
+    if G1.name != G2.name:
+        return False
+
+    if data is True:
+        if G1.graph != G2.graph:
+            return False
+
+    if G1.number_of_nodes() != G2.number_of_nodes():
+        return False
+
+    nodes_1 = sorted(G1.nodes(data=data))
+    nodes_2 = sorted(G2.nodes(data=data))
+    for idx in range(0, len(nodes_1)):
+        # if the nodes have a data dict, this also compares its keys and values
+        if nodes_1[idx] != nodes_2[idx]:
+            return False
+
+    if G1.number_of_edges() != G2.number_of_edges():
+        return False
+
+    # NetworkX can find edge differences quite easily
+    edge_diff_graph = nx.symmetric_difference(G1, G2)
+    edge_diff = edge_diff_graph.edges(data=False)
+    if len(edge_diff) > 0:
+        return False
+
+    # two undirected graphs can have the same edges represented differently, e.g. (1, 2) vs (2, 1),
+    # so we ask the edge data to NetworkX, which handles those differences
+    if data is True:
+        edges_1 = sorted(G1.edges(data=False))
+        for u, v in edges_1:
+            if G1.get_edge_data(u, v) != G2.get_edge_data(u, v):
+                return False
+
+    return True
+
+
+def graph_diff(G1, G2, data=False):
+    diff = ''
+
+    if G1.is_directed() != G2.is_directed():
+        diff += 'Different types of graphs\n'
+        return diff
+
+    if G1.is_multigraph() != G2.is_multigraph():
+        diff += 'Different types of graphs\n'
+        return diff
+
+    if G1.name != G2.name:
+        diff += 'Graphs have different names\n'
+        diff += 'G1 name: {}\n'.format(G1.name)
+        diff += 'G2 name: {}\n'.format(G2.name)
+
+    if data is True:
+        if G1.graph != G2.graph:
+            diff += 'Graphs have different data\n'
+            diff += 'G1 data: {}\n'.format(G1.graph)
+            diff += 'G2 data: {}\n'.format(G2.graph)
+
+    node_cnt_1 = G1.number_of_nodes()
+    node_cnt_2 = G2.number_of_nodes()
+    if node_cnt_1 != node_cnt_2:
+        diff += 'Graphs have different node counts\n'
+        diff += 'G1 node count: {}\n'.format(node_cnt_1)
+        diff += 'G2 node count: {}\n'.format(node_cnt_2)
+
+    nodes_1 = set(G1.nodes(data=False))
+    nodes_2 = set(G2.nodes(data=False))
+
+    node_diff_1 = nodes_1 - nodes_2
+    if len(node_diff_1) > 0:
+        node_diff_1 = sorted(node_diff_1)
+        diff += 'Nodes exclusive to G1\n'
+        for node in node_diff_1:
+            diff += '{}\n'.format(node)
+
+    node_diff_2 = nodes_2 - nodes_1
+    if len(node_diff_2) > 0:
+        node_diff_2 = sorted(node_diff_2)
+        diff += 'Nodes exclusive to G2\n'
+        for node in node_diff_2:
+            diff += '{}\n'.format(node)
+
+    # compare node data only if the graphs have the same nodes
+    if data is True and len(node_diff_1) == 0 and len(node_diff_2) == 0:
+        nodes_1 = sorted(G1.nodes(data=True))
+        nodes_2 = sorted(G2.nodes(data=True))
+        for idx in range(0, len(nodes_1)):
+            if nodes_1[idx] != nodes_2[idx]:
+                diff += 'Node {} has different data\n'.format(nodes_1[idx][0])
+                diff += 'in G1: {}\n'.format(nodes_1[idx][1])
+                diff += 'in G2: {}\n'.format(nodes_2[idx][1])
+
+    edge_cnt_1 = G1.number_of_edges()
+    edge_cnt_2 = G2.number_of_edges()
+    if edge_cnt_1 != edge_cnt_2:
+        diff += 'Graphs have different edge counts\n'
+        diff += 'G1 edge count: {}\n'.format(edge_cnt_1)
+        diff += 'G2 edge count: {}\n'.format(edge_cnt_2)
+
+    # edge diff only works if the graphs have the same nodes
+    if len(node_diff_1) == 0 and len(node_diff_2) == 0:
+        edge_diff_graph_1 = nx.difference(G1, G2)
+        edge_diff_1 = edge_diff_graph_1.edges(data=False)
+        if len(edge_diff_1) > 0:
+            # if the graph is undirected, adopt this edge representation (1, 2) over this (2, 1)
+            if G1.is_directed() is False:
+                edge_diff_1 = [sorted(edge) for edge in edge_diff_1]
+            edge_diff_1 = sorted(edge_diff_1)
+            diff += 'Edges exclusive to G1\n'
+            for edge in edge_diff_1:
+                diff += '{}\n'.format(edge)
+
+        edge_diff_graph_2 = nx.difference(G2, G1)
+        edge_diff_2 = edge_diff_graph_2.edges(data=False)
+        if len(edge_diff_2) > 0:
+            # if the graph is undirected, adopt this edge representation (1, 2) over this (2, 1)
+            if G2.is_directed() is False:
+                edge_diff_2 = [sorted(edge) for edge in edge_diff_2]
+            edge_diff_2 = sorted(edge_diff_2)
+            diff += 'Edges exclusive to G2\n'
+            for edge in edge_diff_2:
+                diff += '{}\n'.format(edge)
+
+        # compare edge data only if the graphs have the same edges
+        if data is True and len(edge_diff_1) == 0 and len(edge_diff_2) == 0:
+            edges_1 = G1.edges(data=False)
+            if G1.is_directed() is False:
+                edges_1 = [sorted(edge) for edge in edges_1]
+            edges_1 = sorted(edges_1)
+            for u, v in edges_1:
+                # two undirected graphs can have the same edges represented differently, e.g. (1, 2) vs (2, 1),
+                # so we ask the edge data to NetworkX, which handles those differences
+                edge_data_1 = G1.get_edge_data(u, v)
+                edge_data_2 = G2.get_edge_data(u, v)
+                if edge_data_1 != edge_data_2:
+                    diff += 'Edge ({}, {}) has different data\n'.format(u, v)
+                    diff += 'in G1: {}\n'.format(edge_data_1)
+                    diff += 'in G2: {}\n'.format(edge_data_2)
+
+    return diff
+
+
+def compare_link_pos(G1, G2):
+    if G1.is_directed() != G2.is_directed():
+        return 'Cannot compare directed and undirected graphs'
+
+    if G1.is_directed() is False:
+        return 'Comparison between undirected graphs not implemented yet'
+
+    diff = ''
+    edges_0 = G1.edges(data=False)
+    edges_1 = G2.edges(data=False)
+
+    edge_cnt_0 = len(edges_0)
+    edge_cnt_1 = len(edges_1)
+    if edge_cnt_0 != edge_cnt_1:
+        diff += 'Graphs have different edge counts\n'
+        diff += 'G1 edge count: {}\n'.format(edge_cnt_0)
+        diff += 'G2 edge count: {}\n'.format(edge_cnt_1)
+
+    edge_pos_0 = []
+    for edge in edges_0:
+        src_node = G1.node[edge[0]]
+        dst_node = G1.node[edge[1]]
+        pos_arc = (src_node['x'], src_node['y'], dst_node['x'], dst_node['y'])
+        edge_pos_0.append(pos_arc)
+
+    edge_pos_1 = []
+    for edge in edges_1:
+        src_node = G2.node[edge[0]]
+        dst_node = G2.node[edge[1]]
+        pos_arc = (src_node['x'], src_node['y'], dst_node['x'], dst_node['y'])
+        edge_pos_1.append(pos_arc)
+
+    edge_pos_0 = sorted(edge_pos_0)
+    edge_pos_1 = sorted(edge_pos_1)
+
+    for idx in range(0, edge_cnt_0):
+        edge_0 = edge_pos_0[idx]
+        edge_1 = edge_pos_1[idx]
+        if edge_0 != edge_1:
+            diff += 'edge_0: {}\nedge_1: {}\n'.format(edge_0, edge_1)
+
+    return diff
+
+
 def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x_shift_a=0.0, y_shift_a=0.0,
                       x_shift_b=0.0, y_shift_b=0.0, stretch=1.0, draw_labels=False, draw_nodes_kwargs={},
                       draw_edges_kwargs={}, draw_labels_kwargs={}):

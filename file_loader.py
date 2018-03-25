@@ -22,12 +22,10 @@ class FileLoader:
             graph = self.loaded[fpath]
             # print('found fpath {}'.format(fpath))  # debug
         else:
-            if len(self.loaded) > self.cache_size:
+            if len(self.loaded) >= self.cache_size:
                 stalest = min(self.last_hit.iterkeys(), key=(lambda key: self.last_hit[key]))
-                # print('replacing stalest {}'.format(stalest))  # debug
                 del self.loaded[stalest]
                 del self.last_hit[stalest]
-            # print('loading fpath {}'.format(fpath))  # debug
             graph = nx.read_graphml(fpath, node_type=node_type)
             self.loaded[fpath] = graph
         self.last_hit[fpath] = time.clock()
@@ -43,7 +41,7 @@ class FileLoader:
         if fpath in self.loaded:
             json_dict = self.loaded[fpath]
         else:
-            if len(self.loaded) > self.cache_size:
+            if len(self.loaded) >= self.cache_size:
                 stalest = min(self.last_hit.iterkeys(), key=(lambda key: self.last_hit[key]))
                 del self.loaded[stalest]
                 del self.last_hit[stalest]

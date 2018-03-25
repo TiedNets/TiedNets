@@ -48,8 +48,8 @@
   "plots": [
     {
       "name": "deaths_and_preds_by_atk_size_many",
-      "ax_x_label": "Nr. of resilient nodes",
-      "ax_y_label": "Average nr. of total failed nodes",
+      "ax_x_label": "No. of strengthened nodes",
+      "ax_y_label": "Average no. of total failed nodes",
       "overlays": [
         {
           "dataset_num": 0,

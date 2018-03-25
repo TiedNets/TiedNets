@@ -1,8 +1,14 @@
+import os
+import shutil
 import networkx as nx
 from collections import defaultdict
 import netw_creator as nc
+import shared_functions as sf
 
 __author__ = 'Agostino Sturaro'
+
+this_dir = os.path.normpath(os.path.dirname(__file__))
+logging_conf_fpath = os.path.join(this_dir, 'logging_base_conf.json')
 
 
 def test_assign_power_roles():
@@ -436,3 +442,278 @@ def test_calc_transm_subst_betweenness():
     results = nc.calc_transm_subst_betweenness(A, B, I)
     expected = {'D0': 0.0, 'D1': 0.0, 'T0': 4./6, 'T1': 2./6, 'G0': 0.0, 'G1': 0.0, 'R0': 0.0, 'R1': 0.0, 'C0': 0.0}
     assert results == expected
+
+
+def test_is_graph_equal():
+    # directed vs undirected
+    G1 = nx.Graph()
+    G2 = nx.DiGraph()
+    assert sf.is_graph_equal(G1, G2) is False
+
+    # simple graph vs multigraph
+    G2 = nx.MultiGraph()
+    assert sf.is_graph_equal(G1, G2) is False
+
+    G2 = nx.Graph()
+    assert sf.is_graph_equal(G1, G2) is True
+
+    # different names
+    G1.name = 'G'
+    G2.name = 'G2'
+    assert sf.is_graph_equal(G1, G2) is False
+
+    G2.name = 'G'
+    assert sf.is_graph_equal(G1, G2) is True
+
+    # different graph data
+    G1.graph['color'] = 'black'
+    G2.graph['color'] = 'white'
+    assert sf.is_graph_equal(G1, G2, True) is False
+    assert sf.is_graph_equal(G1, G2, False) is True
+
+    G2.graph['color'] = 'black'
+    assert sf.is_graph_equal(G1, G2, True) is True
+
+    # different number of nodes
+    G1.add_nodes_from([0, 1, 2])
+    assert sf.is_graph_equal(G1, G2) is False
+
+    G2.add_nodes_from([0, 1, 2])
+    assert sf.is_graph_equal(G1, G2) is True
+
+    # different nodes
+    G1.add_node(3)
+    G2.add_node(4)
+    assert sf.is_graph_equal(G1, G2) is False
+
+    G1.add_node(4)
+    G2.add_node(3)
+    assert sf.is_graph_equal(G1, G2) is True
+
+    # different node data
+    G1.node[0]['color'] = 'black'
+    G2.node[0]['color'] = 'white'
+    assert sf.is_graph_equal(G1, G2, True) is False
+    assert sf.is_graph_equal(G1, G2, False) is True
+
+    G2.node[0]['color'] = 'black'
+    assert sf.is_graph_equal(G1, G2, True) is True
+
+    # different edge count
+    G1.add_edges_from([(0, 1), (1, 2)])
+    G2.add_edge(0, 1)
+    assert sf.is_graph_equal(G1, G2) is False
+
+    G2.add_edge(1, 2)
+    assert sf.is_graph_equal(G1, G2) is True
+
+    # different edges
+    G1.add_edge(2, 3)
+    G2.add_edge(3, 4)
+    assert sf.is_graph_equal(G1, G2) is False
+
+    G1.add_edge(3, 4)
+    G2.add_edge(2, 3)
+    assert sf.is_graph_equal(G1, G2) is True
+
+    # different edges (loops)
+    G1.add_edge(0, 0)
+    G2.add_edge(4, 4)
+    assert sf.is_graph_equal(G1, G2) is False
+
+    G1.add_edge(4, 4)
+    G2.add_edge(0, 0)
+    assert sf.is_graph_equal(G1, G2) is True
+
+    # reset
+    G1 = nx.Graph()
+    G2 = nx.Graph()
+
+    # try to trick it by adding nodes in a different order
+    G1.add_edges_from([(2, 1), (0, 1)])
+    G2.add_edges_from([(0, 1), (1, 2)])
+    assert sf.is_graph_equal(G1, G2) is True
+
+    # different edge data
+    G1.edge[0][1]['color'] = 'black'
+    G2.edge[0][1]['color'] = 'white'
+    assert sf.is_graph_equal(G1, G2, True) is False
+
+    G2.edge[0][1]['color'] = 'black'
+    assert sf.is_graph_equal(G1, G2, True) is True
+
+    # reset to directed graphs
+    G1 = nx.DiGraph()
+    G2 = nx.DiGraph()
+
+    # different edges
+    G1.add_edge(0, 1)
+    G2.add_edge(1, 0)
+    assert sf.is_graph_equal(G1, G2) is False
+
+    G1.add_edge(1, 0)
+    G2.add_edge(0, 1)
+    assert sf.is_graph_equal(G1, G2) is True
+
+    # different edge data
+    G1.edge[0][1]['color'] = 'black'
+    G2.edge[0][1]['color'] = 'white'
+    assert sf.is_graph_equal(G1, G2, True) is False
+
+    G2.edge[0][1]['color'] = 'black'
+    assert sf.is_graph_equal(G1, G2, True) is True
+
+    G1.edge[1][0]['color'] = 'black'
+    assert sf.is_graph_equal(G1, G2, True) is False
+
+    G2.edge[1][0]['color'] = 'white'
+    assert sf.is_graph_equal(G1, G2, True) is False
+
+    G2.edge[1][0]['color'] = 'black'
+    assert sf.is_graph_equal(G1, G2, True) is True
+
+
+def test_graph_diff():
+    # directed vs undirected
+    G1 = nx.Graph()
+    G2 = nx.DiGraph()
+    diff = sf.graph_diff(G1, G2)
+    assert diff != ''
+
+    # simple graph vs multigraph
+    G2 = nx.MultiGraph()
+    diff = sf.graph_diff(G1, G2)
+    assert diff != ''
+
+    G2 = nx.Graph()
+    assert sf.graph_diff(G1, G2) == ''
+
+    # different names
+    G1.name = 'G'
+    G2.name = 'G2'
+    diff = sf.graph_diff(G1, G2)
+    assert diff != ''
+
+    G2.name = 'G'
+    assert sf.graph_diff(G1, G2) == ''
+
+    # different graph data
+    G1.graph['color'] = 'black'
+    G2.graph['color'] = 'white'
+    diff = sf.graph_diff(G1, G2, True)
+    assert diff != ''
+
+    assert sf.graph_diff(G1, G2, False) == ''
+
+    G2.graph['color'] = 'black'
+    assert sf.graph_diff(G1, G2, True) == ''
+
+    # different number of nodes
+    G1.add_nodes_from([0, 1, 2])
+    diff = sf.graph_diff(G1, G2)
+    assert diff != ''
+
+    G2.add_nodes_from([0, 1, 2])
+    assert sf.graph_diff(G1, G2) == ''
+
+    # different nodes
+    G1.add_node(3)
+    G2.add_node(4)
+    diff = sf.graph_diff(G1, G2)
+    assert diff != ''
+
+    G1.add_node(4)
+    G2.add_node(3)
+    assert sf.graph_diff(G1, G2) == ''
+
+    # different node data
+    G1.node[0]['color'] = 'black'
+    G2.node[0]['color'] = 'white'
+    diff = sf.graph_diff(G1, G2, True)
+    assert diff != ''
+
+    assert sf.graph_diff(G1, G2, False) == ''
+
+    G2.node[0]['color'] = 'black'
+    assert sf.graph_diff(G1, G2, True) == ''
+
+    # different edge count
+    G1.add_edges_from([(0, 1), (1, 2)])
+    G2.add_edge(0, 1)
+    diff = (G1, G2)
+    assert diff != ''
+
+    G2.add_edge(1, 2)
+    assert sf.graph_diff(G1, G2) == ''
+
+    # different edges
+    G1.add_edge(2, 3)
+    G2.add_edge(3, 4)
+    diff = (G1, G2)
+    assert diff != ''
+
+    G1.add_edge(3, 4)
+    G2.add_edge(2, 3)
+    assert sf.graph_diff(G1, G2) == ''
+
+    # different edges (loops)
+    G1.add_edge(0, 0)
+    G2.add_edge(4, 4)
+    diff = (G1, G2)
+    assert diff != ''
+
+    G1.add_edge(4, 4)
+    G2.add_edge(0, 0)
+    assert sf.graph_diff(G1, G2) == ''
+
+    # reset
+    G1 = nx.Graph()
+    G2 = nx.Graph()
+
+    # try to trick it by adding nodes in a different order
+    G1.add_edges_from([(2, 1), (0, 1)])
+    G2.add_edges_from([(0, 1), (1, 2)])
+    assert sf.graph_diff(G1, G2) == ''
+
+    # different edge data
+    G1.edge[0][1]['color'] = 'black'
+    G2.edge[0][1]['color'] = 'white'
+    diff = (G1, G2, True)
+    assert diff != ''
+
+    G2.edge[0][1]['color'] = 'black'
+    assert sf.graph_diff(G1, G2, True) == ''
+
+    # reset to directed graphs
+    G1 = nx.DiGraph()
+    G2 = nx.DiGraph()
+
+    # different edges
+    G1.add_edge(0, 1)
+    G2.add_edge(1, 0)
+    diff = (G1, G2)
+    assert diff != ''
+
+    G1.add_edge(1, 0)
+    G2.add_edge(0, 1)
+    assert sf.graph_diff(G1, G2) == ''
+
+    # different edge data
+    G1.edge[0][1]['color'] = 'black'
+    G2.edge[0][1]['color'] = 'white'
+    diff = (G1, G2, True)
+    assert diff != ''
+
+    G2.edge[0][1]['color'] = 'black'
+    assert sf.graph_diff(G1, G2, True) == ''
+
+    G1.edge[1][0]['color'] = 'black'
+    diff = (G1, G2, True)
+    assert diff != ''
+
+    G2.edge[1][0]['color'] = 'white'
+    diff = (G1, G2, True)
+    assert diff != ''
+
+    G2.edge[1][0]['color'] = 'black'
+    assert sf.graph_diff(G1, G2, True) == ''

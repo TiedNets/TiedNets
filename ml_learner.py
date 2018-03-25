@@ -4,6 +4,7 @@ import json
 import random
 import logging.config
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from sklearn import preprocessing
@@ -146,7 +147,7 @@ def plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label,
     min_z, max_z = np.min(ax_z_vec), np.max(ax_z_vec)
 
     fig, ax = setup_3d_axes(ax_x_label, ax_y_label, ax_z_label,
-                       xlim=(min_x, max_x), ylim=(min_y, max_y), zlim=(min_z, max_z))
+                            xlim=(min_x, max_x), ylim=(min_y, max_y), zlim=(min_z, max_z))
 
     if surface is True:
         surf = ax.plot_trisurf(ax_x_vec, ax_y_vec, ax_z_vec, cmap=cm.jet, linewidth=0, alpha=0.8)
@@ -594,7 +595,7 @@ def plot_rnd_scenarios(X, y, info, info_col_names, predictor, xlabel, ylabel, rn
 
 # draw a graph showing the mean error for each #attacks, and the standard deviation of this error
 def plot_cost_by_atk_size(atk_sizes, costs, std_devs):
-    fig, ax = setup_2d_axes('# of attacked power nodes', 'Measured fraction', ylim=(0, 1))
+    fig, ax = setup_2d_axes('# of attacked power nodes', 'Measured fraction', ylim=(0, 0.5))
     line_1 = {'x': atk_sizes, 'y': costs, 'style': 'b-o', 'label': 'Avg abs prediction error'}
     line_2 = {'x': atk_sizes, 'y': std_devs, 'style': 'r-o', 'label': 'Standard deviation'}
     plot_2d_lines([line_1, line_2], ax)
@@ -749,6 +750,7 @@ def make_plots(config, models):
 
             # TODO: refactor this, most functions could simply use the info column instead of its index
             atks_cnt_col = info_col_names.index('#atkd_a')
+            # atks_cnt_col = info_col_names.index('safe_nodes_count')
             plain_ds_X, ds_y, ds_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
 
             if 'filter' in plot_conf:
@@ -818,6 +820,10 @@ def make_plots(config, models):
                 ax_x_label = plot_conf['ax_x_label']
                 ax_y_label = plot_conf['ax_y_label']
                 fig, ax = setup_2d_axes(ax_x_label, ax_y_label)
+                if plot_name == 'cost_by_atk_size_many':
+                    ax.set_ylim(0, 1.0)
+                if plot_name == 'deaths_and_preds_by_atk_size_many':
+                    ax.set_ylim(0, 1.1)
                 ax.grid(linestyle='-', linewidth=0.5)
 
             for overlay in overlays:
@@ -831,6 +837,7 @@ def make_plots(config, models):
 
                 # TODO: refactor this, most functions could simply use the info column instead of its index
                 atks_cnt_col = info_col_names.index('#atkd_a')
+                # atks_cnt_col = info_col_names.index('safe_nodes_count')
                 plain_ds_X, ds_y, ds_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
 
                 x_multiplier = 1
@@ -880,10 +887,10 @@ def make_plots(config, models):
                             plt.plot(x_multiplier * atk_sizes, y_multiplier * avg_deaths, style, label=data_label)
                         else:
                             plt.plot(atk_sizes, avg_deaths, style, label=data_label)
-                        # if avg_deaths.shape[0] == 1:
-                        #     plt.axhline(avg_deaths[0], color='red', linestyle='--', label=data_label)
-                        # else:
-                        #     plt.plot(atk_sizes, avg_deaths, style, label=data_label)
+                            # if avg_deaths.shape[0] == 1:
+                            #     plt.axhline(avg_deaths[0], color='red', linestyle='--', label=data_label)
+                            # else:
+                            #     plt.plot(atk_sizes, avg_deaths, style, label=data_label)
 
             ax.legend()
             plt.tight_layout()
@@ -891,7 +898,7 @@ def make_plots(config, models):
 
 
 def run():
-    conf_fpath = './dataset2.json'
+    conf_fpath = './dataset1.json'
     with open(conf_fpath) as conf_file:
         config = json.load(conf_file)
 
@@ -1024,8 +1031,6 @@ def run_old():
     # find columns
     train_X, train_y, train_info = load_dataset(train_set_fpath, X_col_names, y_col_name, info_col_names)
 
-    # model, transformers, transf_train_X, transf_X_col_names = \
-    #     train_regr_model(train_X, train_y, X_col_names, True, True, True, model_name, 'rfecv')
     model, transformers, transf_train_X, transf_X_col_names = \
         train_regr_model(train_X, train_y, X_col_names, True, False, True, model_name, None)
 
