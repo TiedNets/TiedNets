@@ -130,12 +130,6 @@ def make_uniform_grid_xyz(x_vec, y_vec, z_vec, res_X, res_Y):
     return x_grid, y_grid, z_grid
 
 
-def transform_and_predict(X, poly_feat, scaler, clf):
-    transformed_X = poly_feat.transform(X)
-    transformed_X = scaler.transform(transformed_X)
-    return clf.predict(transformed_X)
-
-
 def plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label, scatter=True,
                            project=False, surface=False):
     if len(ax_x_vec.shape) != 1 or len(ax_y_vec.shape) != 1:
@@ -421,88 +415,98 @@ def iterate_sfm_transform(fitted_sfm, unfitted_X, max_feature_cnt, max_rounds, b
     return fitted_X, fitted_sfm
 
 
-def train_regr_model(train_X, train_y, X_col_names, var_thresh, poly_feat, standardize, model_name, feat_sel_name):
+# We pick an estimator (e.g. linear regression) and put it aside.
+# We apply some preprocessing on the dataset (e.g. standardization), without using the estimator.
+# Then, if we want to do feature selection, we pick a selector (e.g. Recursive Feature Elimination).
+# The selector uses the estimator and gets fit with the dataset,
+# then we use the selector to transform the dataset, performing the actual feature selection.
+# Finally, we fit (train) the estimator (model) using the prepared dataset (preprocessed and feature-selected).
+# This model can be used to make predictions immediately on the transformed data used to train it,
+# or to make predictions on other datasets (e.g. the test set), provided we apply the same transformations first.
+def train_regr_model(train_X, train_y, X_col_names, model_conf):
     global logger
     # make a local copy of the objects we received as parameters and might change
     train_X = train_X.copy()  # make a local copy of the array
     X_col_names = list(X_col_names)  # make a local copy of the list
-    model_name = model_name.lower()
+
+    model_name = model_conf['model']['name'].lower()
+    model_kwargs = model_conf['model']['kwargs']
+    logger.info('Model name: {}'.format(model_name))
+
+    # LinearRegression works as polynomial regression if we apply PolynomialFeatures to the dataset.
+    # RidgeCV, LassoCV and ElasticNetCV are linear regression models with different regularizations.
+    # Regularization is used to lower the weight given to less important and useless features.
+    # They have built-in cross validation (cv) that is used to tune the hyperparameters, like alpha.
+    if model_name == 'linearregression':
+        clf = linear_model.LinearRegression(**model_kwargs)
+    elif model_name == 'ridgecv':
+        clf = linear_model.RidgeCV(**model_kwargs)
+    elif model_name == 'lassocv':
+        clf = linear_model.LassoCV(**model_kwargs)
+    elif model_name == 'elasticnetcv':
+        clf = linear_model.ElasticNetCV(**model_kwargs)
+    elif model_name == 'decisiontreeregressor':
+        clf = tree.DecisionTreeRegressor(**model_kwargs)
+    else:
+        raise ValueError('Unsupported model name: "{}"'.format(model_name))
 
     # objects for preprocessing and feature selection, in the order they were used
     transformers = []
 
-    if var_thresh is True:
-        base_feature_cnt = train_X.shape[1]
-        vt_sel = VarianceThreshold()
-        train_X = vt_sel.fit_transform(train_X)
-        vt_feature_mask = vt_sel.get_support()
-        X_col_names = [item for item_num, item in enumerate(X_col_names) if vt_feature_mask[item_num]]
-        sel_feature_cnt = train_X.shape[1]
-        logger.debug('VarianceThreshold removed {} features'.format(base_feature_cnt - sel_feature_cnt))
-        transformers.append(vt_sel)
+    steps = model_conf['steps']
+    for step_num, step in enumerate(steps):
+        step_name = step['name'].lower()
+        step_kwargs = step['kwargs']
+        selector = None
+        logger.info('Step {}: {}'.format(step_num, step_name))
 
-    # create polynomial features, interactions allowing us to learn a more complex prediction function
-    if poly_feat is True:
-        poly = preprocessing.PolynomialFeatures(4, interaction_only=False)
-        train_X = poly.fit_transform(train_X)
-        X_col_names = poly.get_feature_names(X_col_names)
-        logger.debug('Polynomial X_col_names = {}'.format(X_col_names))
-        logger.debug('train_X with polynomial features (first 2 rows)\n{}'.format(train_X[range(2), :]))
-        transformers.append(poly)
+        if step_name == 'variancethreshold':
+            base_feature_cnt = train_X.shape[1]
+            vt_sel = VarianceThreshold(**step_kwargs)
+            train_X = vt_sel.fit_transform(train_X)
+            vt_feature_mask = vt_sel.get_support()
+            X_col_names = [item for item_num, item in enumerate(X_col_names) if vt_feature_mask[item_num]]
+            sel_feature_cnt = train_X.shape[1]
+            logger.debug('VarianceThreshold removed {} features'.format(base_feature_cnt - sel_feature_cnt))
+            transformers.append(vt_sel)
 
-    # apply a standardization step
-    if standardize is True:
-        scaler = preprocessing.StandardScaler()
-        train_X = scaler.fit_transform(train_X)
-        transformers.append(scaler)
+        # create polynomial features, interactions allowing us to learn a more complex prediction function
+        elif step_name == 'polynomialfeatures':
+            poly = preprocessing.PolynomialFeatures(**step_kwargs)
+            train_X = poly.fit_transform(train_X)
+            X_col_names = poly.get_feature_names(X_col_names)
+            logger.debug('Polynomial X_col_names = {}'.format(X_col_names))
+            logger.debug('train_X with polynomial features (first 2 rows)\n{}'.format(train_X[range(2), :]))
+            transformers.append(poly)
 
-    if model_name == 'linearregression':
-        # plain linear regression can work as polynomial regression too
-        clf = linear_model.LinearRegression()
+        # apply a standardization step
+        elif step_name == 'standardscaler':
+            scaler = preprocessing.StandardScaler(**step_kwargs)
+            train_X = scaler.fit_transform(train_X)
+            transformers.append(scaler)
 
-    # # other polynomial regression models with built-in regularization and cross validation
-    # # regularization is used to lower the weight given to less important and useless features
-    # # cross validation is used to tune the hyperparameters, like alpha
-    elif model_name == 'ridgecv':
-        alphas = (0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 25.0, 50.0)
-        clf = linear_model.RidgeCV(alphas)
-    elif model_name == 'lassocv':
-        clf = linear_model.LassoCV(max_iter=100000)
-    elif model_name == 'elasticnetcv':
-        l1_ratios = [.01, .05, .1, .3, .5, .7, .9, .95, .99, 1]
-        clf = linear_model.ElasticNetCV(l1_ratio=l1_ratios, cv=5, max_iter=40000)
-    elif model_name == 'decisiontreeregressor':
-        # other useful parameters are max_depth and min_samples_leaf
-        clf = tree.DecisionTreeRegressor(criterion='mse', max_depth=3)
-    else:
-        raise ValueError('Unsupported value for parameter model_name')
-
-    # model selection by feature selection
-    if feat_sel_name not in [None, '']:
-        feat_sel_name = feat_sel_name.lower()
-        if feat_sel_name == 'rfe':
-            selector = RFE(clf, step=1, n_features_to_select=20)
-        elif feat_sel_name == 'rfecv':
-            selector = RFECV(clf, step=1, cv=5, scoring='neg_mean_absolute_error')
-        elif feat_sel_name == 'selectfrommodel':
-            selector = SelectFromModel(clf)
+        elif step_name == 'rfe':
+            selector = RFE(clf, **step_kwargs)
+        elif step_name == 'rfecv':
+            selector = RFECV(clf, **step_kwargs)
+        elif step_name == 'selectfrommodel':
+            selector = SelectFromModel(clf, **step_kwargs)
         else:
-            raise ValueError('Unsupported value for parameter feat_sel_name')
+            raise ValueError('Unsupported step name: "{}"'.format(step_name))
 
-        selector.fit(train_X, train_y)
+        if selector is not None:
+            selector.fit(train_X, train_y)
 
-        if feat_sel_name == 'selectfrommodel':
-            train_X, selector = iterate_sfm_transform(selector, train_X, 20, 100, 0.01, 0.01)
-        else:
-            train_X = selector.transform(train_X)
+            if step_name == 'selectfrommodel':
+                train_X, selector = iterate_sfm_transform(selector, train_X, 20, 100, 0.01, 0.01)
+            else:
+                train_X = selector.transform(train_X)
 
-        sel_feature_mask = selector.get_support()
-        X_col_names = [item for item_num, item in enumerate(X_col_names) if sel_feature_mask[item_num]]
-        logger.info('Selected features = {}'.format(X_col_names))
-        logger.debug('After final transform, train_X.shape[1] = {}'.format(train_X.shape[1]))
-
-        # TODO: make sure this is correct, maybe prediction can only be done with selector and not with clf
-        transformers.append(selector)
+            sel_feature_mask = selector.get_support()
+            X_col_names = [item for item_num, item in enumerate(X_col_names) if sel_feature_mask[item_num]]
+            logger.info('Selected features = {}'.format(X_col_names))
+            logger.debug('After transform, train_X.shape[1] = {}'.format(train_X.shape[1]))
+            transformers.append(selector)
 
     clf.fit(train_X, train_y)
     if model_name in ['linearregression', 'ridgecv', 'lassocv', 'elasticnetcv']:
@@ -514,7 +518,7 @@ def train_regr_model(train_X, train_y, X_col_names, var_thresh, poly_feat, stand
     if model_name in ['ridgecv', 'lassocv', 'elasticnetcv']:
         logger.info('alpha = {}'.format(clf.alpha_))
 
-    logger.debug('learning done')
+    logger.debug('Learning completed')
 
     return clf, transformers, train_X, X_col_names
 
@@ -676,15 +680,19 @@ def plot_label_cnts_by_atk_size(labels, atk_sizes, label_cnts):
     plt.show()
 
 
+# Sample usage
+def test_plot_label_cnts_by_atk_size():
+    # [(label, [(atk_size, label_cnt)])]
+    labels = ['a1', 'p1', 'a2', 'p2']
+    height_lists = [[10, 20], [20, 30], [30, 40], [40, 50]]
+    plot_label_cnts_by_atk_size(labels, [1, 2], height_lists)
+
+
 def train_model_on_dataset(config, model_num):
     model_conf = config['model_trainings'][model_num]
     dataset_num = model_conf['dataset_num']
     output_dir = model_conf['output_dir']
-    model_name = model_conf['model_name']
-    var_thresh = model_conf['variance_threshold']
-    poly_feat = model_conf['polynomial_features']
-    standardize = model_conf['standardize']
-    feat_sel_name = model_conf['feature_selection']
+    model_name = model_conf['model']['name'].lower()
 
     dataset = config['datasets'][dataset_num]
     dataset_fpath = dataset['fpath']
@@ -696,9 +704,9 @@ def train_model_on_dataset(config, model_num):
     train_X, train_y, train_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
 
     model, transformers, train_X, transf_X_col_names = \
-        train_regr_model(train_X, train_y, X_col_names, var_thresh, poly_feat, standardize, model_name, feat_sel_name)
+        train_regr_model(train_X, train_y, X_col_names, model_conf)
 
-    if 'tree' in model_name.lower():
+    if 'tree' in model_name:
         # save a representation of the learned decision tree, to plot it, install graphviz
         # it can be turned into an image by running a command like the following
         # dot -T png decision_tree.dot -o decision_tree.png
@@ -910,295 +918,6 @@ def run():
 
     make_plots(config, models)
 
-
-def run_old():
-
-    # train_set_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/equispaced_train_union.tsv'
-    # test_set_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/test_union.tsv'
-    # train_set_fpath = '/home/agostino/Documents/Sims/single_net_20170725/train_1000_n_20_s.tsv'
-    # test_set_fpath = '/home/agostino/Documents/Sims/single_net_20170725/test_1000_n_20_s.tsv'
-    # train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_12/train_1000_n_20_s.tsv'
-    # test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_12/test_1000_n_20_s.tsv'
-    # train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/train_2000_n_20_s_atkd_a.tsv'
-    # test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/test_2000_n_20_s_atkd_a.tsv'
-    # train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/train_2000_n_20_s_atkd_b.tsv'
-    # test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_11/test_2000_n_20_s_atkd_b.tsv'
-    train_set_fpath = '/home/agostino/Documents/Simulations/test_mp_mn/train_mn.tsv'
-    test_set_fpath = '/home/agostino/Documents/Simulations/test_mp_mn/test_mn.tsv'
-
-    output_dir = '/home/agostino/Documents/Simulations/test_mp_mn'
-    # output_dir = '/home/agostino/Documents/Simulations/test_mp_12/'
-
-    # X_col_names = ['p_atkd', 'p_atkd_a', 'p_atkd_b',
-    #                   'indeg_c_ab_q_1', 'indeg_c_ab_q_2', 'indeg_c_ab_q_3', 'indeg_c_ab_q_4', 'indeg_c_ab_q_5',
-    #                   'indeg_c_i_q_1', 'indeg_c_i_q_2', 'indeg_c_i_q_3', 'indeg_c_i_q_4', 'indeg_c_i_q_5',
-    #                   'rel_betw_c_q_1', 'rel_betw_c_q_2', 'rel_betw_c_q_3', 'rel_betw_c_q_4', 'rel_betw_c_q_5',
-    #                   'p_atkd_gen', 'p_atkd_ts', 'p_atkd_ds', 'p_atkd_rel', 'p_atkd_cc']
-    # y_col_name = 'p_dead'
-    # info_col_names = ['instance', 'seed', '#atkd']
-    # X_col_names = ['p_atkd_a', 'p_atkd_ds', 'p_atkd_gen', 'p_atkd_ts',
-    #                   'p_q_1_atkd_betw_c_a', 'p_q_1_atkd_betw_c_ab', 'p_q_1_atkd_betw_c_i',
-    #                   'p_q_1_atkd_deg_c_a', 'p_q_1_atkd_indeg_c_i',
-    #                   'p_q_1_atkd_katz_c_ab', 'p_q_1_atkd_katz_c_i', 'p_q_1_atkd_ts_betw_c',
-    #                   'p_q_2_atkd_betw_c_a', 'p_q_2_atkd_betw_c_ab',
-    #                   'p_q_2_atkd_deg_c_a', 'p_q_2_atkd_indeg_c_i',
-    #                   'p_q_2_atkd_katz_c_ab', 'p_q_2_atkd_katz_c_i', 'p_q_2_atkd_ts_betw_c',
-    #                   'p_q_3_atkd_betw_c_a', 'p_q_3_atkd_betw_c_ab', 'p_q_3_atkd_betw_c_i',
-    #                   'p_q_3_atkd_deg_c_a', 'p_q_3_atkd_indeg_c_i',
-    #                   'p_q_3_atkd_katz_c_ab', 'p_q_3_atkd_katz_c_i', 'p_q_3_atkd_ts_betw_c',
-    #                   'p_q_4_atkd_betw_c_a', 'p_q_4_atkd_betw_c_ab',
-    #                   'p_q_4_atkd_deg_c_a', 'p_q_4_atkd_indeg_c_i',
-    #                   'p_q_4_atkd_katz_c_ab', 'p_q_4_atkd_katz_c_i', 'p_q_4_atkd_ts_betw_c',
-    #                   'p_q_5_atkd_betw_c_a', 'p_q_5_atkd_betw_c_ab', 'p_q_5_atkd_betw_c_i',
-    #                   'p_q_5_atkd_deg_c_a', 'p_q_5_atkd_indeg_c_i',
-    #                   'p_q_5_atkd_katz_c_ab', 'p_q_5_atkd_katz_c_i', 'p_q_5_atkd_ts_betw_c',
-    #                   'p_tot_atkd_betw_c_a', 'p_tot_atkd_betw_c_ab', 'p_tot_atkd_betw_c_i',
-    #                   'p_tot_atkd_deg_c_a', 'p_tot_atkd_indeg_c_i',
-    #                   'p_tot_atkd_katz_c_ab', 'p_tot_atkd_katz_c_i', 'p_tot_atkd_ts_betw_c'
-    #                   ]
-    # very good set, p_tot_atkd_betw_c_ab can be cut
-    # X_col_names = ['p_atkd_ds',
-    #                   'p_q_5_atkd_betw_c_ab', 'p_q_5_atkd_betw_c_i',
-    #                   'p_q_5_atkd_indeg_c_i', 'p_q_5_atkd_ts_betw_c',
-    #                   'p_tot_atkd_betw_c_ab', 'p_tot_atkd_betw_c_i',
-    #                   'p_tot_atkd_indeg_c_i', 'p_tot_atkd_ts_betw_c'
-    #                   ]
-    # quite good set
-    # X_col_names = ['p_atkd_a', 'p_atkd_ds', 'p_atkd_ts',
-    #                   'p_q_4_atkd_betw_c_ab', 'p_q_4_atkd_betw_c_i',
-    #                   'p_q_4_atkd_indeg_c_i', 'p_q_4_atkd_ts_betw_c',
-    #                   'p_q_5_atkd_betw_c_ab', 'p_q_5_atkd_betw_c_i',
-    #                   'p_q_5_atkd_indeg_c_i', 'p_q_5_atkd_ts_betw_c',
-    #                   'p_tot_atkd_betw_c_ab', 'p_tot_atkd_betw_c_i',
-    #                   'p_tot_atkd_indeg_c_i', 'p_tot_atkd_ts_betw_c'
-    #                   ]
-    # X_col_names = ['p_tot_atkd_betw_c_i', 'p_atkd_cc']
-    # X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i']
-    X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_ts_betw_c']
-    # X_col_names = ['p_atkd_b', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_rel_betw_c']
-
-    # also good for trees
-    # X_col_names = ['p_atkd_a', 'p_tot_atkd_betw_c_i', 'p_tot_atkd_ts_betw_c', 'p_tot_atkd_betw_c_ab']
-
-    # X_col_names = ['p_tot_atkd_betw_c_i', 'p_atkd_a', 'p_q_4_atkd_betw_c_i', 'p_q_5_atkd_betw_c_i']
-    # X_col_names = ['p_atkd_ds', 'p_atkd_gen', 'p_atkd_ts',
-    #                   'p_q_1_atkd_betw_c_a', 'p_q_1_atkd_betw_c_ab', 'p_q_1_atkd_betw_c_i',
-    #                   'p_q_1_atkd_clos_c_a', 'p_q_1_atkd_clos_c_ab', 'p_q_1_atkd_clos_c_i',
-    #                   'p_q_1_atkd_deg_c_a', 'p_q_1_atkd_indeg_c_ab', 'p_q_1_atkd_indeg_c_i',
-    #                   'p_q_1_atkd_katz_c_ab', 'p_q_1_atkd_katz_c_i', 'p_q_1_atkd_ts_betw_c',
-    #                   'p_q_2_atkd_betw_c_a', 'p_q_2_atkd_betw_c_ab',
-    #                   'p_q_2_atkd_clos_c_a', 'p_q_2_atkd_clos_c_ab', 'p_q_2_atkd_clos_c_i',
-    #                   'p_q_2_atkd_deg_c_a', 'p_q_2_atkd_indeg_c_ab', 'p_q_2_atkd_indeg_c_i',
-    #                   'p_q_2_atkd_katz_c_ab', 'p_q_2_atkd_katz_c_i', 'p_q_2_atkd_ts_betw_c',
-    #                   'p_q_3_atkd_betw_c_a', 'p_q_3_atkd_betw_c_ab', 'p_q_3_atkd_betw_c_i',
-    #                   'p_q_3_atkd_clos_c_a', 'p_q_3_atkd_clos_c_ab', 'p_q_3_atkd_clos_c_i',
-    #                   'p_q_3_atkd_deg_c_a', 'p_q_3_atkd_indeg_c_ab', 'p_q_3_atkd_indeg_c_i',
-    #                   'p_q_3_atkd_katz_c_ab', 'p_q_3_atkd_katz_c_i', 'p_q_3_atkd_ts_betw_c',
-    #                   'p_q_4_atkd_betw_c_a', 'p_q_4_atkd_betw_c_ab',
-    #                   'p_q_4_atkd_clos_c_a', 'p_q_4_atkd_clos_c_ab', 'p_q_4_atkd_clos_c_i',
-    #                   'p_q_4_atkd_deg_c_a', 'p_q_4_atkd_indeg_c_ab', 'p_q_4_atkd_indeg_c_i',
-    #                   'p_q_4_atkd_katz_c_ab', 'p_q_4_atkd_katz_c_i', 'p_q_4_atkd_ts_betw_c',
-    #                   'p_q_5_atkd_betw_c_a', 'p_q_5_atkd_betw_c_ab', 'p_q_5_atkd_betw_c_i',
-    #                   'p_q_5_atkd_clos_c_a', 'p_q_5_atkd_clos_c_ab', 'p_q_5_atkd_clos_c_i',
-    #                   'p_q_5_atkd_deg_c_a', 'p_q_5_atkd_indeg_c_ab', 'p_q_5_atkd_indeg_c_i',
-    #                   'p_q_5_atkd_katz_c_ab', 'p_q_5_atkd_katz_c_i', 'p_q_5_atkd_ts_betw_c',
-    #                   'p_tot_atkd_betw_c_a', 'p_tot_atkd_betw_c_ab', 'p_tot_atkd_betw_c_i',
-    #                   'p_tot_atkd_clos_c_a', 'p_tot_atkd_clos_c_ab', 'p_tot_atkd_clos_c_i',
-    #                   'p_tot_atkd_deg_c_a', 'p_tot_atkd_indeg_c_ab', 'p_tot_atkd_indeg_c_i',
-    #                   'p_tot_atkd_katz_c_ab', 'p_tot_atkd_katz_c_i', 'p_tot_atkd_ts_betw_c'
-    #                   ]
-    # X_col_names = ['p_atkd_cc', 'p_atkd_ds', 'p_atkd_gen', 'p_atkd_rel', 'p_atkd_ts',
-    #                   'p_q_1_atkd_indeg_c_i', 'p_q_2_atkd_indeg_c_i', 'p_q_3_atkd_indeg_c_i', 'p_q_4_atkd_indeg_c_i',
-    #                   'p_q_5_atkd_indeg_c_i', 'p_tot_atkd_indeg_c_i',
-    #                   'p_q_1_atkd_ts_betw_c', 'p_q_2_atkd_ts_betw_c', 'p_q_3_atkd_ts_betw_c', 'p_q_4_atkd_ts_betw_c',
-    #                   'p_q_5_atkd_ts_betw_c', 'p_tot_atkd_ts_betw_c',
-    #                   'p_q_1_atkd_katz_c_ab', 'p_q_2_atkd_katz_c_ab', 'p_q_3_atkd_katz_c_ab', 'p_q_4_atkd_katz_c_ab',
-    #                   'p_q_5_atkd_katz_c_ab', 'p_tot_atkd_katz_c_ab'
-    #                   ]
-    y_col_name = 'p_dead'
-    # y_col_name = 'dead_lvl'
-    info_col_names = ['instance', 'seed', '#atkd_a']
-    # info_col_names = ['instance', 'seed', '#atkd_b']
-
-    atks_cnt_col = info_col_names.index('#atkd_a')
-    # atks_cnt_col = info_col_names.index('#atkd_b')
-
-    model_name = 'DecisionTreeRegressor'
-    # model_name = 'elasticnetcv'
-    # model_name = 'ridgecv'
-    model_kind = 'regression'
-
-    # find columns
-    train_X, train_y, train_info = load_dataset(train_set_fpath, X_col_names, y_col_name, info_col_names)
-
-    model, transformers, transf_train_X, transf_X_col_names = \
-        train_regr_model(train_X, train_y, X_col_names, True, False, True, model_name, None)
-
-    if 'tree' in model_name.lower():
-        # save a representation of the learned decision tree, to plot it, install graphviz
-        # it can be turned into an image by running a command like the following
-        # dot -T png decision_tree.dot -o decision_tree.png
-        with open(os.path.join(output_dir, 'decision_tree.dot'), 'w') as f:
-            tree.export_graphviz(model, feature_names=transf_X_col_names, out_file=f)
-
-    # save the learned model and what is needed to adapt the data to it
-    learned_stuff_fpath = os.path.join(output_dir, 'model.pkl')
-    learned_stuff = {'model': model, 'transformers': transformers}
-    joblib.dump(learned_stuff, learned_stuff_fpath)
-
-    predictor = lambda x: model.predict(x)  # function we use to predict the result
-
-    datasets = [
-        {
-        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_13/test_500_n_10_s.tsv',
-        #     'relevant_atk_sizes': [0, 3, 5, 10, 15, 20, 25, 35, 50],
-        #     'node_cnt_A': 500, 'name': '500 power nodes, 10 subnets'
-        # }, {
-        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_13/test_500_n_20_s.tsv',
-        #     'relevant_atk_sizes': [0, 3, 5, 10, 15, 20, 25, 35, 50],
-        #     'node_cnt_A': 500, 'name': '500 power nodes, 20 subnets'
-        # }, {
-        #     'dataset_fpath': test_set_fpath,
-        #     'relevant_atk_sizes': [0, 5, 10, 20, 30, 40, 50, 70, 100],
-        #     'node_cnt_A': 1000, 'name': '1000 power nodes, 20 subnets'
-        # }, {
-        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_14/test_2000_n_20_s.tsv',
-        #     'relevant_atk_sizes': [0, 10, 20, 40, 60, 80, 100, 140, 200],
-        #     'node_cnt_A': 2000, 'name': '2000 power nodes, 20 subnets'
-        # }, {
-        #     'dataset_fpath': '/home/agostino/Documents/Simulations/test_mp_14/test_2000_n_40_s.tsv',
-        #     'relevant_atk_sizes': [0, 10, 20, 40, 60, 80, 100, 140, 200],
-        #     'node_cnt_A': 2000, 'name': '2000 power nodes, 40 subnets'
-        # }
-        #
-            'dataset_fpath': test_set_fpath,
-            'relevant_atk_sizes': [0, 6, 11, 22, 33, 44, 55, 77, 88, 99, 109, 120, 131, 142, 153, 164, 175, 186, 197,
-                                   208, 218, 229, 240, 251, 262, 273, 284, 295, 306, 317, 327],
-            'node_cnt_A': 1091, 'name': 'MN power grid'
-        }
-    ]
-
-    for dataset in datasets:
-        plain_ds_X, ds_y, ds_info = load_dataset(dataset['dataset_fpath'], X_col_names, y_col_name, info_col_names)
-        ds_X = plain_ds_X.copy()
-        for transformer in transformers:
-            logger.debug('Applying {}.transform'.format(type(transformer).__name__))
-            ds_X = transformer.transform(ds_X)
-
-        predictions = predictor(ds_X)
-
-        # visualize how two features affect the results
-        # TODO: find the columns of these features by name, instead of hardcoding their position!
-        ax_x_vec, ax_x_label = plain_ds_X[:, 0], 'initial fraction of failed nodes'
-        ax_y_vec, ax_y_label = plain_ds_X[:, 1], 'loss of centrality'
-        ax_z_vec, ax_z_label = ds_y, 'actual resulting fraction of dead nodes'
-        # plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label, True, True, False)
-
-        # show the original features on the x and y axis; show the predictions on the z axis
-        ax_z_vec, ax_z_label = predictions, 'predicted fraction of dead nodes'
-        # plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label, True, False, True)
-
-        # plot_predictions_for_2d_dataset(plain_ds_X, ds_y, transformers, predictor)
-
-        if model_kind == 'regression':
-            check_prediction_bounds(plain_ds_X, ds_info, X_col_names, info_col_names, predictions, 0.0, True, 1.05, True)
-
-            atk_sizes, costs, error_stdevs = calc_cost_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
-            plot_cost_by_atk_size(atk_sizes, costs, error_stdevs)
-
-            atk_sizes, avg_deaths, avg_preds = \
-                avg_labels_and_preds_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
-            plot_deaths_and_preds_by_atk_size(atk_sizes, avg_deaths, avg_preds)
-
-        else:
-            atk_sizes, accuracies, f1_scores =\
-                calc_scores_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor)
-            atk_sizes, actual_cnt, pred_cnt =\
-                count_label_in_labels_and_preds_group_by(ds_X, ds_y, ds_info, atks_cnt_col, predictor, 'total')
-
-        # only keep the data we want
-        relevant_idx = []
-        relevant_atk_sizes = dataset['relevant_atk_sizes']
-        for atk_size_idx, atk_size in enumerate(atk_sizes):
-            if atk_size in relevant_atk_sizes:
-                relevant_idx.append(atk_size_idx)
-
-        atk_sizes = [atk_sizes[i] for i in relevant_idx]
-
-        if model_kind == 'regression':
-            costs = costs[relevant_idx]
-            error_stdevs = error_stdevs[relevant_idx]
-            avg_deaths = avg_deaths[relevant_idx]
-            avg_preds = avg_preds[relevant_idx]
-
-            dataset['results'] = {'atk_sizes': atk_sizes, 'costs': costs, 'error_stdevs': error_stdevs,
-                                  'avg_deaths': avg_deaths, 'avg_preds': avg_preds}
-        else:
-            accuracies = accuracies[relevant_idx]
-            f1_scores = f1_scores[relevant_idx]
-
-            dataset['results'] = {'atk_sizes': atk_sizes, 'accuracies': accuracies, 'f1_scores': f1_scores,
-                                  'actual #total deaths': actual_cnt, 'predicted #total deaths': pred_cnt}
-
-        # plot_all_scenario_performances(ds_X, ds_y, ds_info, info_col_names, predictor, 3, 2)
-
-    # TODO: calculate these, they are the fractions of attacked nodes
-    # atkd_ps = [0.5, 1., 2., 5., 10.]
-    # atkd_ps = [0, 0.5, 1, 2, 3, 4, 5, 7, 10]
-    atkd_ps = [0.0, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16,
-               0.17, 0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.3]
-    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
-    markers = ['o', '^', 's', '*', 'x', '+', 'd']
-    styles = ['b-o', 'g-^', 'r-s', 'c-*', 'm-x', 'y-+']
-
-    if model_kind == 'regression':
-        lines_to_plot = []
-        for i, dataset in enumerate(datasets):
-            line = {'x': atkd_ps, 'y': dataset['results']['avg_deaths'], 'style': styles[i], 'label': dataset['name']}
-            lines_to_plot.append(line)
-        ax = setup_2d_axes('% of attacked power nodes', 'Actual avg dead fraction (pow+tel)',
-                           xticks=atkd_ps, ylim=(0, 1.1))
-        plot_2d_lines(lines_to_plot, ax)
-
-        lines_to_plot = []
-        for i, dataset in enumerate(datasets):
-            line = {'x': atkd_ps, 'y': dataset['results']['avg_preds'], 'style': styles[i], 'label': dataset['name']}
-            lines_to_plot.append(line)
-        ax = setup_2d_axes('% of attacked power nodes', 'Predicted avg dead fraction (pow+tel)',
-                           xticks=atkd_ps, ylim=(0, 1.1))
-        plot_2d_lines(lines_to_plot, ax)
-
-    else:
-        # TODO: now bar chart with groups of 4 bars, describing for each atk size:
-        # number of scenarios with an actual "total" death_lvl label
-        # number of scenarios predicted a predicted "total" death_lvl label
-        # accuracy and f1 score
-        # TODO: later, make the number of scenarios a fraction
-
-        for i, dataset in enumerate(datasets):
-            lines_to_plot = []
-            plot_actual_and_pred_cnts_by_atk_size(dataset['results']['atk_sizes'],
-                                                  dataset['results']['actual #total deaths'],
-                                                  dataset['results']['predicted #total deaths'])
-            line = {'x': atkd_ps, 'y': dataset['results']['f1_scores'], 'style': 'b-o', 'label': 'f1 score'}
-            lines_to_plot.append(line)
-            line = {'x': atkd_ps, 'y': dataset['results']['accuracies'], 'style': 'g-^', 'label': 'accuracy'}
-            lines_to_plot.append(line)
-            ax = setup_2d_axes('Prediction model scores', '% of attacked power nodes', xticks=atkd_ps, ylim=(0,))
-            plot_2d_lines(lines_to_plot, ax)
-
-
-    # use all_results to plot the graph
-    # need atk_sizes, avg_deaths, avg_preds from plot_deaths_and_preds_by_atk_size
-    # and somehow error_stdevs from plot_cost_by_atk_size
-
-def test_plot():
-    # [(label, [(atk_size, label_cnt)])]
-    labels = ['a1', 'p1', 'a2', 'p2']
-    height_lists = [[10, 20], [20,30], [30, 40], [40, 50]]
-    plot_label_cnts_by_atk_size(labels, [1, 2], height_lists)
-
-# test_plot()
 
 setup_logging('logging_base_conf.json')
 run()

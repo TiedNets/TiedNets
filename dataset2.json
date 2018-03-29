@@ -2,14 +2,10 @@
   "datasets": [
     {
       "fpath": "/home/agostino/Documents/Simulations/test_mp_mn/train_mn.tsv",
-      "X_col_names": ["p_atkd_a", "p_atkd_ds", "p_atkd_ts",
-                      "p_q_4_atkd_betw_c_ab", "p_q_4_atkd_betw_c_i",
-                      "p_q_4_atkd_indeg_c_i", "p_q_4_atkd_ts_betw_c",
-                      "p_q_5_atkd_betw_c_ab", "p_q_5_atkd_betw_c_i",
-                      "p_q_5_atkd_indeg_c_i", "p_q_5_atkd_ts_betw_c",
-                      "p_tot_atkd_betw_c_ab", "p_tot_atkd_betw_c_i",
-                      "p_tot_atkd_indeg_c_i", "p_tot_atkd_ts_betw_c"
-                      ],
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i"
+      ],
       "y_col_name": "p_dead",
       "info_col_names": [
         "instance",
@@ -19,14 +15,10 @@
     },
     {
       "fpath": "/home/agostino/Documents/Simulations/test_mp_mn/test_mn.tsv",
-      "X_col_names": ["p_atkd_a", "p_atkd_ds", "p_atkd_ts",
-                      "p_q_4_atkd_betw_c_ab", "p_q_4_atkd_betw_c_i",
-                      "p_q_4_atkd_indeg_c_i", "p_q_4_atkd_ts_betw_c",
-                      "p_q_5_atkd_betw_c_ab", "p_q_5_atkd_betw_c_i",
-                      "p_q_5_atkd_indeg_c_i", "p_q_5_atkd_ts_betw_c",
-                      "p_tot_atkd_betw_c_ab", "p_tot_atkd_betw_c_i",
-                      "p_tot_atkd_indeg_c_i", "p_tot_atkd_ts_betw_c"
-                      ],
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i"
+      ],
       "y_col_name": "p_dead",
       "info_col_names": [
         "instance",
@@ -39,22 +31,29 @@
     {
       "dataset_num": 0,
       "output_dir": "/home/agostino/Documents/Simulations/test_mp_mn",
-      "model_name": "ridgecv",
-      "model_kind": "regression",
-      "variance_threshold": true,
-      "polynomial_features": true,
-      "standardize": true,
-      "feature_selection": "rfecv"
+      "model": {
+        "name": "ridgecv",
+        "kwargs": {"alphas": [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "PolynomialFeatures", "kwargs": {"degree": 4}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
     },
     {
       "dataset_num": 0,
       "output_dir": "/home/agostino/Documents/Simulations/test_mp_mn",
-      "model_name": "DecisionTreeRegressor",
-      "model_kind": "regression",
-      "variance_threshold": true,
-      "polynomial_features": false,
-      "standardize": true,
-      "feature_selection": "rfecv"
+      "model": {
+        "name": "DecisionTreeRegressor",
+        "kwargs": {"max_depth": 6}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
     }
   ],
 
