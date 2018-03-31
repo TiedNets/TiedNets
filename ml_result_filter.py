@@ -169,8 +169,8 @@ my_random = random.Random(130)
 # input_folder = '/home/agostino/Documents/Simulations/test_mp_14/'
 # batches = [4, 5, 6, 7]
 
-input_folder = '/home/agostino/Documents/Simulations/test_mp_mn/'
-batches = [0, 1, 2, 3]
+input_folder = '/home/agostino/Documents/Simulations/test_mp_mn_multi/'
+batches = [0, 1, 2, 3, 4, 5, 6, 7]
 
 input_file_paths = []
 for batch_num in batches:

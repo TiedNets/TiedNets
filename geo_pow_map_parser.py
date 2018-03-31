@@ -106,17 +106,18 @@ def add_generators(elec_gens_fpath, G):
 
     return gen_ids
 
+
 subs_G = nx.Graph()
 final_G = nx.Graph()
 sub_attrs_by_id = dict()
 line_attrs_by_id = dict()
 point_to_id = dict()
 
-elec_subs_fpath = os.path.normpath('datasets/ElecSubs_epsg_4326.geojson')
-elec_lines_fpath = os.path.normpath('datasets/ElecLine_epsg_4326.geojson')
-elec_gens_fpath = os.path.normpath('datasets/ElecGens_epsg_4326.geojson')
-parsed_graph_fpath = os.path.normpath('MN_pow.graphml')
-roles_fpath = os.path.normpath('MN_pow_roles.json')
+elec_subs_fpath = os.path.normpath('temp/datasets/ElecSubs_epsg_4326.geojson')
+elec_lines_fpath = os.path.normpath('temp/datasets/ElecLine_epsg_4326.geojson')
+elec_gens_fpath = os.path.normpath('temp/datasets/ElecGens_epsg_4326.geojson')
+parsed_graph_fpath = os.path.normpath('temp/MN_pow.graphml')
+roles_fpath = os.path.normpath('temp/MN_pow_roles.json')
 
 this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
@@ -347,7 +348,7 @@ for sub_node in final_G.nodes():
 
 node_roles = dict()
 
-# the preference for transmission substation is a) marked as such, b) having lines below the distribution voltage
+# the preference for distribution substation is a) marked as such, b) having lines below the distribution voltage
 # c) not marked as transmission substations; all things being equal, substations with a lower id are preferred
 dist_candidates = sorted(candidates, key=lambda x: (x[0], x[1], not x[2], -x[3]), reverse=True)
 

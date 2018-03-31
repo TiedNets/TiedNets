@@ -453,6 +453,10 @@ def train_regr_model(train_X, train_y, X_col_names, model_conf):
     # objects for preprocessing and feature selection, in the order they were used
     transformers = []
 
+    # used to log more readable standardization info
+    scaling_by_col = {}
+    scaled = False
+
     steps = model_conf['steps']
     for step_num, step in enumerate(steps):
         step_name = step['name'].lower()
@@ -483,6 +487,13 @@ def train_regr_model(train_X, train_y, X_col_names, model_conf):
         elif step_name == 'standardscaler':
             scaler = preprocessing.StandardScaler(**step_kwargs)
             train_X = scaler.fit_transform(train_X)
+            if scaled is True:
+                logger.warning('You are have more than one standardization step!')
+            scaled = True
+            means = scaler.mean_
+            stddevs = scaler.scale_
+            for col_num, col_name in enumerate(X_col_names):
+                scaling_by_col[col_name] = {'mean': means[col_num], 'std': stddevs[col_num]}
             transformers.append(scaler)
 
         elif step_name == 'rfe':
@@ -517,6 +528,10 @@ def train_regr_model(train_X, train_y, X_col_names, model_conf):
         logger.info('Learned equation = {}'.format(learned_eq))
     if model_name in ['ridgecv', 'lassocv', 'elasticnetcv']:
         logger.info('alpha = {}'.format(clf.alpha_))
+
+    if scaled is True:
+        scaling_by_col = {col_name: scaling_by_col[col_name] for col_name in X_col_names}
+        logger.info('Scaling of selected features: {}'.format(scaling_by_col))
 
     logger.debug('Learning completed')
 
@@ -691,7 +706,6 @@ def test_plot_label_cnts_by_atk_size():
 def train_model_on_dataset(config, model_num):
     model_conf = config['model_trainings'][model_num]
     dataset_num = model_conf['dataset_num']
-    output_dir = model_conf['output_dir']
     model_name = model_conf['model']['name'].lower()
 
     dataset = config['datasets'][dataset_num]
@@ -706,17 +720,24 @@ def train_model_on_dataset(config, model_num):
     model, transformers, train_X, transf_X_col_names = \
         train_regr_model(train_X, train_y, X_col_names, model_conf)
 
-    if 'tree' in model_name:
-        # save a representation of the learned decision tree, to plot it, install graphviz
-        # it can be turned into an image by running a command like the following
-        # dot -T png decision_tree.dot -o decision_tree.png
-        with open(os.path.join(output_dir, 'decision_tree_{}_.dot'.format(model_num)), 'w') as f:
-            tree.export_graphviz(model, feature_names=transf_X_col_names, out_file=f)
+    if 'output_dir' in model_conf:
+        output_dir = os.path.normpath(model_conf['output_dir'])
+        if os.path.isabs(output_dir) is False:
+            output_dir = os.path.abspath(output_dir)
 
-    # save the learned model and what is needed to adapt the data to it
-    learned_stuff_fpath = os.path.join(output_dir, 'model_{}_.pkl'.format(model_num))
-    learned_stuff = {'model': model, 'transformers': transformers}
-    joblib.dump(learned_stuff, learned_stuff_fpath)
+        # save the learned model and what is needed to adapt the data to it
+        learned_stuff_fpath = os.path.join(output_dir, 'model_{}.pkl'.format(model_num))
+        learned_stuff = {'model': model, 'transformers': transformers}
+        joblib.dump(learned_stuff, learned_stuff_fpath)
+        logger.info('Saved model to {}'.format(learned_stuff_fpath))
+
+        # save a representation of the learned decision tree, to draw it, install graphviz and run
+        # dot -T png decision_tree.dot -o decision_tree.png
+        if 'tree' in model_name:
+            tree_repr_fpath = os.path.join(output_dir, 'model_{}_tree.dot'.format(model_num))
+            with open(tree_repr_fpath, 'w') as out_file:
+                tree.export_graphviz(model, out_file, feature_names=transf_X_col_names)
+            logger.info('Saved tree representation to {}'.format(tree_repr_fpath))
 
     return model, transformers, transf_X_col_names
 
@@ -824,15 +845,17 @@ def make_plots(config, models):
         if 'overlays' in plot_conf:
             overlays = plot_conf['overlays']
 
-            if plot_name in ['cost_by_atk_size_many', 'deaths_and_preds_by_atk_size_many']:
-                ax_x_label = plot_conf['ax_x_label']
-                ax_y_label = plot_conf['ax_y_label']
-                fig, ax = setup_2d_axes(ax_x_label, ax_y_label)
-                if plot_name == 'cost_by_atk_size_many':
-                    ax.set_ylim(0, 1.0)
-                if plot_name == 'deaths_and_preds_by_atk_size_many':
-                    ax.set_ylim(0, 1.1)
-                ax.grid(linestyle='-', linewidth=0.5)
+            ax_x_label = plot_conf['ax_x_label']
+            ax_y_label = plot_conf['ax_y_label']
+            fig, ax = setup_2d_axes(ax_x_label, ax_y_label)
+
+            if 'ax_x_lim' in plot_conf:
+                ax_x_lim = plot_conf['ax_x_lim']
+                ax.set_xlim(**ax_x_lim)
+            if 'ax_y_lim' in plot_conf:
+                ax_y_lim = plot_conf['ax_y_lim']
+                ax.set_ylim(**ax_y_lim)
+            ax.grid(linestyle='-', linewidth=0.5)
 
             for overlay in overlays:
                 data_label = overlay['label']
@@ -900,7 +923,15 @@ def make_plots(config, models):
                             # else:
                             #     plt.plot(atk_sizes, avg_deaths, style, label=data_label)
 
-            ax.legend()
+            ax.legend()  # Create the plot legend considering all overlays
+
+            if 'fig_fpath' in plot_conf:
+                fig_fpath = os.path.normpath(plot_conf['fig_fpath'])
+                if os.path.isabs(fig_fpath) is False:
+                    fig_fpath = os.path.abspath(fig_fpath)
+                fig.savefig(fig_fpath, bbox_inches="tight")
+                logger.info('Figure saved to {}'.format(fig_fpath))
+
             plt.tight_layout()
             plt.show()
 

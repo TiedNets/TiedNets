@@ -786,7 +786,6 @@ def run(conf_fpath, floader):
         dead_nodes_a = []
         dead_nodes_b = []
         for node in attacked_nodes:
-            # TODO: fix this for maximum matching graphs
             node_netw = I.node[node]['network']
             if node_netw == A.graph['name']:
                 attacked_nodes_a.append(node)

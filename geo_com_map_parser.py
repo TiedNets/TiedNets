@@ -15,8 +15,8 @@ final_G = nx.Graph()
 lines_by_id = dict()
 point_to_id = dict()
 
-com_lines_fpath = os.path.normpath('datasets/ComLines.geojson')
-parsed_graph_fpath = os.path.normpath('MN_pow.graphml')
+com_lines_fpath = os.path.normpath('temp/datasets/ComLines.geojson')
+parsed_graph_fpath = os.path.normpath('temp/MN_pow.graphml')
 
 this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
@@ -81,7 +81,7 @@ for component_idx in range(1, len(components)):
 print('node count without isolated components = {}'.format(final_G.number_of_nodes()))
 
 # export graph in GraphML format
-nx.write_graphml(final_G, 'MN_com.graphml')
+nx.write_graphml(final_G, 'temp/MN_com.graphml')
 
 # draw the final graph
 

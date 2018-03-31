@@ -1,3 +1,4 @@
+import csv
 import os
 import re
 import sys
@@ -576,3 +577,75 @@ def makedirs_clean(path, clean_subdirs=False, ask_confirmation=False):
 def ensure_dir_exists(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
+
+def save_centralities_from_json_to_tsv(input_dir, netw_a_name, netw_b_name, netw_inter_name, out_fpath):
+    input_dir = os.path.normpath(input_dir)
+    centr_a_fpath = os.path.join(input_dir, 'node_centrality_{}.json'.format(netw_a_name))
+    with open(centr_a_fpath, 'r') as json_file:
+        centr_a = json.load(json_file)
+    centr_b_fpath = os.path.join(input_dir, 'node_centrality_{}.json'.format(netw_b_name))
+    with open(centr_b_fpath, 'r') as json_file:
+        centr_b = json.load(json_file)
+    centr_i_fpath = os.path.join(input_dir, 'node_centrality_{}.json'.format(netw_inter_name))
+    with open(centr_i_fpath, 'r') as json_file:
+        centr_i = json.load(json_file)
+
+    centr_misc_fpath = os.path.join(input_dir, 'node_centrality_misc.json')
+    if os.path.isfile(centr_misc_fpath):
+        with open(centr_misc_fpath, 'r') as json_file:
+            centr_misc = json.load(json_file)
+
+    centr_by_node = {}
+    header = [
+        'node',
+        'intra degree', 'inter indegree',
+        'intra betweenness', 'inter betweenness',
+        'intra closeness', 'inter closeness',
+        'inter katz', 'inter closeness']
+
+    if os.path.isfile(centr_misc_fpath):
+        header.extend(['tr sub betweenness', 'relay betweenness'])
+
+    nodes_a = centr_a['degree_centrality'].keys()
+    for node in nodes_a:
+        centr_by_node[node] = {
+            'intra degree': centr_a['degree_centrality'][node],
+            'intra betweenness': centr_a['betweenness_centrality'][node],
+            'intra closeness': centr_a['closeness_centrality'][node]
+        }
+
+    nodes_b = centr_b['degree_centrality'].keys()
+    for node in nodes_b:
+        centr_by_node[node] = {
+            'intra degree': centr_b['degree_centrality'][node],
+            'intra betweenness': centr_b['betweenness_centrality'][node],
+            'intra closeness': centr_b['closeness_centrality'][node]
+        }
+
+    nodes_i = sorted(centr_i['degree_centrality'].keys())
+    for node in nodes_i:
+        node_centr = {
+            'inter indegree': centr_i['indegree_centrality'][node],
+            'inter betweenness': centr_i['betweenness_centrality'][node],
+            'inter closeness': centr_i['closeness_centrality'][node],
+            'inter katz': centr_i['katz_centrality'][node]
+        }
+        centr_by_node[node].update(node_centr)
+
+    if os.path.isfile(centr_misc_fpath):
+        for node in nodes_i:
+            node_centr = {
+                'tr sub betweenness': centr_misc['transm_subst_betweenness_centrality'][node],
+                'relay betweenness': centr_misc['relay_betweenness_centrality'][node]
+            }
+            centr_by_node[node].update(node_centr)
+
+    out_file = open(out_fpath, 'wb')
+    writer = csv.DictWriter(out_file, header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+    writer.writeheader()
+
+    for node in nodes_i:
+        row = centr_by_node[node].copy()
+        row.update({'node': node})
+        writer.writerow(row)

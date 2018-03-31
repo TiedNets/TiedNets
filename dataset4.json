@@ -50,6 +50,7 @@
       "name": "deaths_and_preds_by_atk_size_many",
       "ax_x_label": "No. of strengthened nodes",
       "ax_y_label": "Average no. of total failed nodes",
+      "fig_fpath": "/home/agostino/ML/safe_nodes_3.pdf",
       "overlays": [
         {
           "dataset_num": 0,
