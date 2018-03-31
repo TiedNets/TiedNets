@@ -124,6 +124,7 @@
       "name": "deaths_and_preds_by_atk_size_many",
       "ax_x_label": "Initial fraction of failed power nodes",
       "ax_y_label": "Average resulting fraction of total failed nodes",
+      "fig_fpath": "/home/agostino/ML/actual_atk_outcomes_multi_3.pdf",
       "overlays": [
         {
           "dataset_num": 0,
@@ -141,18 +142,6 @@
           "dataset_num": 2,
           "label": "2000 power nodes in 40 subnets, 2000 telecom nodes",
           "style": "b-x",
-          "x_multiplier": 0.0005
-        },
-        {
-          "dataset_num": 3,
-          "label": "500   power nodes in 20 subnets, 500   telecom nodes",
-          "style": "y-^",
-          "x_multiplier": 0.002
-        },
-        {
-          "dataset_num": 4,
-          "label": "2000 power nodes in 20 subnets, 2000 telecom nodes",
-          "style": "c-x",
           "x_multiplier": 0.0005
         }
       ]
@@ -161,6 +150,7 @@
       "name": "deaths_and_preds_by_atk_size_many",
       "ax_x_label": "Initial fraction of failed power nodes",
       "ax_y_label": "Average predicted fraction of total failed nodes",
+      "fig_fpath": "/home/agostino/ML/predicted_atk_outcomes_multi_3.pdf",
       "overlays": [
         {
           "dataset_num": 0,
@@ -181,20 +171,6 @@
           "model_num": 0,
           "label": "2000 power nodes in 40 subnets, 2000 telecom nodes",
           "style": "b-x",
-          "x_multiplier": 0.0005
-        },
-        {
-          "dataset_num": 3,
-          "model_num": 0,
-          "label": "500   power nodes in 20 subnets, 500   telecom nodes",
-          "style": "y-^",
-          "x_multiplier": 0.002
-        },
-        {
-          "dataset_num": 4,
-          "model_num": 0,
-          "label": "2000 power nodes in 20 subnets, 2000 telecom nodes",
-          "style": "c-x",
           "x_multiplier": 0.0005
         }
       ]

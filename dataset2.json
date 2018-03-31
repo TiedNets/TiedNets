@@ -61,20 +61,22 @@
     {
       "name": "cost_by_atk_size_many",
       "output_fpath": "",
-      "ax_x_label": "No. of attacked power nodes",
+      "ax_x_label": "Initial no. of failed power nodes",
       "ax_y_label": "Measured fraction",
+      "ax_y_lim": {"bottom": 0, "top": 1.0},
+      "fig_fpath": "/home/agostino/ML/avg_abs_pred_error_tree_vs_poly_mn_3.pdf",
       "overlays": [
         {
           "dataset_num": 1,
           "model_num": 0,
-          "label": "Avg abs prediction error of polynomial regression",
+          "label": "Avg absolute prediction error of polynomial regression",
           "fmt": "-o",
           "color": "b"
         },
         {
           "dataset_num": 1,
           "model_num": 1,
-          "label": "Avg abs prediction error of regression tree",
+          "label": "Avg absolute prediction error of regression tree",
           "fmt": "-^",
           "color": "g"
         }
@@ -82,8 +84,10 @@
     },
     {
       "name": "deaths_and_preds_by_atk_size_many",
-      "ax_x_label": "No. of attacked power nodes",
+      "ax_x_label": "Initial no. of failed power nodes",
       "ax_y_label": "Average fraction of resulting dead nodes",
+      "ax_y_lim": {"bottom": 0, "top": 1.05},
+      "fig_fpath": "/home/agostino/ML/avg_dead_pred_comparison_mn_3.pdf",
       "overlays": [
         {
           "dataset_num": 1,
