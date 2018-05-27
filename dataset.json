@@ -82,38 +82,8 @@
       "rnd_seed_cnt": 1
     },
     {
-      "name": "cost_by_atk_size",
-      "dataset_num": 0,
-      "model_num": 0
-    },
-    {
-      "name": "deaths_and_preds_by_atk_size",
-      "model_num": 0,
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn/test_mn.tsv"
-    },
-    {
-      "name": "cost_by_atk_size_many",
-      "ax_x_label": "# of attacked power nodes",
-      "ax_y_label": "Measured fraction",
-      "overlays": [
-        {
-          "dataset_num": 0,
-          "model_num": 0,
-          "label": "train_mn",
-          "fmt": "-o",
-          "color": "b"
-        },
-        {
-          "dataset_num": 1,
-          "model_num": 0,
-          "label": "test_mn",
-          "fmt": "-o",
-          "color": "r"
-        }
-      ]
-    },
-    {
       "name": "deaths_and_preds_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
       "ax_x_label": "Number of attacked power nodes",
       "ax_y_label": "Average fraction of resulting dead nodes",
       "overlays": [

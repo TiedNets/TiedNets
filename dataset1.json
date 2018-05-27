@@ -62,6 +62,7 @@
   "plots": [
     {
       "name": "cost_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
       "ax_x_label": "Initial no. of failed power nodes",
       "ax_y_label": "Measured fraction",
       "ax_y_lim": {"bottom": 0, "top": 1.0},
@@ -85,6 +86,7 @@
     },
     {
       "name": "deaths_and_preds_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
       "ax_x_label": "Initial no. of failed power nodes",
       "ax_y_label": "Average fraction of resulting dead nodes",
       "ax_y_lim": {"bottom": 0, "top": 1.05},

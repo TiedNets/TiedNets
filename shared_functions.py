@@ -315,14 +315,14 @@ def compare_link_pos(G1, G2):
     for edge in edges_0:
         src_node = G1.node[edge[0]]
         dst_node = G1.node[edge[1]]
-        pos_arc = (src_node['x'], src_node['y'], dst_node['x'], dst_node['y'])
+        pos_arc = (src_node['x'], src_node['y'], dst_node['x'], dst_node['y'], '{}>{}'.format(edge[0], edge[1]))
         edge_pos_0.append(pos_arc)
 
     edge_pos_1 = []
     for edge in edges_1:
         src_node = G2.node[edge[0]]
         dst_node = G2.node[edge[1]]
-        pos_arc = (src_node['x'], src_node['y'], dst_node['x'], dst_node['y'])
+        pos_arc = (src_node['x'], src_node['y'], dst_node['x'], dst_node['y'], '{}>{}'.format(edge[0], edge[1]))
         edge_pos_1.append(pos_arc)
 
     edge_pos_0 = sorted(edge_pos_0)
@@ -331,7 +331,7 @@ def compare_link_pos(G1, G2):
     for idx in range(0, edge_cnt_0):
         edge_0 = edge_pos_0[idx]
         edge_1 = edge_pos_1[idx]
-        if edge_0 != edge_1:
+        if edge_0[0] != edge_1[0] or edge_0[1] != edge_1[1] or edge_0[2] != edge_1[2] or edge_0[3] != edge_1[3]:
             diff += 'edge_0: {}\nedge_1: {}\n'.format(edge_0, edge_1)
 
     return diff

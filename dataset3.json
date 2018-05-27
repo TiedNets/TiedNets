@@ -122,6 +122,7 @@
   "plots": [
     {
       "name": "deaths_and_preds_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
       "ax_x_label": "Initial fraction of failed power nodes",
       "ax_y_label": "Average resulting fraction of total failed nodes",
       "fig_fpath": "/home/agostino/ML/actual_atk_outcomes_multi_3.pdf",
@@ -148,6 +149,7 @@
     },
     {
       "name": "deaths_and_preds_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
       "ax_x_label": "Initial fraction of failed power nodes",
       "ax_y_label": "Average predicted fraction of total failed nodes",
       "fig_fpath": "/home/agostino/ML/predicted_atk_outcomes_multi_3.pdf",
