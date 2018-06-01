@@ -14,6 +14,7 @@ from sklearn.feature_selection import RFECV
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.feature_selection import SelectFromModel
 from sklearn import tree
+from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.externals import joblib
@@ -256,12 +257,42 @@ def load_named_cols(input_fpath, col_names, file_header):
     return data_array
 
 
+def apply_row_filter(X, y, info, X_col_names, y_col_name, info_col_names, filter_conf):
+    col_name = filter_conf['col_name']
+    filter_values = filter_conf['col_values']
+
+    if col_name in X_col_names:
+        col_names = X_col_names
+        data = X
+    elif col_name == y_col_name:
+        data = y
+    elif col_name in info_col_names:
+        col_names = info_col_names
+        data = info
+    else:
+        raise ValueError('The column "col_name" of "filter" must be one of the columns in: '
+                         '"X_col_names", "y_col_name", "info_col_names".')
+
+    relevant_idx = np.zeros(data.shape[0], dtype=bool)
+    if data.ndim == 1:
+        for i in range(0, data.shape[0]):
+            relevant_idx[i] = data[i] in filter_values
+    else:
+        col_num = col_names.index(col_name)
+        for i in range(0, data.shape[0]):
+            relevant_idx[i] = data[i, col_num] in filter_values
+
+    if True not in relevant_idx:
+        raise ValueError('None of the values specified in "col_values" is present in column "{}"'.format(col_name))
+
+    return X[relevant_idx], y[relevant_idx], info[relevant_idx]
+
+
 # possible improvement, accept dtypes and use genfromtxt
-def load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names):
+def load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names, filter_conf=None):
     global logger
 
-    # from each file we load load 3 sets of data, the examples (X), the labels (y) and related information
-    # for each array we remember the correlation column name -> column number
+    # from each file we load load 3 sets of data, the examples (X), the labels (y) and related information (info)
     with open(dataset_fpath, 'r') as data_file:
         csvreader = csv.reader(data_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
         header = csvreader.next()
@@ -276,36 +307,10 @@ def load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names):
     logger.debug('y (first 2 rows)\n{}'.format(y[range(2)]))
     logger.debug('info (first 2 rows)\n{}'.format(info[range(2), :]))
 
-    return X, y, info
-
-
-def filter_dataset(X, y, info, X_col_names, info_col_names, filter_conf):
-    filter_col_group = filter_conf['col_group']
-    filter_values = filter_conf['col_values']
-
-    if filter_col_group == 'X_col_names':
-        col_names = X_col_names
-        data = X
-    elif filter_col_group == 'info_col_names':
-        col_names = info_col_names
-        data = info
-    elif filter_col_group == 'y_col_name':
-        data = y
+    if filter_conf is None:
+        return X, y, info
     else:
-        raise ValueError('The possible values for the "col_group" option of a filter are: '
-                         '"X_col_names", "info_col_names", "y_col_name".')
-
-    relevant_idx = np.zeros(data.shape[0], dtype=bool)
-    if data.ndim == 1:
-        for i in range(0, data.shape[0]):
-            relevant_idx[i] = data[i] in filter_values
-    else:
-        filter_col_name = filter_conf['col_name']
-        col_num = col_names.index(filter_col_name)
-        for i in range(0, data.shape[0]):
-            relevant_idx[i] = data[i, col_num] in filter_values
-
-    return X[relevant_idx], y[relevant_idx], info[relevant_idx]
+        return apply_row_filter(X, y, info, X_col_names, y_col_name, info_col_names, filter_conf)
 
 
 # Returns costs and std dev of costs for each group of examples it finds
@@ -424,6 +429,8 @@ def train_regr_model(train_X, train_y, X_col_names, model_conf):
         clf = linear_model.ElasticNetCV(**model_kwargs)
     elif model_name == 'decisiontreeregressor':
         clf = tree.DecisionTreeRegressor(**model_kwargs)
+    elif model_name == 'mlpregressor':
+        clf = MLPRegressor(**model_kwargs)
     else:
         raise ValueError('Unsupported model name: "{}"'.format(model_name))
 
@@ -633,9 +640,10 @@ def train_model_on_dataset(config, model_num):
     X_col_names = dataset['X_col_names']
     y_col_name = dataset['y_col_name']
     info_col_names = dataset['info_col_names']
+    filter_conf = dataset['filter'] if 'filter' in dataset else None
 
     # find columns
-    train_X, train_y, train_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
+    train_X, train_y, train_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names, filter_conf)
 
     model, transformers, train_X, transf_X_col_names = \
         train_regr_model(train_X, train_y, X_col_names, model_conf)
@@ -708,13 +716,10 @@ def make_plots(config, models):
             X_col_names = dataset['X_col_names']
             y_col_name = dataset['y_col_name']
             info_col_names = dataset['info_col_names']
+            filter_conf = dataset['filter'] if 'filter' in dataset else None
 
-            plain_ds_X, ds_y, ds_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
-
-            if 'filter' in plot_conf:
-                filter_conf = plot_conf['filter']
-                plain_ds_X, ds_y, ds_info =\
-                    filter_dataset(plain_ds_X, ds_y, ds_info, X_col_names, info_col_names, filter_conf)
+            plain_ds_X, ds_y, ds_info =\
+                load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names, filter_conf)
 
             if 'model_num' in plot_conf:
                 model_num = plot_conf['model_num']
@@ -796,8 +801,10 @@ def make_plots(config, models):
                 y_col_name = dataset['y_col_name']
                 info_col_names = dataset['info_col_names']
                 dataset_fpath = dataset['fpath']
+                filter_conf = dataset['filter'] if 'filter' in dataset else None
 
-                plain_ds_X, ds_y, ds_info = load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names)
+                plain_ds_X, ds_y, ds_info =\
+                    load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names, filter_conf)
 
                 x_multiplier = 1
                 if 'x_multiplier' in overlay:
