@@ -1,7 +1,7 @@
 {
   "datasets": [
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_12/train_1000_n_20_s.tsv",
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12c/merged.tsv",
       "X_col_names": [
         "p_atkd_a",
         "p_tot_atkd_betw_c_i",
@@ -15,7 +15,7 @@
       ]
     },
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_13/test_500_n_10_s.tsv",
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_13b/merged.tsv",
       "X_col_names": [
         "p_atkd_a",
         "p_tot_atkd_betw_c_i",
@@ -26,15 +26,10 @@
         "instance",
         "seed",
         "#atkd_a"
-      ],
-      "filter": {
-        "col_name_group": "info_col_names",
-        "col_name": "#atkd_a",
-        "col_values": [0, 3, 5, 10, 15, 20, 25, 35, 50]
-      }
+      ]
     },
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_14/test_2000_n_40_s.tsv",
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_14b/merged.tsv",
       "X_col_names": [
         "p_atkd_a",
         "p_tot_atkd_betw_c_i",
@@ -45,74 +40,19 @@
         "instance",
         "seed",
         "#atkd_a"
-      ],
-      "filter": {
-        "col_name_group": "info_col_names",
-        "col_name": "#atkd_a",
-        "col_values": [0, 10, 20, 40, 60, 80, 100, 140, 200]
-      }
-    },
-    {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_13/test_500_n_20_s.tsv",
-      "X_col_names": [
-        "p_atkd_a",
-        "p_tot_atkd_betw_c_i",
-        "p_tot_atkd_ts_betw_c"
-      ],
-      "y_col_name": "p_dead",
-      "info_col_names": [
-        "instance",
-        "seed",
-        "#atkd_a"
-      ],
-      "filter": {
-        "col_name": "#atkd_a",
-        "col_values": [0, 3, 5, 10, 15, 20, 25, 35, 50]
-      }
-    },
-    {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_14/test_2000_n_20_s.tsv",
-      "X_col_names": [
-        "p_atkd_a",
-        "p_tot_atkd_betw_c_i",
-        "p_tot_atkd_ts_betw_c"
-      ],
-      "y_col_name": "p_dead",
-      "info_col_names": [
-        "instance",
-        "seed",
-        "#atkd_a"
-      ],
-      "filter": {
-        "col_name": "#atkd_a",
-        "col_values": [0, 10, 20, 40, 60, 80, 100, 140, 200]
-      }
+      ]
     }
   ],
   "model_trainings": [
     {
       "dataset_num": 0,
-      "output_dir": "/home/agostino/Documents/Simulations/test_mp_12",
+      "output_dir": "/home/agostino/Documents/Simulations/test_mp_12c",
       "model": {
         "name": "DecisionTreeRegressor",
-        "kwargs": {"max_depth": 3}
+        "kwargs": {"max_depth": 4, "max_leaf_nodes": 10}
       },
       "steps": [
         {"name": "VarianceThreshold", "kwargs": {}},
-        {"name": "StandardScaler", "kwargs": {}},
-        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
-      ]
-    },
-    {
-      "dataset_num": 0,
-      "output_dir": "/home/agostino/Documents/Simulations/test_mp_12",
-      "model": {
-        "name": "ridgecv",
-        "kwargs": {"alphas": [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]}
-      },
-      "steps": [
-        {"name": "VarianceThreshold", "kwargs": {}},
-        {"name": "PolynomialFeatures", "kwargs": {"degree": 4}},
         {"name": "StandardScaler", "kwargs": {}},
         {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
       ]
@@ -125,24 +65,30 @@
       "group_by_col_name": "#atkd_a",
       "ax_x_label": "Initial fraction of failed power nodes",
       "ax_y_label": "Average resulting fraction of total failed nodes",
-      "fig_fpath": "/home/agostino/ML/actual_atk_outcomes_multi_3.pdf",
+      "fig_fpath": "/home/agostino/draft2/actual_atk_outcomes_multi_4.pdf",
       "overlays": [
         {
           "dataset_num": 0,
           "label": "1000 power nodes in 20 subnets, 1000 telecom nodes",
-          "style": "r-o",
+          "fmt": "r-o",
+          "linewidth": 1,
+          "capsize": 3,
           "x_multiplier": 0.001
         },
         {
           "dataset_num": 1,
           "label": "500   power nodes in 10 subnets, 500   telecom nodes",
-          "style": "g-^",
+          "fmt": "g-^",
+          "linewidth": 1,
+          "capsize": 3,
           "x_multiplier": 0.002
         },
         {
           "dataset_num": 2,
           "label": "2000 power nodes in 40 subnets, 2000 telecom nodes",
-          "style": "b-x",
+          "fmt": "b-x",
+          "linewidth": 1,
+          "capsize": 3,
           "x_multiplier": 0.0005
         }
       ]
@@ -152,27 +98,27 @@
       "group_by_col_name": "#atkd_a",
       "ax_x_label": "Initial fraction of failed power nodes",
       "ax_y_label": "Average predicted fraction of total failed nodes",
-      "fig_fpath": "/home/agostino/ML/predicted_atk_outcomes_multi_3.pdf",
+      "fig_fpath": "/home/agostino/draft2/predicted_atk_outcomes_multi_4.pdf",
       "overlays": [
         {
           "dataset_num": 0,
           "model_num": 0,
           "label": "1000 power nodes in 20 subnets, 1000 telecom nodes",
-          "style": "r-o",
+          "fmt": "r-o",
           "x_multiplier": 0.001
         },
         {
           "dataset_num": 1,
           "model_num": 0,
           "label": "500   power nodes in 10 subnets, 500   telecom nodes",
-          "style": "g-^",
+          "fmt": "g-^",
           "x_multiplier": 0.002
         },
         {
           "dataset_num": 2,
           "model_num": 0,
           "label": "2000 power nodes in 40 subnets, 2000 telecom nodes",
-          "style": "b-x",
+          "fmt": "b-x",
           "x_multiplier": 0.0005
         }
       ]

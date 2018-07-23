@@ -93,19 +93,19 @@
         {
           "dataset_num": 1,
           "label": "Actual fraction from simulation",
-          "style": "r-o"
+          "fmt": "r-o"
         },
         {
           "dataset_num": 1,
           "model_num": 0,
           "label": "Fraction predicted by polynomial regression",
-          "style": "b-x"
+          "fmt": "b-x"
         },
         {
           "dataset_num": 1,
           "model_num": 1,
           "label": "Fraction predicted by regression tree",
-          "style": "g-^"
+          "fmt": "g-^"
         }
       ]
     }

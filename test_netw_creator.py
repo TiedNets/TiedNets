@@ -717,3 +717,185 @@ def test_graph_diff():
 
     G2.edge[1][0]['color'] = 'black'
     assert sf.graph_diff(G1, G2, True) == ''
+
+
+def test_compare_roles_by_pos():
+    G1 = nx.Graph()
+    G2 = nx.Graph()
+
+    # different number of nodes, no role diff
+    G1.add_node(0, {'x': 0, 'y': 0, 'role': 'black'})
+    assert sf.compare_roles_by_pos(G1, G2) == ''
+
+    G2.add_node(0, {'x': 0, 'y': 0, 'role': 'black'})
+    assert sf.compare_roles_by_pos(G1, G2) == ''
+
+    # different node ids, same roles, no role diff
+    G1.add_node(1, {'x': 1, 'y': 1, 'role': 'black'})
+    G2.add_node(1, {'x': 1, 'y': 1, 'role': 'white'})
+    diff = sf.compare_roles_by_pos(G1, G2)
+    assert diff != ''
+
+    G2.node[1]['role'] = 'black'
+    assert sf.compare_roles_by_pos(G1, G2) == ''
+
+
+def test_compare_links_between_pos():
+    # warning for comparing directed and undirected graphs
+    G1 = nx.Graph()
+    G2 = nx.DiGraph()
+    diff = sf.compare_links_between_pos(G1, G2)
+    assert diff != ''
+
+    # empty undirected graphs
+    G2 = nx.Graph()
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    # different number of nodes, no edges, no difference
+    G1.add_node(0, {'x': 0, 'y': 0})
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    G2.add_node(0, {'x': 0, 'y': 0})
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    # different nodes, no edges, no difference
+    G1.add_node(1, {'x': 1, 'y': 1})
+    G2.add_node(2, {'x': 2, 'y': 2})
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    G1.add_node(2, {'x': 2, 'y': 2})
+    G2.add_node(1, {'x': 1, 'y': 1})
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    # different edge count
+    G1.add_edge(0, 1)
+    diff = sf.compare_links_between_pos(G1, G2)
+    assert diff != ''
+
+    G2.add_edge(0, 1)
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    G1.add_node(3, {'x': 3, 'y': 3})
+    G2.add_node(3, {'x': 3, 'y': 3})
+
+    # different sets of undirected edges
+    G1.add_edge(1, 2)
+    G2.add_edge(2, 3)
+    diff = sf.compare_links_between_pos(G1, G2)
+    assert diff != ''
+
+    G1.add_edge(2, 3)
+    G2.add_edge(1, 2)
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    # undirected loop
+    G1.add_edge(0, 0)
+    diff = sf.compare_links_between_pos(G1, G2)
+    assert diff != ''
+
+    G2.add_edge(0, 0)
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    # another couple of undirected graphs
+    G1 = nx.Graph()
+    G2 = nx.Graph()
+
+    # different node ids, same node positions, no edges so no difference
+    G1.add_node('0a', {'x': 0, 'y': 0})
+    G1.add_node('1a', {'x': 1, 'y': 1})
+    G2.add_node('0b', {'x': 0, 'y': 0})
+    G2.add_node('1b', {'x': 1, 'y': 1})
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    # different edge count
+    G1.add_edge('0a', '1a')
+    diff = sf.compare_links_between_pos(G1, G2)
+    assert diff != ''
+
+    G2.add_edge('0b', '1b')
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    G1.add_node('2a', {'x': 2, 'y': 2})
+    G1.add_node('3a', {'x': 3, 'y': 3})
+    G2.add_node('2b', {'x': 2, 'y': 2})
+    G2.add_node('3b', {'x': 3, 'y': 3})
+
+    # different sets of undirected edges
+    G1.add_edge('1a', '2a')
+    G2.add_edge('2b', '3b')
+    diff = sf.compare_links_between_pos(G1, G2)
+    assert diff != ''
+
+    G1.add_edge('2a', '3a')
+    G2.add_edge('1b', '2b')
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    # directed graphs
+    G1 = nx.DiGraph()
+    G2 = nx.DiGraph()
+
+    # same node ids but with different positions, no edges so no difference
+    G1.add_node('a', {'x': 1, 'y': 1})
+    G1.add_node('b', {'x': -1, 'y': -1})
+    G2.add_node('a', {'x': -1, 'y': -1})
+    G2.add_node('b', {'x': 1, 'y': 1})
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    # different edge count
+    G1.add_edge('a', 'b')  # (1, 1) > (-1, -1)
+    diff = sf.compare_links_between_pos(G1, G2)
+    assert diff != ''
+
+    G2.add_edge('b', 'a')  # (1, 1) > (-1, -1)
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    G1.add_node('c', {'x': 2, 'y': 2})
+    G1.add_node('d', {'x': -2, 'y': -2})
+    G2.add_node('c', {'x': -2, 'y': -2})
+    G2.add_node('d', {'x': 2, 'y': 2})
+
+    # different sets of directed edges
+    G1.add_edge('b', 'c')  # (-1, -1) > (2, 2)
+    G2.add_edge('c', 'd')  # (-2, -2) > (2, 2)
+    diff = sf.compare_links_between_pos(G1, G2)
+    assert diff != ''
+
+    G1.add_edge('d', 'c')  # (-2, -2) > (2, 2)
+    G2.add_edge('a', 'd')  # (-1, -1) > (2, 2)
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    # another couple of directed graphs
+    G1 = nx.DiGraph()
+    G2 = nx.DiGraph()
+
+    G1.add_node(0, {'x': 0, 'y': 0})
+    G1.add_node(1, {'x': 1, 'y': 1})
+    G2.add_node(0, {'x': 0, 'y': 0})
+    G2.add_node(1, {'x': 1, 'y': 1})
+
+    # directed loop
+    G1.add_edge(0, 0)
+    diff = sf.compare_links_between_pos(G1, G2)
+    assert diff != ''
+
+    G2.add_edge(0, 0)
+    assert sf.compare_links_between_pos(G1, G2) == ''
+
+    # different edge data
+    G1.add_edge(0, 1, {'color': 'white'})
+    G2.add_edge(0, 1, {'color': 'black'})
+    assert sf.compare_links_between_pos(G1, G2, data=False) == ''
+
+    diff = sf.compare_links_between_pos(G1, G2, data=True)
+    assert diff != ''
+
+    G2.edge[0][1]['color'] = 'white'
+    assert sf.compare_links_between_pos(G1, G2, data=True) == ''
+
+    # same edge data
+    G1.add_node(2, {'x': 2, 'y': 2})
+    G2.add_node(2, {'x': 2, 'y': 2})
+    G1.add_edge(1, 2, {'color': 'black'})
+    G2.add_edge(1, 2, {'color': 'black'})
+    assert sf.compare_links_between_pos(G1, G2, data=False) == ''
+    assert sf.compare_links_between_pos(G1, G2, data=True) == ''

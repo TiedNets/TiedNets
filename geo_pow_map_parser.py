@@ -116,8 +116,8 @@ point_to_id = dict()
 elec_subs_fpath = os.path.normpath('temp/datasets/ElecSubs_epsg_4326.geojson')
 elec_lines_fpath = os.path.normpath('temp/datasets/ElecLine_epsg_4326.geojson')
 elec_gens_fpath = os.path.normpath('temp/datasets/ElecGens_epsg_4326.geojson')
-parsed_graph_fpath = os.path.normpath('temp/MN_pow.graphml')
-roles_fpath = os.path.normpath('temp/MN_pow_roles.json')
+parsed_graph_fpath = os.path.normpath('temp/MN_pow_r256.graphml')
+roles_fpath = os.path.normpath('temp/MN_pow_roles_r256.json')
 
 this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
@@ -324,28 +324,51 @@ total_sub_cnt = final_G.number_of_nodes()
 dist_subs_cnt = int(math.floor(total_sub_cnt * dist_subs_fract))
 transm_sub_cnt = total_sub_cnt - dist_subs_cnt
 
+# counters for debug
+multi_sub_ids_cnt = 0
+marked_as_dist_cnt = 0
+marked_as_trans_cnt = 0
+below_thresh_cnt = 0
+trans_below_thresh_cnt = 0
+
 candidates = list()
-dubious_nodes = list()  # nodes we have no hit on how to classify
+dubious_nodes = list()  # nodes we are not sure how to classify
 for sub_node in final_G.nodes():
     sub_ids = final_G.node[sub_node]['sub_ids']
     if len(sub_ids) > 1:
         dubious_nodes.append(sub_node)
+        multi_sub_ids_cnt += 1
     else:
         sub_id = sub_ids[0]
         sub_attrs = sub_attrs_by_id[sub_id]
+        marked_as_dist = False
+        marked_as_trans = False
+        below_thresh = False
         if sub_attrs['SUB_TYPE'] is not None:
             # substring checks
-            marked_as_dist = 'DIST' in sub_attrs['SUB_TYPE']
-            marked_as_trans = 'TRANS' in sub_attrs['SUB_TYPE']
-        else:
-            marked_as_dist = False
-            marked_as_trans = False
-        below_thresh = any(x <= dist_voltage_thresh for x in final_G.node[sub_node]['voltages'])
+            if 'DIST' in sub_attrs['SUB_TYPE']:
+                marked_as_dist = True
+                marked_as_dist_cnt += 1
+            if 'TRANS' in sub_attrs['SUB_TYPE']:
+                marked_as_trans = True
+                marked_as_trans_cnt += 1
+        if any(x <= dist_voltage_thresh for x in final_G.node[sub_node]['voltages']):
+            below_thresh = True
+            below_thresh_cnt += 1
+        # TODO: maybe put strange combinations in dubious_nodes too
         if marked_as_dist is False and marked_as_trans is False and below_thresh is False:
             dubious_nodes.append(sub_node)
         else:
             candidates.append((marked_as_dist, below_thresh, marked_as_trans, sub_node))
+        if marked_as_trans is True and below_thresh is True:
+            trans_below_thresh_cnt += 1
 
+print('#nodes with multiple sub_ids: {}'.format(multi_sub_ids_cnt))
+print('#nodes with "DIST" in SUB_TYPE: {}'.format(marked_as_dist_cnt))
+print('#nodes with "TRANS" in SUB_TYPE: {}'.format(marked_as_trans_cnt))
+print('#nodes with voltages <= {}: {}'.format(dist_voltage_thresh, below_thresh_cnt))
+print('#nodes with "TRANS" in SUB_TYPE but voltages <= {}: {}'.format(dist_voltage_thresh, trans_below_thresh_cnt))
+print('#nodes with uncertain role: {}'.format(len(dubious_nodes)))
 node_roles = dict()
 
 # the preference for distribution substation is a) marked as such, b) having lines below the distribution voltage

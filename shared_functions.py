@@ -181,7 +181,7 @@ def is_graph_equal(G1, G2, data=False):
     if data is True:
         edges_1 = sorted(G1.edges(data=False))
         for u, v in edges_1:
-            if G1.get_edge_data(u, v) != G2.get_edge_data(u, v):
+            if G1.edge[u][v] != G2.edge[u][v]:
                 return False
 
     return True
@@ -283,8 +283,8 @@ def graph_diff(G1, G2, data=False):
             for u, v in edges_1:
                 # two undirected graphs can have the same edges represented differently, e.g. (1, 2) vs (2, 1),
                 # so we ask the edge data to NetworkX, which handles those differences
-                edge_data_1 = G1.get_edge_data(u, v)
-                edge_data_2 = G2.get_edge_data(u, v)
+                edge_data_1 = G1.edge[u][v]
+                edge_data_2 = G2.edge[u][v]
                 if edge_data_1 != edge_data_2:
                     diff += 'Edge ({}, {}) has different data\n'.format(u, v)
                     diff += 'in G1: {}\n'.format(edge_data_1)
@@ -293,46 +293,114 @@ def graph_diff(G1, G2, data=False):
     return diff
 
 
-def compare_link_pos(G1, G2):
-    if G1.is_directed() != G2.is_directed():
-        return 'Cannot compare directed and undirected graphs'
+# compare the roles of nodes with the same positions in two distinct graphs
+def compare_roles_by_pos(G1, G2):
+    diff = ''
+    roles_by_xy_1 = {}
+    for node_id in G1.nodes():
+        node = G1.node[node_id]
+        xy_key = (node['x'], node['y'])
+        roles_by_xy_1[xy_key] = node['role']
 
-    if G1.is_directed() is False:
-        return 'Comparison between undirected graphs not implemented yet'
+    roles_by_xy_2 = {}
+    for node_id in G2.nodes():
+        node = G2.node[node_id]
+        xy_key = (node['x'], node['y'])
+        roles_by_xy_2[xy_key] = node['role']
+
+    cnt = 0
+    common_pos = set(roles_by_xy_1.keys()) & set(roles_by_xy_2.keys())
+    for xy in common_pos:
+        role_1 = roles_by_xy_1[xy]
+        role_2 = roles_by_xy_2[xy]
+        if role_1 != role_2:
+            diff += 'Nodes in pos {} have different roles, {} vs {}\n'.format(xy, role_1, role_2)
+            cnt += 1
+
+    return diff
+
+
+# compare the links of nodes with the same positions in two distinct graphs
+# if two nodes have the same ids but different positions in the two graphs, or vice versa, if nodes with the same
+# position have different ids, this takes care of the comparison problem
+def compare_links_between_pos(G1, G2, data=False):
+    if G1.is_multigraph() or G2.is_multigraph():
+        raise ValueError('Comparison of links between positions unsupported for multigraphs')
 
     diff = ''
-    edges_0 = G1.edges(data=False)
-    edges_1 = G2.edges(data=False)
+    G1_xy = nx.DiGraph()
+    G1_id_by_xy = {}
+    G2_xy = nx.DiGraph()
+    G2_id_by_xy = {}
 
-    edge_cnt_0 = len(edges_0)
-    edge_cnt_1 = len(edges_1)
-    if edge_cnt_0 != edge_cnt_1:
-        diff += 'Graphs have different edge counts\n'
-        diff += 'G1 edge count: {}\n'.format(edge_cnt_0)
-        diff += 'G2 edge count: {}\n'.format(edge_cnt_1)
+    if G1.is_directed() != G2.is_directed():
+        diff += 'Warning: comparison of directed and undirected graphs\n'
 
-    edge_pos_0 = []
-    for edge in edges_0:
-        src_node = G1.node[edge[0]]
-        dst_node = G1.node[edge[1]]
-        pos_arc = (src_node['x'], src_node['y'], dst_node['x'], dst_node['y'], '{}>{}'.format(edge[0], edge[1]))
-        edge_pos_0.append(pos_arc)
+    if G1.is_directed() is False:
+        G1 = G1.to_directed()
 
-    edge_pos_1 = []
-    for edge in edges_1:
-        src_node = G2.node[edge[0]]
-        dst_node = G2.node[edge[1]]
-        pos_arc = (src_node['x'], src_node['y'], dst_node['x'], dst_node['y'], '{}>{}'.format(edge[0], edge[1]))
-        edge_pos_1.append(pos_arc)
+    if G2.is_directed() is False:
+        G2 = G2.to_directed()
 
-    edge_pos_0 = sorted(edge_pos_0)
-    edge_pos_1 = sorted(edge_pos_1)
+    for node_id in G1.nodes(data=False):
+        xy_node = (G1.node[node_id]['x'], G1.node[node_id]['y'])
+        G1_xy.add_node(xy_node)
+        if xy_node not in G1_id_by_xy:
+            G1_id_by_xy[xy_node] = node_id
+        else:
+            diff += 'Warning: these nodes in G1 share the same position, ' \
+                    '{} and {} at ({})\n'.format(G1_id_by_xy[xy_node], node_id, xy_node)
 
-    for idx in range(0, edge_cnt_0):
-        edge_0 = edge_pos_0[idx]
-        edge_1 = edge_pos_1[idx]
-        if edge_0[0] != edge_1[0] or edge_0[1] != edge_1[1] or edge_0[2] != edge_1[2] or edge_0[3] != edge_1[3]:
-            diff += 'edge_0: {}\nedge_1: {}\n'.format(edge_0, edge_1)
+    for node_id in G2.nodes(data=False):
+        xy_node = (G2.node[node_id]['x'], G2.node[node_id]['y'])
+        G2_xy.add_node(xy_node)
+        if xy_node not in G2_id_by_xy:
+            G2_id_by_xy[xy_node] = node_id
+        else:
+            diff += 'Warning: these nodes in G2 share the same position, ' \
+                    '{} and {} at ({})\n'.format(G2_id_by_xy[xy_node], node_id, xy_node)
+
+    for id_u, id_v in G1.edges():
+        xy_u = (G1.node[id_u]['x'], G1.node[id_u]['y'])
+        xy_v = (G1.node[id_v]['x'], G1.node[id_v]['y'])
+        G1_xy.add_edge(xy_u, xy_v)
+
+    for id_u, id_v in G2.edges():
+        xy_u = (G2.node[id_u]['x'], G2.node[id_u]['y'])
+        xy_v = (G2.node[id_v]['x'], G2.node[id_v]['y'])
+        G2_xy.add_edge(xy_u, xy_v)
+
+    common_xy_links = []
+
+    for xy_u, xy_v in G1_xy.edges():
+        if not G2_xy.has_edge(xy_u, xy_v):
+            id_u = G1_id_by_xy[xy_u]
+            id_v = G1_id_by_xy[xy_v]
+            diff += 'Positions only linked in G1: {} > {}, corresponding to {} > {}\n'.format(xy_u, xy_v, id_u, id_v)
+        elif data is True:
+            xy_link = (xy_u, xy_v)
+            common_xy_links.append(xy_link)
+
+    for xy_u, xy_v in G2_xy.edges():
+        if not G1_xy.has_edge(xy_u, xy_v):
+            id_u = G2_id_by_xy[xy_u]
+            id_v = G2_id_by_xy[xy_v]
+            diff += 'Positions only linked in G2: {} > {}, corresponding to {} > {}\n'.format(xy_u, xy_v, id_u, id_v)
+
+    if data is True:
+        for xy_u, xy_v in common_xy_links:
+            id_u_1 = G1_id_by_xy[xy_u]
+            id_v_1 = G1_id_by_xy[xy_v]
+            edge_data_1 = G1.edge[id_u_1][id_v_1]
+
+            id_u_2 = G2_id_by_xy[xy_u]
+            id_v_2 = G2_id_by_xy[xy_v]
+            edge_data_2 = G2.edge[id_u_2][id_v_2]
+
+            if edge_data_1 != edge_data_2:
+                diff += 'Position link {} > {}, corresponding to G1 edge {} > {} in and to G2 edge {} > {},' \
+                        'has different data, {} vs {}\n'.format(xy_u, xy_v, id_u_1, id_v_1, id_u_2, id_v_2,
+                                                                edge_data_1, edge_data_2)
 
     return diff
 

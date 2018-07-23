@@ -43,7 +43,8 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-base_dir = os.path.normpath('../Simulations/test_mp_/MN')
+base_dir = os.path.normpath('../Simulations/test_mp_nets')
+# base_dir = os.path.normpath('../Simulations/test_mp_/MN')
 # base_dir = os.path.normpath('../Simulations/test_mp/2cc_2ap')
 
 # remember to increase d_0 for bigger networks
@@ -115,6 +116,7 @@ build_b_options = [{
     # 'model': 'barabasi_albert',
     # 'm': 3,
     # 'roles': 'relay_attached_controllers',
+    # 'controller_attachment': 'random',
     # 'controllers': 1,
     # 'relays': 999
     #
@@ -179,38 +181,41 @@ misc_options = [{
     'produce_ab_union': True,
     'ab_union_name': 'UnionAB',
     'calc_node_centrality': True,
-    'calc_misc_centralities': False
+    'calc_misc_centralities': True
 }]
 
 instances_per_type = 1
-seeds = list()
-first_group = True
+first_seed = 0
+
+seeds = range(first_seed, first_seed + instances_per_type)
+print('seeds = {}'.format(seeds))
 
 # my_random = random.Random(254)  # used for n 500 s 10
 # my_random = random.Random(255)  # used for n 500 s 20
 # my_random = random.Random(256)  # used for n 1000 s 20
 # my_random = random.Random(257)  # used for n 2000 s 40
 # my_random = random.Random(258)  # used for n 2000 s 20
-my_random = random.Random(259)  # used for MN nets
+# my_random = random.Random(259)  # used for MN nets
 
 # create directory if it does not exist, clean it if it already exists
+# TODO: this is not asking for confirmation!
 sf.makedirs_clean(base_dir, True)
 
 # outer cycle sets different network structure parameters, mixing build options for the 2 networks
 instance_num = 0
-line_num = 0
+first_group = True
+# TODO: simplify this and take a json without zipping
 for a_opts, b_opts, inter_opts, misc_opts in zip(build_a_options, build_b_options, build_inter_options, misc_options):
 
     # inner cycle creates a number of instances with the same structure
     created_for_type = 0
     while created_for_type < instances_per_type:
+        print('Current seed = {}'.format(seed))
         if first_group is True:
-            seed = my_random.randint(0, sys.maxsize)
-            seeds.append(seed)
-            print('seeds[{}] = {}'.format(len(seeds) - 1, seed))
+            seed = seeds[created_for_type]
         else:
             seed = seeds[instance_num % instances_per_type]
-            print('seeds[{}] = {}'.format(instance_num % instances_per_type, seed))
+        print('Current seed: {}'.format(seed))
         misc_opts['seed'] = seed
         instance_dir = os.path.join(base_dir, 'instance_{}'.format(instance_num))
         conf_fpath = os.path.join(base_dir, 'config_{}.ini'.format(instance_num))
@@ -219,5 +224,4 @@ for a_opts, b_opts, inter_opts, misc_opts in zip(build_a_options, build_b_option
         created_for_type += 1
         instance_num += 1
 
-    line_num += 1
     first_group = False

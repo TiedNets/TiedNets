@@ -56,22 +56,22 @@
         {
           "dataset_num": 0,
           "label": "Inter-betweenness",
-          "style": "g-^"
+          "fmt": "g-^"
         },
         {
           "dataset_num": 1,
           "label": "Inter-Degree",
-          "style": "b-x"
+          "fmt": "b-x"
         },
         {
           "dataset_num": 2,
           "label": "Random",
-          "style": "m-o"
+          "fmt": "m-o"
         },
         {
           "dataset_num": 3,
           "label": "No resilient nodes",
-          "style": "c-o"
+          "fmt": "c-o"
         }
       ]
     }

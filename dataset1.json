@@ -1,7 +1,7 @@
 {
   "datasets": [
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_12/train_1000_n_20_s.tsv",
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12c/merged.tsv",
       "X_col_names": [
         "p_atkd_a",
         "p_tot_atkd_betw_c_i",
@@ -15,7 +15,7 @@
       ]
     },
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_12/test_1000_n_20_s.tsv",
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12b/merged.tsv",
       "X_col_names": [
         "p_atkd_a",
         "p_tot_atkd_betw_c_i",
@@ -32,7 +32,6 @@
   "model_trainings": [
     {
       "dataset_num": 0,
-      "output_dir": "/home/agostino/Documents/Simulations/test_mp_12",
       "model": {
         "name": "ridgecv",
         "kwargs": {"alphas": [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]}
@@ -46,15 +45,27 @@
     },
     {
       "dataset_num": 0,
-      "output_dir": "/home/agostino/Documents/Simulations/test_mp_12",
+      "output_dir": "/home/agostino/Documents/Simulations/test_mp_12c",
       "model": {
         "name": "DecisionTreeRegressor",
-        "kwargs": {"max_depth": 3}
+        "kwargs": {"max_depth": 4, "max_leaf_nodes": 10}
       },
       "steps": [
         {"name": "VarianceThreshold", "kwargs": {}},
         {"name": "StandardScaler", "kwargs": {}},
         {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    },
+    {
+      "dataset_num": 0,
+      "model": {
+        "name": "mlpregressor",
+        "kwargs": {"solver": "lbfgs", "hidden_layer_sizes": [50, 25, 25, 50], "random_state": 12}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "PolynomialFeatures", "kwargs": {"degree": 3}},
+        {"name": "StandardScaler", "kwargs": {}}
       ]
     }
   ],
@@ -66,21 +77,34 @@
       "ax_x_label": "Initial no. of failed power nodes",
       "ax_y_label": "Measured fraction",
       "ax_y_lim": {"bottom": 0, "top": 1.0},
-      "fig_fpath": "/home/agostino/ML/avg_abs_pred_error_tree_vs_poly_3.pdf",
+      "fig_fpath": "/home/agostino/draft2/avg_abs_pred_error_tree_vs_poly_4.pdf",
       "overlays": [
         {
           "dataset_num": 1,
           "model_num": 0,
           "label": "Avg absolute prediction error of polynomial regression",
-          "fmt": "-o",
-          "color": "b"
+          "marker": "^",
+          "color": "b",
+          "linewidth": 1,
+          "capsize": 3
         },
         {
           "dataset_num": 1,
           "model_num": 1,
           "label": "Avg absolute prediction error of regression tree",
-          "fmt": "-^",
-          "color": "g"
+          "marker": "x",
+          "color": "g",
+          "linewidth": 1,
+          "capsize": 3
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 2,
+          "label": "Avg absolute prediction error of neural network",
+          "marker": "v",
+          "color": "orange",
+          "linewidth": 1,
+          "capsize": 3
         }
       ]
     },
@@ -90,24 +114,34 @@
       "ax_x_label": "Initial no. of failed power nodes",
       "ax_y_label": "Average fraction of resulting dead nodes",
       "ax_y_lim": {"bottom": 0, "top": 1.05},
-      "fig_fpath": "/home/agostino/ML/avg_dead_pred_comparison_3.pdf",
+      "fig_fpath": "/home/agostino/draft2/avg_dead_pred_comparison_4.pdf",
       "overlays": [
         {
           "dataset_num": 1,
           "label": "Actual fraction from simulation",
-          "style": "r-o"
+          "marker": "o",
+          "color": "r"
         },
         {
           "dataset_num": 1,
           "model_num": 0,
           "label": "Fraction predicted by polynomial regression",
-          "style": "b-x"
+          "marker": "^",
+          "color": "b"
         },
         {
           "dataset_num": 1,
           "model_num": 1,
           "label": "Fraction predicted by regression tree",
-          "style": "g-^"
+          "marker": "x",
+          "color": "g"
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 2,
+          "label": "Fraction predicted by neural network",
+          "marker": "v",
+          "color": "orange"
         }
       ]
     }

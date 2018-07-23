@@ -13,6 +13,7 @@ from sklearn.feature_selection import RFE
 from sklearn.feature_selection import RFECV
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.feature_selection import SelectFromModel
+from sklearn.model_selection import GridSearchCV
 from sklearn import tree
 from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import accuracy_score
@@ -503,7 +504,26 @@ def train_regr_model(train_X, train_y, X_col_names, model_conf):
             logger.debug('After transform, train_X.shape[1] = {}'.format(train_X.shape[1]))
             transformers.append(selector)
 
+    if 'GridSearchCV' in model_conf:
+        grid_kwargs = model_conf['GridSearchCV']
+        clf = GridSearchCV(clf, **grid_kwargs)
+
     clf.fit(train_X, train_y)
+
+    if 'tree' in model_name:
+        importances = clf.feature_importances_
+        indices = np.argsort(importances)[::-1]
+        logger.info('Feature ranking:')
+        for i, idx in enumerate(indices):
+            logger.info("feature %d, %s (%f)" % (idx, X_col_names[idx], importances[idx]))
+            # if importances[idx] < 0.00001 or i > 20:
+            #     break
+
+    if 'GridSearchCV' in model_conf:
+        logger.info('Best parameters found by grid search = {}'.format(clf.best_params_))
+        logger.info('grid get_params = {}'.format(clf.get_params()))
+        logger.info('Model parameters = {}'.format(clf.best_estimator_.get_params()))
+
     if model_name in ['linearregression', 'ridgecv', 'lassocv', 'elasticnetcv']:
         learned_eq = '{:+.3f}'.format(clf.intercept_)
         coefficients = clf.coef_
@@ -682,6 +702,28 @@ def pick_group_by_col(plain_ds_X, X_col_names, ds_info, info_col_names, config):
     return group_by_col
 
 
+def get_line2d_kwargs(conf):
+    # fmt is not really a kwarg of Line2D, but we will handle it later
+    keys = ['color', 'marker', 'linestyle', 'linewidth', 'markersize', 'label', 'fmt']
+    kwargs = {key: conf[key] for key in keys if key in conf}
+    return kwargs
+
+
+def get_errorbar_kwargs(conf):
+    keys = ['color', 'marker', 'linestyle', 'linewidth', 'markersize', 'label', 'fmt', 'capsize']
+    plot_kwargs = {key: conf[key] for key in keys if key in conf}
+    return plot_kwargs
+
+
+# plt.plot does not support "fmt" as a kwarg, so we use this function to handle it properly
+def plot_xy_by_conf(x, y, conf):
+    if 'fmt' in conf:
+        fmt = conf.pop('fmt')
+        plt.plot(x, y, fmt, **conf)
+    else:
+        plt.plot(x, y, **conf)
+
+
 # Type of plots by name:
 # - features_xy_results_z, 3D plot, represents two features of a dataset, one on X and one on Y, and the corresponding
 # simulation results on Z. Useful to check how any two features affect simulation results.
@@ -794,7 +836,6 @@ def make_plots(config, models):
             ax.grid(linestyle='-', linewidth=0.5)
 
             for overlay in overlays:
-                data_label = overlay['label']
                 dataset_num = overlay['dataset_num']
                 dataset = config['datasets'][dataset_num]
                 X_col_names = dataset['X_col_names']
@@ -828,37 +869,36 @@ def make_plots(config, models):
                 if plot_name == 'cost_by_atk_size_many':
                     group_by_col = pick_group_by_col(plain_ds_X, X_col_names, ds_info, info_col_names, plot_conf)
                     atk_sizes, costs, error_stdevs = calc_cost_group_by(ds_X, ds_y, group_by_col, predictor)
-                    color = overlay['color']
-                    fmt = overlay['fmt']
+                    plt_kwargs = get_errorbar_kwargs(overlay)
                     if x_multiplier != 1 or y_multiplier != 1:
                         ax.errorbar(x_multiplier * atk_sizes, y_multiplier * costs, y_multiplier * error_stdevs,
-                                    fmt=fmt, color=color, linewidth=1, capsize=3, label=data_label)
+                                    **plt_kwargs)
                     else:
-                        ax.errorbar(atk_sizes, costs, error_stdevs, fmt=fmt, color=color, linewidth=1, capsize=3,
-                                    label=data_label)
+                        ax.errorbar(atk_sizes, costs, error_stdevs, **plt_kwargs)
 
                 if plot_name == 'deaths_and_preds_by_atk_size_many':
-                    style = overlay['style']
+                    plt_kwargs = get_line2d_kwargs(overlay)
                     group_by_col = pick_group_by_col(plain_ds_X, X_col_names, ds_info, info_col_names, plot_conf)
 
                     if 'model_num' in overlay:
                         atk_sizes, avg_deaths, avg_preds = \
                             avg_labels_and_preds_group_by(ds_X, ds_y, group_by_col, predictor)
                         if x_multiplier != 1 or y_multiplier != 1:
-                            plt.plot(x_multiplier * atk_sizes, y_multiplier * avg_preds, style, label=data_label)
+                            plot_xy_by_conf(x_multiplier * atk_sizes, y_multiplier * avg_preds, plt_kwargs)
                         else:
-                            plt.plot(atk_sizes, avg_preds, style, label=data_label)
+                            plot_xy_by_conf(atk_sizes, avg_preds, plt_kwargs)
                     else:
                         atk_sizes, avg_deaths, avg_preds = \
                             avg_labels_and_preds_group_by(plain_ds_X, ds_y, group_by_col, predictor)
+                        print('atk_sizes {}\navg_deaths {}'.format(atk_sizes, avg_deaths))
                         if x_multiplier != 1 or y_multiplier != 1:
-                            plt.plot(x_multiplier * atk_sizes, y_multiplier * avg_deaths, style, label=data_label)
+                            plot_xy_by_conf(x_multiplier * atk_sizes, y_multiplier * avg_deaths, plt_kwargs)
                         else:
-                            plt.plot(atk_sizes, avg_deaths, style, label=data_label)
+                            plot_xy_by_conf(atk_sizes, avg_deaths, plt_kwargs)
                             # if avg_deaths.shape[0] == 1:
                             #     plt.axhline(avg_deaths[0], color='red', linestyle='--', label=data_label)
                             # else:
-                            #     plt.plot(atk_sizes, avg_deaths, style, label=data_label)
+                            #     plot_xy_by_conf(atk_sizes, avg_deaths, plt_kwargs)
 
             ax.legend()  # Create the plot legend considering all overlays
 

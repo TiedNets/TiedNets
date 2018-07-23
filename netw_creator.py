@@ -236,14 +236,16 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
         raise ValueError('com_access_pts is not a positive number')
 
     my_random = random.Random(seed)
+    nodes_G1 = sorted(G1.nodes())
+    nodes_G2 = sorted(G2.nodes())
 
     Inter_G = nx.DiGraph()
-    Inter_G.add_nodes_from(G1.nodes())
-    Inter_G.add_nodes_from(G2.nodes())
+    Inter_G.add_nodes_from(nodes_G1)
+    Inter_G.add_nodes_from(nodes_G2)
 
     control_nodes = list()
     relay_nodes = list()
-    for node_b in G2.nodes():
+    for node_b in nodes_G2:
         if G2.node[node_b]['role'] == 'controller':
             control_nodes.append(node_b)
         else:
@@ -251,7 +253,7 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
 
     if power_roles is True:
         distribution_subs = list()
-        for node_a in G1.nodes():
+        for node_a in nodes_G1:
             if G1.node[node_a]['role'] == 'distribution_substation':
                 distribution_subs.append(node_a)
 
@@ -260,8 +262,8 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
 
     if prefer_nearest is True:
         distances = defaultdict(dict)
-        for node_a in G1.nodes():
-            for node_b in G2.nodes():
+        for node_a in nodes_G1:
+            for node_b in nodes_G2:
                 distance = math.hypot(G1.node[node_a]['x'] - G2.node[node_b]['x'],
                                       G1.node[node_a]['y'] - G2.node[node_b]['y'])
                 distances[node_a][node_b] = distance
@@ -271,7 +273,7 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
     done = False
     while tries < max_tries and done is False:
         failed = False
-        unsaturated_a = G1.nodes()  # list of power nodes with less than n control centers supporting them
+        unsaturated_a = list(nodes_G1)  # list of power nodes with less than n control centers supporting them
 
         # every control center of the communication network supports n nodes of the power grid
         for controller in control_nodes:
@@ -315,8 +317,8 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
         if power_roles is True:  # select distribution substations only
             other_nodes = distribution_subs
         else:
-            other_nodes = G1.nodes()
-        for node in G2.nodes():
+            other_nodes = nodes_G1
+        for node in nodes_G2:
             nearest_other = other_nodes[0]  # pick the first element to initialize the search
             min_distance = distances[node][nearest_other]
             for other_node in other_nodes:  # search for the closest node
@@ -328,7 +330,7 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
 
         # every power node needs to access a relay node
         other_nodes = relay_nodes
-        for node in G1.nodes():
+        for node in nodes_G1:
             if com_access_pts == 1:  # if only the nearest needs to be selected (faster code)
                 nearest_other = other_nodes[0]  # pick the first element to initialize the search
                 min_distance = distances[node][nearest_other]
@@ -352,14 +354,14 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
         if power_roles is True:  # select distribution substations only
             other_nodes = distribution_subs
         else:
-            other_nodes = G1.nodes()
-        for node in G2.nodes():
+            other_nodes = nodes_G1
+        for node in nodes_G2:
             chosen_other = my_random.choice(other_nodes)
             Inter_G.add_edge(chosen_other, node)  # a power node provides the service
 
         # every power node needs to access a relay node
         other_nodes = relay_nodes
-        for node in G1.nodes():
+        for node in nodes_G1:
             chosen_other_nodes = my_random.sample(other_nodes, com_access_pts)  # function to pick n nodes at random
             for chosen_other in chosen_other_nodes:
                 Inter_G.add_edge(chosen_other, node)  # a relay provides the service

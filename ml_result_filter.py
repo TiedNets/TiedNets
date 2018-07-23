@@ -134,6 +134,9 @@ def filter_duplicates_on_col(input_fpath, output_fpath, duplicates_col_name):
 
 # TODO: offer an alternative split that does not slice examples first
 
+# my_random = random.Random(130)
+# my_random = random.Random(131)
+# my_random = random.Random(132)
 my_random = random.Random(130)
 
 # input_fpath = '/home/agostino/Documents/Sims/netw_a_0-100/0-100_union/train_union.tsv'
@@ -169,8 +172,14 @@ my_random = random.Random(130)
 # input_folder = '/home/agostino/Documents/Simulations/test_mp_14/'
 # batches = [4, 5, 6, 7]
 
-input_folder = '/home/agostino/Documents/Simulations/test_mp_mn_multi/'
-batches = [0, 1, 2, 3, 4, 5, 6, 7]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_12b/'
+# batches = [6, 7]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_12b/'
+# batches = [6, 7]
+# input_folder = '/home/agostino/Documents/Simulations/test_mp_14b/'
+# batches = [2, 3, 4, 5, 6]
+input_folder = '/home/agostino/Documents/Simulations/test_mp_12c/'
+batches = range(0, 8)
 
 input_file_paths = []
 for batch_num in batches:
@@ -188,7 +197,10 @@ merge_files_with_headers(input_file_paths, merged_fpath)
 #
 in_fpath = merged_fpath
 # in_fpath = extra_cols_fpath
-base_out_fname = 'mn.tsv'
+# base_out_fname = '500_n_10_s.tsv'
+# base_out_fname = '1000_n_20_s.tsv'
+# base_out_fname = '2000_n_40_s.tsv'
+base_out_fname = '1000_n_20_s.tsv'
 train_fpath = os.path.join(input_folder, 'train_' + base_out_fname)
 cv_fpath = os.path.join(input_folder, 'cv_' + base_out_fname)
 test_fpath = os.path.join(input_folder, 'test_' + base_out_fname)
