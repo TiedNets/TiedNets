@@ -16,15 +16,12 @@ lines_by_id = dict()
 point_to_id = dict()
 
 com_lines_fpath = os.path.normpath('temp/datasets/ComLines.geojson')
-parsed_graph_fpath = os.path.normpath('temp/MN_pow.graphml')
 
 this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 
 if not os.path.isabs(com_lines_fpath):
     com_lines_fpath = os.path.abspath(com_lines_fpath)
-if not os.path.isabs(parsed_graph_fpath):
-    parsed_graph_fpath = os.path.abspath(parsed_graph_fpath)
 
 with open(com_lines_fpath) as com_lines_file:
     # elec_lines = json.load(com_lines_file, parse_float=Decimal)

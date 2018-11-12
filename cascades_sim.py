@@ -997,6 +997,9 @@ def run(conf_fpath, floader):
         ml_stats['dead_count_b'] = len(dead_nodes_b)
         ml_stats['dead_count'] = len(dead_nodes_a) + len(dead_nodes_b)
 
+        if config.has_section('safe_nodes_opts'):
+            ml_stats['safe_count'] = len(safe_nodes)
+
         ml_stats_file_existed = os.path.isfile(ml_stats_fpath)
         with open(ml_stats_fpath, 'ab') as ml_stats_file:
 

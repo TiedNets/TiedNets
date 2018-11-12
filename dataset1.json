@@ -1,4 +1,5 @@
 {
+  "comment": "Learning on synthetic networks",
   "datasets": [
     {
       "fpath": "/home/agostino/Documents/Simulations/test_mp_12c/merged.tsv",
@@ -77,34 +78,41 @@
       "ax_x_label": "Initial no. of failed power nodes",
       "ax_y_label": "Measured fraction",
       "ax_y_lim": {"bottom": 0, "top": 1.0},
+      "grid_kwargs": {"linewidth": 0.5},
       "fig_fpath": "/home/agostino/draft2/avg_abs_pred_error_tree_vs_poly_4.pdf",
       "overlays": [
         {
           "dataset_num": 1,
           "model_num": 0,
-          "label": "Avg absolute prediction error of polynomial regression",
-          "marker": "^",
-          "color": "b",
-          "linewidth": 1,
-          "capsize": 3
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of polynomial regression",
+            "marker": "^",
+            "color": "b",
+            "linewidth": 1,
+            "capsize": 3
+          }
         },
         {
           "dataset_num": 1,
           "model_num": 1,
-          "label": "Avg absolute prediction error of regression tree",
-          "marker": "x",
-          "color": "g",
-          "linewidth": 1,
-          "capsize": 3
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of regression tree",
+            "marker": "x",
+            "color": "g",
+            "linewidth": 1,
+            "capsize": 3
+          }
         },
         {
           "dataset_num": 1,
           "model_num": 2,
-          "label": "Avg absolute prediction error of neural network",
-          "marker": "v",
-          "color": "orange",
-          "linewidth": 1,
-          "capsize": 3
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of neural network",
+            "marker": "v",
+            "color": "orange",
+            "linewidth": 1,
+            "capsize": 3
+          }
         }
       ]
     },
@@ -114,34 +122,43 @@
       "ax_x_label": "Initial no. of failed power nodes",
       "ax_y_label": "Average fraction of resulting dead nodes",
       "ax_y_lim": {"bottom": 0, "top": 1.05},
+      "grid_kwargs": {"linewidth": 0.5},
       "fig_fpath": "/home/agostino/draft2/avg_dead_pred_comparison_4.pdf",
       "overlays": [
         {
           "dataset_num": 1,
-          "label": "Actual fraction from simulation",
-          "marker": "o",
-          "color": "r"
+          "line_kwargs": {
+            "label": "Actual fraction from simulation",
+            "marker": "o",
+            "color": "r"
+          }
         },
         {
           "dataset_num": 1,
           "model_num": 0,
-          "label": "Fraction predicted by polynomial regression",
-          "marker": "^",
-          "color": "b"
+          "line_kwargs": {
+            "label": "Fraction predicted by polynomial regression",
+            "marker": "^",
+            "color": "b"
+          }
         },
         {
           "dataset_num": 1,
           "model_num": 1,
-          "label": "Fraction predicted by regression tree",
-          "marker": "x",
-          "color": "g"
+          "line_kwargs": {
+            "label": "Fraction predicted by regression tree",
+            "marker": "x",
+            "color": "g"
+          }
         },
         {
           "dataset_num": 1,
           "model_num": 2,
-          "label": "Fraction predicted by neural network",
-          "marker": "v",
-          "color": "orange"
+          "line_kwargs": {
+            "label": "Fraction predicted by neural network",
+            "marker": "v",
+            "color": "orange"
+          }
         }
       ]
     }

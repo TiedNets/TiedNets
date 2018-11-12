@@ -1,6 +1,4 @@
 import os
-import sys
-import random
 import logging
 import netw_creator as nc
 import shared_functions as sf
@@ -43,9 +41,7 @@ this_dir = os.path.normpath(os.path.dirname(__file__))
 os.chdir(this_dir)
 sf.setup_logging('logging_base_conf.json')
 logger = logging.getLogger(__name__)
-base_dir = os.path.normpath('../Simulations/test_mp_nets')
-# base_dir = os.path.normpath('../Simulations/test_mp_/MN')
-# base_dir = os.path.normpath('../Simulations/test_mp/2cc_2ap')
+base_dir = os.path.normpath('../Simulations/test_mp/MN')
 
 # remember to increase d_0 for bigger networks
 build_a_options = [{
@@ -77,31 +73,31 @@ build_a_options = [{
     # 'transmission_substations': 270,
     # 'distribution_substations': 630
     #
-    'name': 'A',
-    'model': 'rt_nested_smallworld',
-    'nodes': 500,
-    'subnets': 20,
-    'beta': 0.2,
-    'alpha': 0.2,
-    'd_0': 7,
-    'avg_k': 4,
-    'q_rw': 0.5,
-    'roles': 'subnet_gen_transm_distr',
-    'generators': 50,
-    'transmission_substations': 135,
-    'distribution_substations': 315,
-    'layout': 'spring',
-    'controller_attachment': 'random',
-    'controller_placement': 'random'
-    #
     # 'name': 'A',
-    # 'model': 'user_defined_graph',
-    # 'user_graph_fpath': '../Simulations/MN_data/MN_pow.graphml',
-    # 'roles': 'random_gen_transm_distr',
-    # 'preassigned_roles_fpath': '../Simulations/MN_data/MN_pow_roles.json',
-    # 'generators': 0,
-    # 'distribution_substations': 0,
-    # 'transmission_substations': 0
+    # 'model': 'rt_nested_smallworld',
+    # 'nodes': 500,
+    # 'subnets': 20,
+    # 'beta': 0.2,
+    # 'alpha': 0.2,
+    # 'd_0': 7,
+    # 'avg_k': 4,
+    # 'q_rw': 0.5,
+    # 'roles': 'subnet_gen_transm_distr',
+    # 'generators': 50,
+    # 'transmission_substations': 135,
+    # 'distribution_substations': 315,
+    # 'layout': 'spring',
+    # 'controller_attachment': 'random',
+    # 'controller_placement': 'random'
+    #
+    'name': 'A',
+    'model': 'user_defined_graph',
+    'user_graph_fpath': '../Simulations/MN_data_new/MN_pow.graphml',
+    'roles': 'random_gen_transm_distr',
+    'preassigned_roles_fpath': '',  # placeholder value, remember to fill
+    'generators': 0,
+    'distribution_substations': 0,
+    'transmission_substations': 0
 }]
 
 build_b_options = [{
@@ -120,23 +116,23 @@ build_b_options = [{
     # 'controllers': 1,
     # 'relays': 999
     #
-    'name': 'B',
-    'model': 'barabasi_albert',
-    'm': 3,
-    'roles': 'relay_attached_controllers',
-    'controllers': 1,
-    'relays': 499,
-    'layout': 'spring',
-    'controller_attachment': 'random',
-    'controller_placement': 'random'
-    #
     # 'name': 'B',
-    # 'model': 'user_defined_graph',
-    # 'user_graph_fpath': '../Simulations/MN_data/MN_com.graphml',
+    # 'model': 'barabasi_albert',
+    # 'm': 3,
     # 'roles': 'relay_attached_controllers',
     # 'controllers': 1,
-    # 'controller_placement': 'center',
-    # 'controller_attachment': 'prefer_nearest'
+    # 'relays': 499,
+    # 'layout': 'spring',
+    # 'controller_attachment': 'random',
+    # 'controller_placement': 'random'
+    #
+    'name': 'B',
+    'model': 'user_defined_graph',
+    'user_graph_fpath': '../Simulations/MN_data_new/MN_com.graphml',
+    'roles': 'relay_attached_controllers',
+    'controllers': 1,
+    'controller_placement': 'center',
+    'controller_attachment': 'prefer_nearest'
 }]
 
 build_inter_options = [{
@@ -158,23 +154,23 @@ build_inter_options = [{
     # 'produce_max_matching': True,
     # 'max_matching_name': 'InterMM'
     #
-    'name': 'Inter',
-    'dependency_model': 'k-to-n',
-    'k': 1,
-    'n': 500,
-    'com_access_points': 1,
-    'prefer_nearest': False,
-    'produce_max_matching': True,
-    'max_matching_name': 'InterMM'
-    #
     # 'name': 'Inter',
     # 'dependency_model': 'k-to-n',
     # 'k': 1,
-    # 'n': 1091,
+    # 'n': 500,
     # 'com_access_points': 1,
-    # 'prefer_nearest': True,  # geographical attachment
+    # 'prefer_nearest': False,
     # 'produce_max_matching': True,
     # 'max_matching_name': 'InterMM'
+    #
+    'name': 'Inter',
+    'dependency_model': 'k-to-n',
+    'k': 1,
+    'n': 1091,
+    'com_access_points': 1,
+    'prefer_nearest': True,  # geographical attachment
+    'produce_max_matching': True,
+    'max_matching_name': 'InterMM'
 }]
 
 misc_options = [{
@@ -184,18 +180,12 @@ misc_options = [{
     'calc_misc_centralities': True
 }]
 
-instances_per_type = 1
+instances_per_type = 60
 first_seed = 0
 
+# in older versions this list was generated randomly, now it's a simple range
 seeds = range(first_seed, first_seed + instances_per_type)
 print('seeds = {}'.format(seeds))
-
-# my_random = random.Random(254)  # used for n 500 s 10
-# my_random = random.Random(255)  # used for n 500 s 20
-# my_random = random.Random(256)  # used for n 1000 s 20
-# my_random = random.Random(257)  # used for n 2000 s 40
-# my_random = random.Random(258)  # used for n 2000 s 20
-# my_random = random.Random(259)  # used for MN nets
 
 # create directory if it does not exist, clean it if it already exists
 # TODO: this is not asking for confirmation!
@@ -210,7 +200,7 @@ for a_opts, b_opts, inter_opts, misc_opts in zip(build_a_options, build_b_option
     # inner cycle creates a number of instances with the same structure
     created_for_type = 0
     while created_for_type < instances_per_type:
-        print('Current seed = {}'.format(seed))
+        a_opts['preassigned_roles_fpath'] = '../Simulations/MN_data_new/MN_pow_roles_{}.json'.format(instance_num)
         if first_group is True:
             seed = seeds[created_for_type]
         else:

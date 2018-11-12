@@ -163,7 +163,7 @@ for sim_group in range(0, len(base_configs)):
                 run_num_by_inst[instance_num] = 0
 
             # inner cycle ranging over different seeds
-            for seed_pos, seed in enumerate(seeds):
+            for seed in seeds:
                 # pick up the simulation number (n-th time we run a simulation on this instance)
                 run_num = run_num_by_inst[instance_num]
                 misc['instance'] = instance_num  # mark in the configuration file the number of this instance
@@ -181,8 +181,8 @@ for sim_group in range(0, len(base_configs)):
                     group_index = csv.writer(group_index_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
                     group_index.writerow([instance_num, conf_fpath])
 
-                logger.info('Batch {}) Running simulation {} of {}\nsim group {}, value {}, instance {}, seed {}'
-                            .format(batch_no, cur_sim_num, sim_cnt, sim_group, var_value, instance_num, seed))
+                logger.warning('Batch {}) Running simulation {} of {}\nsim group {}, value {}, instance {}, seed {}'
+                               .format(batch_no, cur_sim_num, sim_cnt, sim_group, var_value, instance_num, seed))
                 sim.run(conf_fpath, floader)  # run the simulation
                 run_num_by_inst[instance_num] += 1  # next simulation for this instance will be number + 1
                 cur_sim_num += 1

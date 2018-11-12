@@ -32,7 +32,6 @@
   "model_trainings": [
     {
       "dataset_num": 0,
-      "output_dir": "/home/agostino/Documents/Simulations/test_mp_mn",
       "model": {
         "name": "DecisionTreeRegressor",
         "kwargs": {"max_depth": 6}
@@ -45,7 +44,6 @@
     },
     {
       "dataset_num": 0,
-      "output_dir": "/home/agostino/Documents/Simulations/test_mp_mn",
       "model": {
         "name": "ridgecv",
         "kwargs": {"alphas": [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]}
@@ -86,23 +84,30 @@
       "group_by_col_name": "#atkd_a",
       "ax_x_label": "Number of attacked power nodes",
       "ax_y_label": "Average fraction of resulting dead nodes",
+      "grid_kwargs": {"linewidth": 0.5},
       "overlays": [
         {
           "dataset_num": 1,
-          "label": "Actual fraction from simulation",
-          "fmt": "r-o"
+          "line_kwargs": {
+            "label": "Actual fraction from simulation",
+            "fmt": "r-o"
+          }
         },
         {
           "dataset_num": 1,
           "model_num": 0,
-          "label": "Fraction predicted by regression tree",
-          "fmt": "g-^"
+          "line_kwargs": {
+            "label": "Fraction predicted by regression tree",
+            "fmt": "g-^"
+          }
         },
         {
           "dataset_num": 1,
           "model_num": 1,
-          "label": "Fraction predicted by polynomial regression",
-          "fmt": "b-x"
+          "line_kwargs": {
+            "label": "Fraction predicted by polynomial regression",
+            "fmt": "b-x"
+          }
         }
       ]
     }

@@ -1,4 +1,5 @@
 {
+  "comment": "Generalizability of learning, comparison of prediction performances on different synthetic datasets",
   "datasets": [
     {
       "fpath": "/home/agostino/Documents/Simulations/test_mp_12c/merged.tsv",
@@ -65,30 +66,37 @@
       "group_by_col_name": "#atkd_a",
       "ax_x_label": "Initial fraction of failed power nodes",
       "ax_y_label": "Average resulting fraction of total failed nodes",
+      "grid_kwargs": {"linewidth": 0.5},
       "fig_fpath": "/home/agostino/draft2/actual_atk_outcomes_multi_4.pdf",
       "overlays": [
         {
           "dataset_num": 0,
-          "label": "1000 power nodes in 20 subnets, 1000 telecom nodes",
-          "fmt": "r-o",
-          "linewidth": 1,
-          "capsize": 3,
+          "line_kwargs": {
+            "label": "1000 power nodes in 20 subnets, 1000 telecom nodes",
+            "fmt": "r-o",
+            "linewidth": 1,
+            "capsize": 3
+          },
           "x_multiplier": 0.001
         },
         {
           "dataset_num": 1,
-          "label": "500   power nodes in 10 subnets, 500   telecom nodes",
-          "fmt": "g-^",
-          "linewidth": 1,
-          "capsize": 3,
+          "line_kwargs": {
+            "label": "500   power nodes in 10 subnets, 500   telecom nodes",
+            "fmt": "g-^",
+            "linewidth": 1,
+            "capsize": 3
+          },
           "x_multiplier": 0.002
         },
         {
           "dataset_num": 2,
-          "label": "2000 power nodes in 40 subnets, 2000 telecom nodes",
-          "fmt": "b-x",
-          "linewidth": 1,
-          "capsize": 3,
+          "line_kwargs": {
+            "label": "2000 power nodes in 40 subnets, 2000 telecom nodes",
+            "fmt": "b-x",
+            "linewidth": 1,
+            "capsize": 3
+          },
           "x_multiplier": 0.0005
         }
       ]
@@ -98,27 +106,34 @@
       "group_by_col_name": "#atkd_a",
       "ax_x_label": "Initial fraction of failed power nodes",
       "ax_y_label": "Average predicted fraction of total failed nodes",
+      "grid_kwargs": {"linewidth": 0.5},
       "fig_fpath": "/home/agostino/draft2/predicted_atk_outcomes_multi_4.pdf",
       "overlays": [
         {
           "dataset_num": 0,
           "model_num": 0,
-          "label": "1000 power nodes in 20 subnets, 1000 telecom nodes",
-          "fmt": "r-o",
+          "line_kwargs": {
+            "label": "1000 power nodes in 20 subnets, 1000 telecom nodes",
+            "fmt": "r-o"
+          },
           "x_multiplier": 0.001
         },
         {
           "dataset_num": 1,
           "model_num": 0,
-          "label": "500   power nodes in 10 subnets, 500   telecom nodes",
-          "fmt": "g-^",
+          "line_kwargs": {
+            "label": "500   power nodes in 10 subnets, 500   telecom nodes",
+            "fmt": "g-^"
+          },
           "x_multiplier": 0.002
         },
         {
           "dataset_num": 2,
           "model_num": 0,
-          "label": "2000 power nodes in 40 subnets, 2000 telecom nodes",
-          "fmt": "b-x",
+          "line_kwargs": {
+            "label": "2000 power nodes in 40 subnets, 2000 telecom nodes",
+            "fmt": "b-x"
+          },
           "x_multiplier": 0.0005
         }
       ]

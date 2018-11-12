@@ -1,44 +1,61 @@
 {
   "datasets": [
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_mix_fix/ml_stats_fix_cut_0.tsv",
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_mix_new/ml_stats_0.tsv",
       "X_col_names": [
-        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+        "p_atkd_a"
       ],
       "y_col_name": "p_dead",
       "info_col_names": [
-        "instance", "seed", "#atkd_a", "safe_nodes_count"
-      ]
+        "instance", "seed", "#atkd_a", "safe_count"
+      ],
+      "filter": {
+        "col_name": "instance",
+        "col_values": [4]
+      }
     },
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_mix_fix/ml_stats_fix_cut_1.tsv",
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_mix_new/ml_stats_1.tsv",
       "X_col_names": [
-        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+        "p_atkd_a"
       ],
       "y_col_name": "p_dead",
       "info_col_names": [
-        "instance", "seed", "#atkd_a", "safe_nodes_count"
-      ]
+        "instance", "seed", "#atkd_a", "safe_count"
+      ],
+      "filter": {
+        "col_name": "instance",
+        "col_values": [4]
+      }
     },
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_mix_fix/ml_stats_fix_cut_2.tsv",
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_mix_new/ml_stats_2.tsv",
       "X_col_names": [
-        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+        "p_atkd_a"
       ],
       "y_col_name": "p_dead",
       "info_col_names": [
-        "instance", "seed", "#atkd_a", "safe_nodes_count"
-      ]
+        "instance", "seed", "#atkd_a", "safe_count"
+      ],
+      "filter": {
+        "col_name": "instance",
+        "col_values": [4]
+      }
     },
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mp_mn_mix_fix/ml_stats_fix_6.tsv",
+      "comment": "This is the scenario with no safe nodes, a single point used to position a horizontal line",
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_mix_new/ml_stats_2.tsv",
       "X_col_names": [
-        "p_atkd_a", "p_tot_atkd_betw_c_i",  "p_tot_atkd_ts_betw_c"
+        "p_atkd_a"
       ],
       "y_col_name": "p_dead",
       "info_col_names": [
-        "instance", "seed", "#atkd_a", "safe_nodes_count"
-      ]
+        "instance", "seed", "#atkd_a", "safe_count"
+      ],
+      "filter": {
+        "col_name": "safe_count",
+        "col_values": [0]
+      }
     }
   ],
   "model_trainings": [
@@ -48,30 +65,39 @@
   "plots": [
     {
       "name": "deaths_and_preds_by_atk_size_many",
-      "group_by_col_name": "safe_nodes_count",
+      "group_by_col_name": "safe_count",
       "ax_x_label": "No. of strengthened nodes",
       "ax_y_label": "Average no. of total failed nodes",
-      "fig_fpath": "/home/agostino/ML/safe_nodes_3.pdf",
+      "grid_kwargs": {"linewidth": 0.5},
+      "fig_fpath": "/home/agostino/draft2/safe_nodes_3.pdf",
       "overlays": [
         {
           "dataset_num": 0,
-          "label": "Inter-betweenness",
-          "fmt": "g-^"
+          "line_kwargs": {
+            "label": "Inter-betweenness",
+            "fmt": "g-^"
+          }
         },
         {
           "dataset_num": 1,
-          "label": "Inter-Degree",
-          "fmt": "b-x"
+          "line_kwargs": {
+            "label": "Inter-Degree",
+            "fmt": "b-x"
+          }
         },
         {
           "dataset_num": 2,
-          "label": "Random",
-          "fmt": "m-o"
+          "line_kwargs": {
+            "label": "Random",
+            "fmt": "m-o"
+          }
         },
         {
           "dataset_num": 3,
-          "label": "No resilient nodes",
-          "fmt": "c-o"
+          "line_kwargs": {
+            "label": "No resilient nodes",
+            "fmt": "r--"
+          }
         }
       ]
     }

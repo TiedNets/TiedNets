@@ -20,6 +20,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.externals import joblib
 from matplotlib.mlab import griddata
+from matplotlib.ticker import MultipleLocator
 
 __author__ = 'Agostino Sturaro'
 
@@ -51,20 +52,61 @@ def normal_equation(X, y):
     return np.linalg.pinv(X.T.dot(X)).dot(X.T).dot(y)
 
 
-def setup_2d_axes(xlabel, ylabel, xlim=None, ylim=None, xticks=None, yticks=None):
+def setup_2d_axes(xlabel, ylabel):
     fig, ax = plt.subplots()
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
-    if xlim is not None:
-        ax.set_xlim(xlim)
-    if ylim is not None:
-        ax.set_ylim(ylim)
+    return fig, ax
 
-    if xticks is not None:
-        ax.set_xticks(xticks)
-    if yticks is not None:
-        ax.set_yticks(yticks)
+
+def setup_2d_axes_by_conf(conf):
+    fig, ax = plt.subplots()
+
+    if 'ax_x_label' in conf:
+        ax_x_label = conf['ax_x_label']
+        ax.set_xlabel(ax_x_label)
+    if 'ax_y_label' in conf:
+        ax_y_label = conf['ax_y_label']
+        ax.set_ylabel(ax_y_label)
+
+    if 'ax_x_lim' in conf:
+        ax_x_lim = conf['ax_x_lim']
+        if type(ax_x_lim) is list:
+            ax.set_xlim(*ax_x_lim)
+        elif type(ax_x_lim) is dict:
+            ax.set_xlim(**ax_x_lim)
+        else:
+            raise ValueError('Parameter "ax_x_lim" must be either a list or a dict')
+
+    if 'ax_y_lim' in conf:
+        ax_y_lim = conf['ax_y_lim']
+        if type(ax_y_lim) is list:
+            ax.set_ylim(*ax_y_lim)
+        elif type(ax_y_lim) is dict:
+            ax.set_ylim(**ax_y_lim)
+        else:
+            raise ValueError('Parameter "ax_y_lim" must be either a list or a dict')
+
+    # set the frequency of the ticks on the x axis
+    if 'ax_x_major_locator' in conf:
+        x_maj_loc = MultipleLocator(conf['ax_x_major_locator'])
+        ax.xaxis.set_major_locator(x_maj_loc)
+    if 'ax_x_minor_locator' in conf:
+        x_min_loc = MultipleLocator(conf['ax_x_minor_locator'])
+        ax.xaxis.set_minor_locator(x_min_loc)
+
+    # set the frequency of the ticks on the y axis
+    if 'ax_y_major_locator' in conf:
+        y_maj_loc = MultipleLocator(conf['ax_y_major_locator'])
+        ax.yaxis.set_major_locator(y_maj_loc)
+    if 'ax_y_minor_locator' in conf:
+        y_min_loc = MultipleLocator(conf['ax_y_minor_locator'])
+        ax.yaxis.set_minor_locator(y_min_loc)
+
+    if 'grid_kwargs' in conf:
+        grid_kwargs = conf['grid_kwargs']
+        ax.grid(**grid_kwargs)
 
     return fig, ax
 
@@ -134,7 +176,7 @@ def make_uniform_grid_xyz(x_vec, y_vec, z_vec, res_X, res_Y):
 
 def plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label, scatter=True,
                            project=False, surface=False):
-    if len(ax_x_vec.shape) != 1 or len(ax_y_vec.shape) != 1:
+    if ax_x_vec.ndim != 1 or ax_y_vec.ndim != 1:
         raise ValueError('The parameters "xs" and "ys" must be 1D ndarrays, '
                          'xs.shape={}, ys.shape={}'.format(ax_x_vec.shape, ax_y_vec.shape))
 
@@ -163,7 +205,7 @@ def plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label,
 
 def plot_3d_lots(ax_x_label, ax_y_label, ax_z_label, ax_x_vec, ax_y_vec, ax_z_vec,
                  x_grid, y_grid, z_grid, surface=False, contour=True, scatter=True, project=True):
-    if len(ax_x_vec.shape) != 1 or len(ax_y_vec.shape) != 1:
+    if ax_x_vec.ndim != 1 or ax_y_vec.ndim != 1:
         raise ValueError('The parameters "xs" and "ys" must be 1D ndarrays, '
                          'xs.shape={}, ys.shape={}'.format(ax_x_vec.shape, ax_y_vec.shape))
 
@@ -259,6 +301,8 @@ def load_named_cols(input_fpath, col_names, file_header):
 
 
 def apply_row_filter(X, y, info, X_col_names, y_col_name, info_col_names, filter_conf):
+    if X.ndim != 2:
+        raise ValueError('Parameter "X" must be a 2D array')
     col_name = filter_conf['col_name']
     filter_values = filter_conf['col_values']
 
@@ -303,7 +347,17 @@ def load_dataset(dataset_fpath, X_col_names, y_col_name, info_col_names, filter_
     y = np.loadtxt(dataset_fpath, delimiter='\t', skiprows=1, usecols=[result_col])
     info = load_named_cols(dataset_fpath, info_col_names, header)
 
+    # if X got loaded as a 1D array, turn it into a 2D array
+    if X.ndim == 1:
+        # X has only one feature, make it a single column
+        if len(X_col_names) == 1:
+            X = np.array(X, ndmin=2).T
+        else:
+            # otherwise it has only one example, make it a single row
+            X = np.array(X, ndmin=2)
+
     logger.debug('Loading dataset at {}'.format(dataset_fpath))
+    logger.debug('X.shape: {}'.format(X.shape))
     logger.debug('X (first 2 rows)\n{}'.format(X[range(2), :]))
     logger.debug('y (first 2 rows)\n{}'.format(y[range(2)]))
     logger.debug('info (first 2 rows)\n{}'.format(info[range(2), :]))
@@ -350,6 +404,18 @@ def calc_scores_group_by(data_X, data_y, group_by_col, predictor):
     return unique_vals, accuracies, f1_scores
 
 
+def calc_avg_labels_and_std_group_by(group_by_col, data_y):
+    unique_vals = np.sort(np.unique(group_by_col))
+    avg_labels = np.zeros(unique_vals.size)
+    std_devs = np.zeros(unique_vals.size)
+    for i, val in enumerate(unique_vals):
+        relevant_idx = group_by_col == val
+        relevant_data_y = data_y[relevant_idx]
+        avg_labels[i] = np.mean(relevant_data_y)
+        std_devs[i] = np.std(relevant_data_y, 0, ddof=1)
+    return unique_vals, avg_labels, std_devs
+
+
 # returns three arrays:
 # 1) unique_vals, the unique values found on the group_by_col, from lowest to highest
 #    e.g. the list of attack sizes
@@ -360,7 +426,6 @@ def calc_scores_group_by(data_X, data_y, group_by_col, predictor):
 # The returned arrays should never be sorted separately, because
 # unique_vals[i], avg_labels[i] and avg_preds[i] work together
 def avg_labels_and_preds_group_by(data_X, data_y, group_by_col, predictor):
-    # pick unique values on the column with the number of attacks
     unique_vals = np.sort(np.unique(group_by_col))
     avg_labels = np.zeros(unique_vals.size)
     if predictor is not None:
@@ -380,6 +445,8 @@ def avg_labels_and_preds_group_by(data_X, data_y, group_by_col, predictor):
 # iteratively apply SelectFromModel.transform changing the threshold until we get the desired number of features
 # If you have a test set, just use the returned fitted_sfm to transform it
 def iterate_sfm_transform(fitted_sfm, unfitted_X, max_feature_cnt, max_rounds, base_thresh, thresh_incr):
+    if unfitted_X.ndim != 2:
+        raise ValueError('Parameter "unfitted_X" must be a 2D array')
     temp_train_X = fitted_sfm.transform(unfitted_X)
     sel_feature_cnt = temp_train_X.shape[1]
 
@@ -408,6 +475,9 @@ def iterate_sfm_transform(fitted_sfm, unfitted_X, max_feature_cnt, max_rounds, b
 # or to make predictions on other datasets (e.g. the test set), provided we apply the same transformations first.
 def train_regr_model(train_X, train_y, X_col_names, model_conf):
     global logger
+    if train_X.ndim != 2:
+        raise ValueError('Parameter "train_X" must be a 2D array')
+
     # make a local copy of the objects we received as parameters and might change
     train_X = train_X.copy()  # make a local copy of the array
     X_col_names = list(X_col_names)  # make a local copy of the list
@@ -527,6 +597,7 @@ def train_regr_model(train_X, train_y, X_col_names, model_conf):
     if model_name in ['linearregression', 'ridgecv', 'lassocv', 'elasticnetcv']:
         learned_eq = '{:+.3f}'.format(clf.intercept_)
         coefficients = clf.coef_
+        logger.info('coefficients[0] == 0.0 {}'.format(coefficients[0] == 0.0))  # debug
         for i in range(0, len(coefficients)):
             learned_eq += ' {:+.3f} {}'.format(coefficients[i], X_col_names[i])
         logger.info('Learned equation = {}'.format(learned_eq))
@@ -544,6 +615,8 @@ def train_regr_model(train_X, train_y, X_col_names, model_conf):
 
 def check_prediction_bounds(plain_X, info, X_col_names, info_col_names, predictions, lb, include_lb, ub, include_ub,
                             print_examples=False):
+    if plain_X.ndim != 2:
+        raise ValueError('plain_X must be a 2D array')
     if plain_X.shape[1] != len(X_col_names):
         raise ValueError('plain_X and X_col_names should have the same number of columns')
     if info.shape[1] != len(info_col_names):
@@ -570,6 +643,8 @@ def check_prediction_bounds(plain_X, info, X_col_names, info_col_names, predicti
 
 def interpolate_xy_predict_z_plot_3d(X, y, transformers, predictor, ax_x_label, ax_y_label, ax_z_label, res_x, res_y):
     global logger
+    if X.ndim != 1:
+        raise ValueError('Parameter "X" must be a 2D array')
     if X.shape[1] != 2:
         raise ValueError('This function only works for datasets with exactly 2 features.')
 
@@ -618,39 +693,21 @@ def plot_rnd_scenarios(X, y, info, info_col_names, predictor, xlabel, ylabel, rn
 
 # draw a graph showing the mean error for each #attacks, and the standard deviation of this error
 def plot_cost_by_atk_size(atk_sizes, costs, std_devs):
-    fig, ax = setup_2d_axes('# of attacked power nodes', 'Measured fraction', ylim=(0, 0.5))
+    fig, ax = setup_2d_axes('# of attacked power nodes', 'Measured fraction')
     line_1 = {'x': atk_sizes, 'y': costs, 'style': 'b-o', 'label': 'Avg abs prediction error'}
     line_2 = {'x': atk_sizes, 'y': std_devs, 'style': 'r-o', 'label': 'Standard deviation'}
     plot_2d_lines([line_1, line_2], ax)
 
 
 def plot_deaths_and_preds_by_atk_size(atk_sizes, avg_deaths, avg_preds):
+    fig, ax = setup_2d_axes('# of attacked power nodes', 'Average fraction of dead nodes')
     line_1 = {'x': atk_sizes, 'y': avg_deaths, 'style': 'g-o', 'label': 'Actual'}
     line_2 = {'x': atk_sizes, 'y': avg_preds, 'style': 'b-o', 'label': 'Predicted'}
-    fig, ax = setup_2d_axes('# of attacked power nodes', 'Average fraction of dead nodes')
     plot_2d_lines([line_1, line_2], ax)
 
 
-def plot_actual_and_pred_cnts_by_atk_size(atk_sizes, actual_cnt, pred_cnt):
-    ind = np.arange(len(atk_sizes))  # the x locations for the groups
-    width = 0.25  # the width of the bars
-
-    fig, ax = plt.subplots()
-    rects1 = ax.bar(ind, actual_cnt, width, color='r')
-    rects2 = ax.bar(ind + width, pred_cnt, width, color='b')
-
-    ax.set_xlabel('#attacked nodes')
-    ax.set_ylabel('#simulations')
-    ax.set_xticks(ind + width / 2)
-    ax.set_xticklabels(atk_sizes)
-
-    ax.set_title('Occurrences of massive destruction ordered by attack size')
-    ax.legend((rects1[0], rects2[0]), ('Actual', 'Predicted'), fontsize=10)
-    plt.tight_layout()
-    plt.show()
-
-
 def train_model_on_dataset(config, model_num):
+    global logger
     model_conf = config['model_trainings'][model_num]
     dataset_num = model_conf['dataset_num']
     model_name = model_conf['model']['name'].lower()
@@ -702,19 +759,6 @@ def pick_group_by_col(plain_ds_X, X_col_names, ds_info, info_col_names, config):
     return group_by_col
 
 
-def get_line2d_kwargs(conf):
-    # fmt is not really a kwarg of Line2D, but we will handle it later
-    keys = ['color', 'marker', 'linestyle', 'linewidth', 'markersize', 'label', 'fmt']
-    kwargs = {key: conf[key] for key in keys if key in conf}
-    return kwargs
-
-
-def get_errorbar_kwargs(conf):
-    keys = ['color', 'marker', 'linestyle', 'linewidth', 'markersize', 'label', 'fmt', 'capsize']
-    plot_kwargs = {key: conf[key] for key in keys if key in conf}
-    return plot_kwargs
-
-
 # plt.plot does not support "fmt" as a kwarg, so we use this function to handle it properly
 def plot_xy_by_conf(x, y, conf):
     if 'fmt' in conf:
@@ -746,7 +790,7 @@ def plot_xy_by_conf(x, y, conf):
 # multiple datasets, drawing a different pair of lines for each dataset. Additionally, it can plot only the simulation
 # results for a dataset. Just omit the model_num option for that dataset.
 def make_plots(config, models):
-
+    global logger
     plots = config['plots']
     for plot_conf in plots:
         plot_name = plot_conf['name']
@@ -822,18 +866,7 @@ def make_plots(config, models):
 
         if 'overlays' in plot_conf:
             overlays = plot_conf['overlays']
-
-            ax_x_label = plot_conf['ax_x_label']
-            ax_y_label = plot_conf['ax_y_label']
-            fig, ax = setup_2d_axes(ax_x_label, ax_y_label)
-
-            if 'ax_x_lim' in plot_conf:
-                ax_x_lim = plot_conf['ax_x_lim']
-                ax.set_xlim(**ax_x_lim)
-            if 'ax_y_lim' in plot_conf:
-                ax_y_lim = plot_conf['ax_y_lim']
-                ax.set_ylim(**ax_y_lim)
-            ax.grid(linestyle='-', linewidth=0.5)
+            fig, ax = setup_2d_axes_by_conf(plot_conf)
 
             for overlay in overlays:
                 dataset_num = overlay['dataset_num']
@@ -869,38 +902,53 @@ def make_plots(config, models):
                 if plot_name == 'cost_by_atk_size_many':
                     group_by_col = pick_group_by_col(plain_ds_X, X_col_names, ds_info, info_col_names, plot_conf)
                     atk_sizes, costs, error_stdevs = calc_cost_group_by(ds_X, ds_y, group_by_col, predictor)
-                    plt_kwargs = get_errorbar_kwargs(overlay)
+                    line_kwargs = overlay['line_kwargs']
                     if x_multiplier != 1 or y_multiplier != 1:
                         ax.errorbar(x_multiplier * atk_sizes, y_multiplier * costs, y_multiplier * error_stdevs,
-                                    **plt_kwargs)
+                                    **line_kwargs)
                     else:
-                        ax.errorbar(atk_sizes, costs, error_stdevs, **plt_kwargs)
+                        ax.errorbar(atk_sizes, costs, error_stdevs, **line_kwargs)
+
+                if plot_name == 'deaths_by_atk_size_many':
+                    group_by_col = pick_group_by_col(plain_ds_X, X_col_names, ds_info, info_col_names, plot_conf)
+                    atk_sizes, avg_deaths, error_stdevs = calc_avg_labels_and_std_group_by(group_by_col, ds_y)
+                    line_kwargs = overlay['line_kwargs']
+                    if x_multiplier != 1 or y_multiplier != 1:
+                        ax.errorbar(x_multiplier * atk_sizes, y_multiplier * avg_deaths, y_multiplier * error_stdevs,
+                                    **line_kwargs)
+                    else:
+                        ax.errorbar(atk_sizes, avg_deaths, error_stdevs, **line_kwargs)
 
                 if plot_name == 'deaths_and_preds_by_atk_size_many':
-                    plt_kwargs = get_line2d_kwargs(overlay)
+                    line_kwargs = overlay['line_kwargs']
                     group_by_col = pick_group_by_col(plain_ds_X, X_col_names, ds_info, info_col_names, plot_conf)
 
                     if 'model_num' in overlay:
                         atk_sizes, avg_deaths, avg_preds = \
                             avg_labels_and_preds_group_by(ds_X, ds_y, group_by_col, predictor)
                         if x_multiplier != 1 or y_multiplier != 1:
-                            plot_xy_by_conf(x_multiplier * atk_sizes, y_multiplier * avg_preds, plt_kwargs)
+                            plot_xy_by_conf(x_multiplier * atk_sizes, y_multiplier * avg_preds, line_kwargs)
                         else:
-                            plot_xy_by_conf(atk_sizes, avg_preds, plt_kwargs)
+                            plot_xy_by_conf(atk_sizes, avg_preds, line_kwargs)
                     else:
                         atk_sizes, avg_deaths, avg_preds = \
                             avg_labels_and_preds_group_by(plain_ds_X, ds_y, group_by_col, predictor)
                         print('atk_sizes {}\navg_deaths {}'.format(atk_sizes, avg_deaths))
                         if x_multiplier != 1 or y_multiplier != 1:
-                            plot_xy_by_conf(x_multiplier * atk_sizes, y_multiplier * avg_deaths, plt_kwargs)
+                            plot_xy_by_conf(x_multiplier * atk_sizes, y_multiplier * avg_deaths, line_kwargs)
                         else:
-                            plot_xy_by_conf(atk_sizes, avg_deaths, plt_kwargs)
-                            # if avg_deaths.shape[0] == 1:
-                            #     plt.axhline(avg_deaths[0], color='red', linestyle='--', label=data_label)
-                            # else:
-                            #     plot_xy_by_conf(atk_sizes, avg_deaths, plt_kwargs)
+                            # if there is only one value, use it as a baseline and position an horizontal line
+                            if avg_deaths.shape[0] == 1:
+                                plt.axhline(avg_deaths[0], color='red', linestyle='--', label=line_kwargs['label'])
+                            else:
+                                plot_xy_by_conf(atk_sizes, avg_deaths, line_kwargs)
 
-            ax.legend()  # Create the plot legend considering all overlays
+            if 'legend_kwargs' in plot_conf:
+                handles, labels = ax.get_legend_handles_labels()
+                legend_kwargs = plot_conf['legend_kwargs']
+                ax.legend(handles, labels, **legend_kwargs)
+            else:
+                ax.legend()  # Create the plot legend considering all overlays
 
             if 'fig_fpath' in plot_conf:
                 fig_fpath = os.path.normpath(plot_conf['fig_fpath'])

@@ -1,5 +1,4 @@
 import os
-import shutil
 import networkx as nx
 from collections import defaultdict
 import netw_creator as nc
