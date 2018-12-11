@@ -4,9 +4,12 @@ import json
 import random
 import logging.config
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+import sys
 from matplotlib import cm
+from matplotlib.mlab import griddata
+from matplotlib.ticker import MultipleLocator
+from mpl_toolkits.mplot3d import Axes3D
 from sklearn import preprocessing
 from sklearn import linear_model
 from sklearn.feature_selection import RFE
@@ -19,10 +22,16 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.externals import joblib
-from matplotlib.mlab import griddata
-from matplotlib.ticker import MultipleLocator
+
 
 __author__ = 'Agostino Sturaro'
+
+if sys.version_info[0] < 3:
+    integer_types = (int, long,)
+    string_types = (basestring,)
+else:
+    integer_types = (int,)
+    string_types = (str,)
 
 # global variable
 logger = None
@@ -151,12 +160,13 @@ def plot_scenario_performances(x_values, results, predictions, xlabel, ylabel):
     plt.show()
 
 
-# get two 2d ndarrays, the second dimension of the arrays is like a line-wrap to represent the grid rows
+# x_vec and y_vec are two 1d ndarrays
+# num_samples_x and num_samples_y are the number of points on each axis
 # the first point of the grid is (x_grid[0], y_grid[0])
 # the second one (same row, one step to the right) is (x_grid[1], y_grid[0])
-def make_uniform_grid_xy(x_vec, y_vec, res_X, res_Y):
-    linspace_col_1 = np.linspace(x_vec.min(), x_vec.max(), num=res_X, endpoint=False)
-    linspace_col_2 = np.linspace(y_vec.min(), y_vec.max(), num=res_Y, endpoint=False)
+def make_uniform_grid_xy(x_vec, y_vec, num_samples_x, num_samples_y):
+    linspace_col_1 = np.linspace(x_vec.min(), x_vec.max(), num_samples_x)
+    linspace_col_2 = np.linspace(y_vec.min(), y_vec.max(), num_samples_y)
     x_grid, y_grid = np.meshgrid(linspace_col_1, linspace_col_2)
 
     return x_grid, y_grid
@@ -176,9 +186,10 @@ def make_uniform_grid_xyz(x_vec, y_vec, z_vec, res_X, res_Y):
 
 def plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label, scatter=True,
                            project=False, surface=False):
-    if ax_x_vec.ndim != 1 or ax_y_vec.ndim != 1:
-        raise ValueError('The parameters "xs" and "ys" must be 1D ndarrays, '
-                         'xs.shape={}, ys.shape={}'.format(ax_x_vec.shape, ax_y_vec.shape))
+    if ax_x_vec.ndim != 1 or ax_y_vec.ndim != 1 or ax_z_vec.ndim != 1:
+        raise ValueError('The parameters "ax_x_vec", "ax_y_vec", "ax_z_vec" must be 1D ndarrays, '
+                         'ax_x_vec.shape={}, ax_y_vec.shape={}, ax_z_vec.shape={}'
+                         .format(ax_x_vec.shape, ax_y_vec.shape, ax_z_vec.shape))
 
     min_x, max_x = np.min(ax_x_vec), np.max(ax_x_vec)
     min_y, max_y = np.min(ax_y_vec), np.max(ax_y_vec)
@@ -204,10 +215,11 @@ def plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label,
 
 
 def plot_3d_lots(ax_x_label, ax_y_label, ax_z_label, ax_x_vec, ax_y_vec, ax_z_vec,
-                 x_grid, y_grid, z_grid, surface=False, contour=True, scatter=True, project=True):
-    if ax_x_vec.ndim != 1 or ax_y_vec.ndim != 1:
-        raise ValueError('The parameters "xs" and "ys" must be 1D ndarrays, '
-                         'xs.shape={}, ys.shape={}'.format(ax_x_vec.shape, ax_y_vec.shape))
+                 x_grid, y_grid, z_grid, scatter=True, project=False, surface=False, contour=True):
+    if ax_x_vec.ndim != 1 or ax_y_vec.ndim != 1 or ax_z_vec.ndim != 1:
+        raise ValueError('The parameters "ax_x_vec", "ax_y_vec", "ax_z_vec" must be 1D ndarrays, '
+                         'ax_x_vec.shape={}, ax_y_vec.shape={}, ax_z_vec.shape={}'
+                         .format(ax_x_vec.shape, ax_y_vec.shape, ax_z_vec.shape))
 
     min_x, max_x = np.min(ax_x_vec), np.max(ax_x_vec)
     min_y, max_y = np.min(ax_y_vec), np.max(ax_y_vec)
@@ -641,15 +653,16 @@ def check_prediction_bounds(plain_X, info, X_col_names, info_col_names, predicti
         logger.info('{}\n{}'.format(info_col_names, info[over_mask]))
 
 
-def interpolate_xy_predict_z_plot_3d(X, y, transformers, predictor, ax_x_label, ax_y_label, ax_z_label, res_x, res_y):
+def interpolate_xy_predict_z_plot_3d(X, y, transformers, predictor, ax_x_label, ax_y_label, ax_z_label, scatter=True,
+                                     project=False, surface=False, contour=True, num_samples_x=50, num_samples_y=50):
     global logger
-    if X.ndim != 1:
+    if X.ndim != 2:
         raise ValueError('Parameter "X" must be a 2D array')
     if X.shape[1] != 2:
         raise ValueError('This function only works for datasets with exactly 2 features.')
 
     # create a dataset with uniformly spaced points
-    x_grid, y_grid = make_uniform_grid_xy(X[:, 0], X[:, 1], res_x, res_y)
+    x_grid, y_grid = make_uniform_grid_xy(X[:, 0], X[:, 1], num_samples_x, num_samples_y)
 
     # this is why we need X to only have 2 features, we need to recreate it
     uniform_X = np.c_[x_grid.ravel(), y_grid.ravel()]
@@ -662,7 +675,8 @@ def interpolate_xy_predict_z_plot_3d(X, y, transformers, predictor, ax_x_label, 
     z_grid = np.reshape(predictions, x_grid.shape)
 
     ax_x_vec, ax_y_vec, ax_z_vec = X[:, 0], X[:, 1], y
-    plot_3d_lots(ax_x_label, ax_y_label, ax_z_label, ax_x_vec, ax_y_vec, ax_z_vec, x_grid, y_grid, z_grid)
+    plot_3d_lots(ax_x_label, ax_y_label, ax_z_label, ax_x_vec, ax_y_vec, ax_z_vec, x_grid, y_grid, z_grid, scatter,
+                 project, surface, contour)
 
 
 def plot_rnd_scenarios(X, y, info, info_col_names, predictor, xlabel, ylabel, rnd_inst_cnt, rnd_seed_cnt, seed=None):
@@ -773,8 +787,8 @@ def plot_xy_by_conf(x, y, conf):
 # simulation results on Z. Useful to check how any two features affect simulation results.
 # - features_xy_predictions_z, 3D plot, same as features_xy_results_z, but with predicted results on Z. Useful to check
 # how any two features affect predicted results.
-# - interpolate_xy_predict_z, 3D plot, similar to features_xy_predictions_z, but only works for predictions that need
-# exactly two features. It interpolates points on X and Y to get a smoother drawing.
+# - interpolate_xy_predict_z, 3D plot, similar to features_xy_predictions_z, but only works with datasets having
+# exactly two features. It interpolates points on X and Y and then makes the predictions for Z.
 # - plot_rnd_scenarios, 2D plot, picks a few random scenarios from a dataset, and for each one, it plots two lines,
 # one with the simulation results, and the other with the predicted results. Useful to test different predictors and
 # find out how they perform on individual scenarios, rather than evaluating performances on a whole dataset.
@@ -835,22 +849,28 @@ def make_plots(config, models):
             plot_3d_no_interpolate(ax_x_vec, ax_y_vec, ax_z_vec, ax_x_label, ax_y_label, ax_z_label,
                                    plot_conf['scatter'], plot_conf['project'], plot_conf['surface'])
 
+        # this only works for datasets with exactly 2 features
+        if plot_name == 'interpolate_xy_predict_z':
+            ax_x_label = plot_conf['ax_x_label']
+            ax_y_label = plot_conf['ax_y_label']
+            ax_z_label = plot_conf['ax_z_label']
+            num_samples_x = 50
+            if 'num_samples_x' in plot_conf:
+                num_samples_x = plot_conf['num_samples_x']
+            num_samples_y = 50
+            if 'num_samples_y' in plot_conf:
+                num_samples_y = plot_conf['num_samples_y']
+            interpolate_xy_predict_z_plot_3d(plain_ds_X, ds_y, transformers, predictor,
+                                             ax_x_label, ax_y_label, ax_z_label, plot_conf['scatter'],
+                                             plot_conf['project'], plot_conf['surface'], plot_conf['contour'],
+                                             num_samples_x, num_samples_y)
+
         # make some plots comparing results and predictions on different scenarios
         if plot_name == 'plot_rnd_scenarios':
             ax_x_label = plot_conf['ax_x_label']
             ax_y_label = plot_conf['ax_y_label']
             plot_rnd_scenarios(ds_X, ds_y, ds_info, info_col_names, predictor, ax_x_label, ax_y_label,
                                plot_conf['rnd_inst_cnt'], plot_conf['rnd_seed_cnt'], plot_conf.get('seed'))
-
-        # this only works for datasets with only 2 features
-        if plot_name == 'interpolate_xy_predict_z':
-            ax_x_label = plot_conf['ax_x_label']
-            ax_y_label = plot_conf['ax_y_label']
-            ax_z_label = plot_conf['ax_z_label']
-            res_x = plot_conf['res_x']
-            res_y = plot_conf['res_y']
-            interpolate_xy_predict_z_plot_3d(plain_ds_X, ds_y, transformers, predictor,
-                                             ax_x_label, ax_y_label, ax_z_label, res_x, res_y)
 
         # add plot type that plots datasets together on the same figure
         if plot_name == 'cost_by_atk_size':
@@ -962,7 +982,9 @@ def make_plots(config, models):
 
 
 def run():
-    conf_fpath = './dataset.json'
+    global logger
+    conf_fpath = './dataset1_debug.json'
+    logger.info('Configuration file: {}\n'.format(conf_fpath))
     with open(conf_fpath) as conf_file:
         config = json.load(conf_file)
 
@@ -971,6 +993,7 @@ def run():
     for model_num in range(0, len(model_trainings)):
         model, transformers, transf_X_col_names = train_model_on_dataset(config, model_num)
         models.append({'model': model, 'transformers': transformers})
+        logger.info('')
 
     make_plots(config, models)
 

@@ -1,8 +1,18 @@
 {
-  "comment": "Learning on real MN networks",
+  "comments": [
+    "First the machine learning algorithms are trained on a set of simulations containing a number examples with the ",
+    "details of an attack on imported networks and its effects. Then they are questioned for predictions.",
+    "Plot avg_abs_pred_error_tree_vs_poly_mn_5.pdf shows the average prediction errors made by different machine ",
+    "learning algorithms questioned about the effects of attacks on increasingly larger sets of nodes.",
+    "Plot avg_dead_pred_comparison_mn_5.pdf a line with the average simulation results, and other lines with the ",
+    "average predictions of different machine learning algorithms, an uses the same data as the other plot.",
+    "The equation learned by the polynomial regression algorithm is short enough to be readable and we published it ",
+    "in full.",
+    "Training done on imported networks."
+  ],
   "datasets": [
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mn_centerCC_seeds0to150/train_mn.tsv",
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_centerCC/train_mn.tsv",
       "X_col_names": [
         "p_atkd_a",
         "p_tot_atkd_betw_c_i"
@@ -15,7 +25,7 @@
       ]
     },
     {
-      "fpath": "/home/agostino/Documents/Simulations/test_mn_centerCC_seeds0to150/ml_stats_5.tsv",
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_centerCC/ml_stats_5.tsv",
       "X_col_names": [
         "p_atkd_a",
         "p_tot_atkd_betw_c_i"
@@ -44,7 +54,7 @@
     },
     {
       "dataset_num": 0,
-      "output_dir": "/home/agostino/Documents/Simulations/test_mn_centerCC_seeds0to150",
+      "output_dir": "/home/agostino/Documents/Simulations/test_mn_centerCC",
       "model": {
         "name": "DecisionTreeRegressor",
         "kwargs": {"max_depth": 6}

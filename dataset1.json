@@ -1,5 +1,30 @@
 {
-  "comment": "Learning on synthetic networks",
+  "comments": [
+    "First the machine learning algorithms are trained on a set of simulations containing examples having as features ",
+    "the details of an attack on synthetic networks, and as label its effects.",
+    "The label is the fraction of nodes failed when the failure propagation stops and the cascade is over.",
+    "When the algorithms are trained, they learn a rule that links the details of an attack to its effects.",
+    "Once the training is complete, the algorithms can be questioned. Given the details of an attack, they will ",
+    "predicts its effects.",
+    "Each prediction is compared to the result of the corresponding simulation to calculate the prediction error.",
+    "The set of simulation examples that an algorithm is trained on is the 'training set', while the set of ",
+    "simulation examples that the algorithm is questioned on is the 'test set'. We keep them separate so that, when ",
+    "we test the algorithm, we can verify it learned a proper rule, and not just memorized the results.",
+    "Plot avg_abs_pred_error_tree_vs_poly_4.pdf shows the average prediction errors made by different machine ",
+    "learning algorithms questioned about the effects of attacks on increasingly larger sets of nodes.",
+    "From this plot, we can see the entity of the error that a single prediction has on average.",
+    "Plot avg_dead_pred_comparison_4.pdf shows a line with the average simulation results, and other lines with the ",
+    "average predictions of different machine learning algorithms, an uses the same data as the other plot.",
+    "From this plot, we can see that the average predictions closely match the average results, but this optimistic ",
+    "measure should be taken with a grain of salt.",
+    "Considering both plots, we can see that the average prediction error, calculated for each single prediction is a ",
+    "more valuable measure, since it tells us how correct a single prediction could be for the specific situation we ",
+    "are making the prediction for.",
+    "The representation of the tree learned by the 2nd machine learning algorithm is saved as a .dot file, which can ",
+    "be converted into an image. We polished the .dot file, added a legend node, and used it to create the plot",
+    "synth_learned_tree_3.pdf.",
+    "Training done on synthetic networks."
+  ],
   "datasets": [
     {
       "fpath": "/home/agostino/Documents/Simulations/test_mp_12c/merged.tsv",

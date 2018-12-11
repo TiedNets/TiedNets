@@ -1,0 +1,180 @@
+{
+  "comments": [
+    "This configuration produces some plots to visualize what was learned by the machine learning process."
+  ],
+  "datasets": [
+    {
+      "comment": "Original training set",
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12c/merged.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i",
+        "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "comment": "Original test set, unused in this config",
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12b/merged.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i",
+        "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "comment": "Test set filtered to only contain the examples of a single instance",
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12b/merged.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i",
+        "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ],
+      "filter": {
+        "col_name": "instance",
+        "col_values": [0]
+      }
+    },
+    {
+      "comment": "Training set with only 2 features",
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12c/merged.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "comment": "Test set with only 2 features and filtered to a single instance",
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12b/merged.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ],
+      "filter": {
+        "col_name": "instance",
+        "col_values": [0]
+      }
+    }
+  ],
+  "model_trainings": [
+    {
+      "dataset_num": 0,
+      "model": {
+        "name": "ridgecv",
+        "kwargs": {"alphas": [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "PolynomialFeatures", "kwargs": {"degree": 4}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    },
+    {
+      "dataset_num": 0,
+      "model": {
+        "name": "DecisionTreeRegressor",
+        "kwargs": {"max_depth": 4, "max_leaf_nodes": 10}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    },
+    {
+      "dataset_num": 3,
+      "model": {
+        "name": "DecisionTreeRegressor",
+        "kwargs": {"max_depth": 4, "max_leaf_nodes": 10}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    }
+  ],
+
+  "plots": [
+    {
+      "name": "plot_rnd_scenarios",
+      "dataset_num": 2,
+      "model_num": 1,
+      "ax_x_label": "Number of attacked power nodes",
+      "ax_y_label": "Fraction of resulting dead nodes",
+      "rnd_inst_cnt": 1,
+      "rnd_seed_cnt": 1
+    },
+    {
+      "name": "features_xy_results_z",
+      "dataset_num": 2,
+      "ax_x_feature": "p_atkd_a",
+      "ax_y_feature": "p_tot_atkd_betw_c_i",
+      "ax_x_label": "Initial fraction of failed nodes",
+      "ax_y_label": "Loss of centrality",
+      "ax_z_label": "Actual resulting fraction of dead nodes",
+      "scatter": true,
+      "project": true,
+      "surface": false
+    },
+    {
+      "name": "features_xy_predictions_z",
+      "dataset_num": 2,
+      "model_num": 1,
+      "ax_x_feature": "p_atkd_a",
+      "ax_y_feature": "p_tot_atkd_betw_c_i",
+      "ax_x_label": "Initial fraction of failed nodes",
+      "ax_y_label": "Loss of centrality",
+      "ax_z_label": "Predicted resulting fraction of dead nodes",
+      "scatter": true,
+      "project": false,
+      "surface": true
+    },
+    {
+      "name": "interpolate_xy_predict_z",
+      "dataset_num": 4,
+      "model_num": 2,
+      "ax_x_feature": "p_atkd_a",
+      "ax_y_feature": "p_tot_atkd_betw_c_i",
+      "ax_x_label": "Initial fraction of failed nodes",
+      "ax_y_label": "Loss of centrality",
+      "ax_z_label": "Predicted resulting fraction of dead nodes",
+      "num_samples_x": 50,
+      "num_samples_y": 50,
+      "scatter": true,
+      "project": false,
+      "surface": false,
+      "contour": true
+    }
+  ]
+}

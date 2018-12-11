@@ -1,5 +1,13 @@
 {
-  "comment": "Generalizability of learning, comparison of prediction performances on different synthetic datasets",
+  "comments": [
+    "Plot actual_atk_outcomes_multi_4.pdf shows the average failures caused by attacks of increasing size on ",
+    "synthetic networks of different size but similar topology.",
+    "Plot predicted_atk_outcomes_multi_4.pdf shows the predictions made by a machine learning algorithm trained ",
+    "on networks with a specific size, and questioned about similar networks and networks with different sizes.",
+    "Comparing the plots we can understand if a rule learned for a set of networks is general enough to be applied ",
+    "with confidence to a set of networks with slightly different topologies.",
+    "Training done on synthetic networks."
+  ],
   "datasets": [
     {
       "fpath": "/home/agostino/Documents/Simulations/test_mp_12c/merged.tsv",

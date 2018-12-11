@@ -1,4 +1,14 @@
 {
+  "comments": [
+    "Plot safe_nodes_3.pdf shows the failures caused by 5 node attacks on imported networks in which an increasingly ",
+    "larger set of nodes has been rendered immune to failures. Each line shows a different tactic for choosing the ",
+    "nodes to immunize, according to different priorities. Each tactic ranks the nodes to protect first according to ",
+    "the value of one of their features. The features chosen here to prioritize node protection are considered ",
+    "indicative of node importance because they appear in the equations learned by the machine learning algorithms.",
+    "This means that the machine learning algorithms use those features to predict the final number of failures.",
+    "In other words, this is a verification test that the node features used to choose what nodes to attack to make ",
+    "the most damage can be used to choose what nodes to protect in order to minimize the damage."
+  ],
   "datasets": [
     {
       "fpath": "/home/agostino/Documents/Simulations/test_mn_mix_new/ml_stats_0.tsv",
