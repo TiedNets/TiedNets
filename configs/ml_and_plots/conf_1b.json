@@ -1,0 +1,167 @@
+{
+  "comments": [
+    "This configuration uses the same dataset used to generate the plots avg_abs_pred_error_tree_vs_poly_4.pdf and ",
+    "avg_dead_pred_comparison_4.pdf, but tries to learn a shorter and more readable equation.",
+    "It produces plots to compare the prediction performances of the equation learned considering 3 dataset features ",
+    "and of the shorter equation learned considering only 2 features. The equations have very similar performances, ",
+    "and we reference the shorter one in our article as a readable approximation of the full learned equation.",
+    "Training done on synthetic networks."
+  ],
+  "datasets": [
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12c/merged.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i",
+        "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12b/merged.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i",
+        "p_tot_atkd_ts_betw_c"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12c/merged.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mp_12b/merged.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    }
+  ],
+  "model_trainings": [
+    {
+      "dataset_num": 0,
+      "model": {
+        "name": "ridgecv",
+        "kwargs": {"alphas": [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "PolynomialFeatures", "kwargs": {"degree": 4}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    },
+    {
+      "dataset_num": 2,
+      "model": {
+        "name": "ridgecv",
+        "kwargs": {"alphas": [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "PolynomialFeatures", "kwargs": {"degree": 4}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    }
+  ],
+
+  "plots": [
+    {
+      "name": "cost_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
+      "ax_x_label": "Initial no. of failed power nodes",
+      "ax_y_label": "Measured fraction",
+      "ax_y_lim": {"bottom": 0, "top": 1.0},
+      "grid_kwargs": {"linewidth": 0.5},
+      "fig_fpath": "/home/agostino/draft2/avg_abs_pred_error_full_poly_vs_short.pdf",
+      "overlays": [
+        {
+          "dataset_num": 1,
+          "model_num": 0,
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of polynomial regression original",
+            "marker": "^",
+            "color": "b",
+            "linewidth": 1,
+            "capsize": 3
+          }
+        },
+        {
+          "dataset_num": 3,
+          "model_num": 1,
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of polynomial regression with 2 features",
+            "marker": "x",
+            "color": "g",
+            "linewidth": 1,
+            "capsize": 3
+          }
+        }
+      ]
+    },
+    {
+      "name": "deaths_and_preds_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
+      "ax_x_label": "Initial no. of failed power nodes",
+      "ax_y_label": "Average fraction of resulting dead nodes",
+      "ax_y_lim": {"bottom": 0, "top": 1.05},
+      "grid_kwargs": {"linewidth": 0.5},
+      "fig_fpath": "/home/agostino/draft2/avg_dead_pred_comparison_full_poly_vs_short.pdf",
+      "overlays": [
+        {
+          "dataset_num": 1,
+          "line_kwargs": {
+            "label": "Actual fraction from simulation",
+            "marker": "o",
+            "color": "r"
+          }
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 0,
+          "line_kwargs": {
+            "label": "Fraction predicted by polynomial regression original",
+            "marker": "^",
+            "color": "b"
+          }
+        },
+        {
+          "dataset_num": 3,
+          "model_num": 1,
+          "line_kwargs": {
+            "label": "Fraction predicted by polynomial regression with 2 features",
+            "marker": "x",
+            "color": "g"
+          }
+        }
+      ]
+    }
+  ]
+}

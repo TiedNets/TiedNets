@@ -1,0 +1,118 @@
+{
+  "comments": [
+    "Plot avg_abs_pred_error_p_atkd_a.pdf shows the performances of different machine learning algorithms when ",
+    "provided with a single feature to learn from, the fraction of power nodes initially failed.",
+    "Training done on imported networks."
+  ],
+  "datasets": [
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_centerCC/train_mn.tsv",
+      "X_col_names": [
+        "p_atkd_a"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_centerCC/ml_stats_5.tsv",
+      "X_col_names": [
+        "p_atkd_a"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    }
+  ],
+  "model_trainings": [
+    {
+      "dataset_num": 0,
+      "model": {
+        "name": "ridgecv",
+        "kwargs": {"alphas": [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "PolynomialFeatures", "kwargs": {"degree": 4}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    },
+    {
+      "dataset_num": 0,
+      "model": {
+        "name": "DecisionTreeRegressor",
+        "kwargs": {"max_depth": 5}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    },
+    {
+      "dataset_num": 0,
+      "model": {
+        "name": "mlpregressor",
+        "kwargs": {"solver": "lbfgs", "hidden_layer_sizes": [10, 10, 10], "random_state": 12}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "PolynomialFeatures", "kwargs": {"degree": 3}},
+        {"name": "StandardScaler", "kwargs": {}}
+      ]
+    }
+  ],
+
+  "plots": [
+    {
+      "name": "cost_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
+      "ax_x_label": "Initial no. of failed power nodes",
+      "ax_y_label": "Measured fraction",
+      "ax_y_lim": {"bottom": 0, "top": 1.0},
+      "fig_fpath": "/home/agostino/draft2/avg_abs_pred_error_p_atkd_a.pdf",
+      "overlays": [
+        {
+          "dataset_num": 1,
+          "model_num": 0,
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of polynomial regression",
+            "marker": "^",
+            "color": "b",
+            "linewidth": 1,
+            "capsize": 3
+          }
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 1,
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of regression tree",
+            "marker": "x",
+            "color": "g",
+            "linewidth": 1,
+            "capsize": 3
+          }
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 2,
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of neural network",
+            "marker": "v",
+            "color": "orange",
+            "linewidth": 1,
+            "capsize": 3
+          }
+        }
+      ]
+    }
+  ]
+}

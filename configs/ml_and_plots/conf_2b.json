@@ -1,0 +1,139 @@
+{
+  "comments": [
+    "This configuration uses the same dataset used to generate the plots avg_abs_pred_error_tree_vs_poly_mn_5.pdf and ",
+    "avg_dead_pred_comparison_mn_5.pdf, but tries to learn a shorter and more readable tree.",
+    "Plot avg_abs_pred_error_trees_comp_mn.pdf shows the average prediction errors made by different regression trees.",
+    "The first tree is the full one, used to make the best predictions, while the others are pruned versions of it ",
+    "that are easier to fit into a figure. The 4th tree has the best performance of the pruned trees.",
+    "The representation of each learned tree is saved as a .dot file, which can be converted into an image.",
+    "We polished the 4th .dot file, added a legend node, and used it to create the plot real_learned_tree_3.pdf.",
+    "Training done on imported networks."
+  ],
+  "datasets": [
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_centerCC/train_mn.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_centerCC/ml_stats_5.tsv",
+      "X_col_names": [
+        "p_atkd_a",
+        "p_tot_atkd_betw_c_i"
+      ],
+      "y_col_name": "p_dead",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    }
+  ],
+  "model_trainings": [
+    {
+      "dataset_num": 0,
+      "output_dir": "/home/agostino/Documents/Simulations/test_mn_centerCC",
+      "model": {
+        "name": "DecisionTreeRegressor",
+        "kwargs": {"max_depth": 6}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    },
+    {
+      "dataset_num": 0,
+      "output_dir": "/home/agostino/Documents/Simulations/test_mn_centerCC",
+      "model": {
+        "name": "DecisionTreeRegressor",
+        "kwargs": {"max_depth": 4}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    },
+    {
+      "dataset_num": 0,
+      "output_dir": "/home/agostino/Documents/Simulations/test_mn_centerCC",
+      "model": {
+        "name": "DecisionTreeRegressor",
+        "kwargs": {"max_depth": 4, "max_leaf_nodes": 10}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    },
+    {
+      "dataset_num": 0,
+      "output_dir": "/home/agostino/Documents/Simulations/test_mn_centerCC",
+      "model": {
+        "name": "DecisionTreeRegressor",
+        "kwargs": {"max_depth": 4, "max_leaf_nodes": 12}
+      },
+      "steps": [
+        {"name": "VarianceThreshold", "kwargs": {}},
+        {"name": "StandardScaler", "kwargs": {}},
+        {"name": "rfecv", "kwargs": {"cv": 5, "scoring": "neg_mean_absolute_error"}}
+      ]
+    }
+  ],
+
+  "plots": [
+    {
+      "name": "cost_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
+      "ax_x_label": "Initial no. of failed power nodes",
+      "ax_y_label": "Measured fraction",
+      "ax_y_lim": {"bottom": 0, "top": 1.0},
+      "fig_fpath": "/home/agostino/draft2/avg_abs_pred_error_trees_comp_mn.pdf",
+      "overlays": [
+        {
+          "dataset_num": 1,
+          "model_num": 0,
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of tree depth 6",
+            "fmt": "b-o"
+          }
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 1,
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of tree depth 4",
+            "fmt": "g-^"
+          }
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 2,
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of tree depth 4, max leaf 10",
+            "fmt": "r-v"
+          }
+        },
+        {
+          "dataset_num": 1,
+          "model_num": 3,
+          "line_kwargs": {
+            "label": "Avg absolute prediction error of tree depth 4, max leaf 12",
+            "fmt": "y-*"
+          }
+        }
+      ]
+    }
+  ]
+}

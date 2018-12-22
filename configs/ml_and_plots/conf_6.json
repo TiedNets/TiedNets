@@ -1,0 +1,134 @@
+{
+  "comments": [
+    "Plot MN_rnd_atk_failure_cnt_2a.pdf shows the average failures caused by random attacks on increasingly larger ",
+    "sets of nodes. Each line shows a different model for failure propagation.",
+    "Simulations done on imported networks."
+  ],
+  "datasets": [
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_centerCC/train_mn.tsv",
+      "X_col_names": [
+        "p_atkd_a"
+      ],
+      "y_col_name": "dead_count",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_sc_21/merged_sc_21.tsv",
+      "X_col_names": [
+        "p_atkd_a"
+      ],
+      "y_col_name": "dead_count",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_sc_200/merged_sc_200.tsv",
+      "X_col_names": [
+        "p_atkd_a"
+      ],
+      "y_col_name": "dead_count",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_unif/ml_stats_6.tsv",
+      "X_col_names": [
+        "p_atkd_a"
+      ],
+      "y_col_name": "dead_count",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    }
+  ],
+  "model_trainings": [
+  ],
+
+  "plots": [
+    {
+      "name": "deaths_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
+      "ax_x_label": "Initial no. of failed power nodes",
+      "ax_y_label": "Average fraction of resulting dead nodes",
+      "ax_x_lim": {"left": 0, "right": 310},
+      "ax_y_lim": {"bottom": 0, "top": 2100},
+      "ax_x_major_locator": 50,
+      "ax_x_minor_locator": 10,
+      "ax_y_major_locator": 250,
+      "ax_y_minor_locator": 50,
+      "grid_kwargs": {"linewidth": 0.5},
+      "fig_fpath": "/home/agostino/draft2/MN_rnd_atk_failure_cnt_2a.pdf",
+      "legend_kwargs": {
+        "bbox_to_anchor": [0, 1.01, 1, 0.2],
+        "loc": "lower left",
+        "ncol": 4,
+        "mode": "expand",
+        "borderaxespad": 0.0,
+        "fontsize": 10
+      },
+      "overlays": [
+        {
+          "dataset_num": 0,
+          "line_kwargs": {
+            "label": "HINT",
+            "marker": "*",
+            "color": "c",
+            "linewidth": 1,
+            "capsize": 3,
+            "markeredgecolor": "black",
+            "markeredgewidth": 0.5
+          }
+        },
+        {
+          "dataset_num": 1,
+          "line_kwargs": {
+            "label": "SC Δ=20",
+            "marker": "o",
+            "color": "b",
+            "linewidth": 1,
+            "capsize": 3,
+            "markeredgecolor": "black",
+            "markeredgewidth": 0.5
+          }
+        },
+        {
+          "dataset_num": 2,
+          "line_kwargs": {
+            "label": "SC Δ=200",
+            "marker": "^",
+            "color": "g",
+            "linewidth": 1,
+            "capsize": 3,
+            "markeredgecolor": "black",
+            "markeredgewidth": 0.5
+          }
+        },
+        {
+          "dataset_num": 3,
+          "line_kwargs": {
+            "label": "Uniform",
+            "marker": "s",
+            "color": "r",
+            "linewidth": 1,
+            "capsize": 3,
+            "markeredgecolor": "black",
+            "markeredgewidth": 0.5
+          }
+        }
+      ]
+    }
+  ]
+}

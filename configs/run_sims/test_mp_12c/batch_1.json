@@ -1,0 +1,74 @@
+{
+	"instances_dir": "../Simulations/test_mp/1000_nodes_20_subnets",
+	
+	"first_instance": 0,
+	"last_instance": 50,
+	
+	"indep_var_name": "attacks",
+	
+	"indep_var_vals": {
+		"pick": "specified",
+		"list_of_values": [0, 1, 3, 5, 7, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+	},
+	
+	"seeds": {
+		"pick": "range",
+		"start": 25,
+		"stop": 50
+	},
+	
+	"base_configs": [{
+		"paths": {
+			"netw_dir": null,
+			"netw_b_fname": "B.graphml",
+			"netw_a_fname": "A.graphml",
+			"netw_inter_fname": "Inter.graphml",
+			"netw_union_fname": "UnionAB.graphml",
+			"results_dir": "../Simulations/test_mp/results_1",
+			"run_stats_fname": null,
+			"end_stats_fpath": null,
+			"ml_stats_fpath": "../Simulations/test_mp/ml_stats_1.tsv"
+		},
+
+		"run_opts": {
+			"attacked_netw": "A",
+			"attack_tactic": "random",
+			"calc_centrality_on": "netw_inter",
+			"intra_support_type": "realistic",
+			"inter_support_type": "realistic",
+			"save_death_cause": true,
+			"save_attacked_roles": true,
+			"attacks": null,
+			"seed": null
+		},
+
+		"misc": {
+			"instance": null,
+			"sim_group": null
+		}
+	}],
+	
+	"logging_config": {
+		"version": 1,
+		"disable_existing_loggers": false,
+		"formatters": {
+				"simplest": {
+				"format": "%(message)s"
+			}
+		},
+
+		"handlers": {
+			"console": {
+				"class": "logging.StreamHandler",
+				"level": "WARNING",
+				"formatter": "simplest",
+				"stream": "ext://sys.stdout"
+			}
+		},
+
+		"root": {
+			"level": "WARNING",
+			"handlers": ["console"]
+		}
+	}
+}

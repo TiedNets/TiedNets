@@ -1,0 +1,134 @@
+{
+  "comments": [
+    "Plot MN_deg_atks_failure_cnt_2a.pdf shows the average failures caused by different attack tactics targeting ",
+    "increasingly larger sets of nodes, according to different priorities.",
+    "Simulations done on imported networks."
+  ],
+  "datasets": [
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_target/ml_stats_0.tsv",
+      "X_col_names": [
+        "p_atkd_a"
+      ],
+      "y_col_name": "dead_count",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_target/ml_stats_1.tsv",
+      "X_col_names": [
+        "p_atkd_a"
+      ],
+      "y_col_name": "dead_count",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_target/ml_stats_2.tsv",
+      "X_col_names": [
+        "p_atkd_a"
+      ],
+      "y_col_name": "dead_count",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    },
+    {
+      "fpath": "/home/agostino/Documents/Simulations/test_mn_target/ml_stats_3.tsv",
+      "X_col_names": [
+        "p_atkd_a"
+      ],
+      "y_col_name": "dead_count",
+      "info_col_names": [
+        "instance",
+        "seed",
+        "#atkd_a"
+      ]
+    }
+  ],
+  "model_trainings": [
+  ],
+
+  "plots": [
+    {
+      "name": "deaths_by_atk_size_many",
+      "group_by_col_name": "#atkd_a",
+      "ax_x_label": "Initial no. of failed power nodes",
+      "ax_y_label": "Average fraction of resulting dead nodes",
+      "ax_x_lim": {"left": 0, "right": 170},
+      "ax_y_lim": {"bottom": 0, "top": 2100},
+      "ax_x_major_locator": 50,
+      "ax_x_minor_locator": 10,
+      "ax_y_major_locator": 250,
+      "ax_y_minor_locator": 50,
+      "grid_kwargs": {"linewidth": 0.5},
+      "fig_fpath": "/home/agostino/draft2/MN_deg_atks_failure_cnt_2a.pdf",
+      "legend_kwargs": {
+        "bbox_to_anchor": [0, 1.01, 1, 0.2],
+        "loc": "lower left",
+        "ncol": 2,
+        "mode": "expand",
+        "borderaxespad": 0.0,
+        "fontsize": 10
+      },
+      "overlays": [
+        {
+          "dataset_num": 0,
+          "line_kwargs": {
+            "label": "Inter-degree distribution",
+            "marker": "*",
+            "color": "c",
+            "linewidth": 1,
+            "capsize": 3,
+            "markeredgecolor": "black",
+            "markeredgewidth": 0.5
+          }
+        },
+        {
+          "dataset_num": 1,
+          "line_kwargs": {
+            "label": "Intra-degree distribution",
+            "marker": "s",
+            "color": "r",
+            "linewidth": 1,
+            "capsize": 3,
+            "markeredgecolor": "black",
+            "markeredgewidth": 0.5
+          }
+        },
+        {
+          "dataset_num": 2,
+          "line_kwargs": {
+            "label": "Intra-degree transmission",
+            "marker": "^",
+            "color": "g",
+            "linewidth": 1,
+            "capsize": 3,
+            "markeredgecolor": "black",
+            "markeredgewidth": 0.5
+          }
+        },
+        {
+          "dataset_num": 3,
+          "line_kwargs": {
+            "label": "Intra-degree generator",
+            "marker": "o",
+            "color": "b",
+            "linewidth": 1,
+            "capsize": 3,
+            "markeredgecolor": "black",
+            "markeredgewidth": 0.5
+          }
+        }
+      ]
+    }
+  ]
+}

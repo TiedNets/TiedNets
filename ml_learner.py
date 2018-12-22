@@ -983,7 +983,7 @@ def make_plots(config, models):
 
 def run():
     global logger
-    conf_fpath = './dataset1_debug.json'
+    conf_fpath = './configs/ml_and_plots/conf_1_debug.json'
     logger.info('Configuration file: {}\n'.format(conf_fpath))
     with open(conf_fpath) as conf_file:
         config = json.load(conf_file)
