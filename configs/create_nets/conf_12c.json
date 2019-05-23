@@ -1,0 +1,50 @@
+{
+  "comments": [
+  ],
+  "seeds": {
+    "pick": "range",
+    "start": 0,
+    "stop": 50
+  },
+  "base_dir": "/home/agostino/Documents/Simulations/test_mp_12c/1000_nodes_20_subnets",
+  "build_a": {
+    "name": "A",
+    "model": "rt_nested_smallworld",
+    "nodes": 500,
+    "subnets": 10,
+    "beta": 0.2,
+    "alpha": 0.2,
+    "d_0": 7,
+    "avg_k": 4,
+    "q_rw": 0.5,
+    "roles": "subnet_gen_transm_distr",
+    "generators": 50,
+    "transmission_substations": 135,
+    "distribution_substations": 315
+  },
+  "build_b": {
+    "name": "B",
+    "model": "barabasi_albert",
+    "m": 3,
+    "roles": "relay_attached_controllers",
+    "controller_attachment": "random",
+    "controllers": 1,
+    "relays": 499
+  },
+  "build_inter": {
+    "name": "Inter",
+    "dependency_model": "k-to-n",
+    "k": 1,
+    "n": 500,
+    "com_access_points": 1,
+    "prefer_nearest": false,
+    "produce_max_matching": true,
+    "max_matching_name": "InterMM"
+  },
+  "misc": {
+    "produce_ab_union": true,
+    "ab_union_name": "UnionAB",
+    "calc_node_centrality": true,
+    "calc_misc_centralities": true
+  }
+}

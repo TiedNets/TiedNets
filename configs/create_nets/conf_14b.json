@@ -1,0 +1,55 @@
+{
+  "comments": [
+    "To recreate the exact networks used in the article, you'll need these parameters, but older code. ",
+    "First, reset the code to commit b4ed11826e7b9776e46f7517566624e43fd065a5. ",
+    "Then, use the parameters of this configuration to set the variables in batch_netw_creator.py."
+  ],
+  "seeds": {
+    "pick": "specified",
+    "list_of_values": [
+      7587077609694633042, 4968170189922202747, 3895825821244051287, 85513189004651843, 2355302553884712843,
+      6907279557349411750, 3245648312963945202, 3349569582318054434, 984506105230585035, 8386804851910122526
+    ]
+  },
+  "base_dir": "/home/agostino/Documents/Simulations/test_mp_14b/2000_nodes_40_subnets",
+  "build_a": {
+    "name": "A",
+    "model": "rt_nested_smallworld",
+    "nodes": 2000,
+    "subnets": 40,
+    "beta": 0.2,
+    "alpha": 0.2,
+    "d_0": 14,
+    "avg_k": 4,
+    "q_rw": 0.5,
+    "roles": "subnet_gen_transm_distr",
+    "generators": 200,
+    "transmission_substations": 540,
+    "distribution_substations": 1260
+  },
+  "build_b": {
+    "name": "B",
+    "model": "barabasi_albert",
+    "m": 3,
+    "roles": "relay_attached_controllers",
+    "controller_attachment": "random",
+    "controllers": 1,
+    "relays": 1999
+  },
+  "build_inter": {
+    "name": "Inter",
+    "dependency_model": "k-to-n",
+    "k": 1,
+    "n": 2000,
+    "com_access_points": 1,
+    "prefer_nearest": false,
+    "produce_max_matching": true,
+    "max_matching_name": "InterMM"
+  },
+  "misc": {
+    "produce_ab_union": true,
+    "ab_union_name": "UnionAB",
+    "calc_node_centrality": true,
+    "calc_misc_centralities": true
+  }
+}

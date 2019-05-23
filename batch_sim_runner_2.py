@@ -42,24 +42,6 @@ def write_conf(conf_fpath, paths, run_options, misc, safe_nodes_opts):
         config.write(conf_file)
 
 
-def pick_conf_values(config, opt_name):
-    values = None
-    if config[opt_name]['pick'] == 'range':
-        start = config[opt_name]['start']
-        stop = config[opt_name]['stop']
-        if 'step' in config[opt_name]:
-            step = config[opt_name]['step']
-        else:
-            step = 1
-        values = range(start, stop, step)
-    elif config[opt_name]['pick'] == 'specified':
-        if 'single_value' in config[opt_name]:
-            values = [config[opt_name]['single_value']]
-        elif 'list_of_values' in config[opt_name]:
-            values = config[opt_name]['list_of_values']
-    return values
-
-
 # An "instance" is a set of graphs forming an interdependent network (power, telecom and inter), indicated by a number
 # A "group" of simulations (sim_group) is intended to gather simulations executed using similar parameters. For example,
 # a group can contain simulations on the same instances executed changing only the random seed and the value of another
@@ -118,11 +100,11 @@ indep_var_name = batch_conf['indep_var_name']
 logger.info('indep_var_name = {}'.format(indep_var_name))
 
 # values of the independent value of the simulation
-indep_var_vals = pick_conf_values(batch_conf, 'indep_var_vals')
+indep_var_vals = sf.read_variable_values_in_conf(batch_conf, 'indep_var_vals')
 logger.info('indep_var_vals = {}'.format(indep_var_vals))
 
 # seeds used to execute multiple tests on the same network instance
-seeds = pick_conf_values(batch_conf, 'seeds')
+seeds = sf.read_variable_values_in_conf(batch_conf, 'seeds')
 logger.info('seeds = {}'.format(seeds))
 
 sim_cnt = len(base_configs) * len(indep_var_vals) * (last_instance - first_instance) * len(seeds)

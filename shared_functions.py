@@ -143,7 +143,9 @@ def compare_files_by_line(fpath1, fpath2, silent=True):
     return not found_diff
 
 
-def is_graph_equal(G1, G2, data=False):
+# This function is more suitable for graph comparisons than networkx.is_isomorphic since it compares graph data,
+# and it checks node labels.
+def is_graph_equal(G1, G2, data=False, ignored_node_keys=[]):
     if G1.is_directed() != G2.is_directed():
         return False
 
@@ -163,8 +165,17 @@ def is_graph_equal(G1, G2, data=False):
     nodes_1 = sorted(G1.nodes(data=data))
     nodes_2 = sorted(G2.nodes(data=data))
     for idx in range(0, len(nodes_1)):
+        node_1 = nodes_1[idx]
+        node_2 = nodes_2[idx]
+
+        # discard data from the node data dict, as needed
+        if data is True:
+            for ignored_key in ignored_node_keys:
+                node_1[1].pop(ignored_key, None)
+                node_2[1].pop(ignored_key, None)
+
         # if the nodes have a data dict, this also compares its keys and values
-        if nodes_1[idx] != nodes_2[idx]:
+        if node_1 != node_2:
             return False
 
     if G1.number_of_edges() != G2.number_of_edges():
@@ -405,6 +416,34 @@ def compare_links_between_pos(G1, G2, data=False):
     return diff
 
 
+def read_variable_values_in_conf(config, opt_name):
+    values = None
+    if config[opt_name]['pick'] == 'range':
+        start = config[opt_name]['start']
+        stop = config[opt_name]['stop']
+        if 'step' in config[opt_name]:
+            step = config[opt_name]['step']
+        else:
+            step = 1
+        values = range(start, stop, step)
+    elif config[opt_name]['pick'] == 'specified':
+        if 'single_value' in config[opt_name]:
+            values = [config[opt_name]['single_value']]
+        elif 'list_of_values' in config[opt_name]:
+            values = config[opt_name]['list_of_values']
+    return values
+
+
+def read_variable_paths_in_conf(config, opt_name):
+    paths = []
+    prefix = config[opt_name]['prefix']
+    postfix = config[opt_name]['postfix']
+    variable_part_values = read_variable_values_in_conf(config[opt_name], 'variable_part_values')
+    for variable_part in variable_part_values:
+        paths.append('{}{}{}'.format(prefix, variable_part, postfix))
+    return paths
+
+
 def paint_netw_graphs(A, B, Inter, node_col_by_role, edges_a_col, edges_b_col, x_shift_a=0.0, y_shift_a=0.0,
                       x_shift_b=0.0, y_shift_b=0.0, stretch=1.0, draw_labels=False, draw_nodes_kwargs={},
                       draw_edges_kwargs={}, draw_labels_kwargs={}):
@@ -617,7 +656,7 @@ def mix(colors, markers, desired_cnt=None):
     return couples
 
 
-def makedirs_clean(path, clean_subdirs=False, ask_confirmation=False):
+def ensure_dir_clean(path, clean_subdirs=False, ask_confirmation=False):
     path = os.path.normpath(path)
 
     if not os.path.exists(path):
@@ -645,75 +684,3 @@ def makedirs_clean(path, clean_subdirs=False, ask_confirmation=False):
 def ensure_dir_exists(path):
     if not os.path.exists(path):
         os.makedirs(path)
-
-
-def save_centralities_from_json_to_tsv(input_dir, netw_a_name, netw_b_name, netw_inter_name, out_fpath):
-    input_dir = os.path.normpath(input_dir)
-    centr_a_fpath = os.path.join(input_dir, 'node_centrality_{}.json'.format(netw_a_name))
-    with open(centr_a_fpath, 'r') as json_file:
-        centr_a = json.load(json_file)
-    centr_b_fpath = os.path.join(input_dir, 'node_centrality_{}.json'.format(netw_b_name))
-    with open(centr_b_fpath, 'r') as json_file:
-        centr_b = json.load(json_file)
-    centr_i_fpath = os.path.join(input_dir, 'node_centrality_{}.json'.format(netw_inter_name))
-    with open(centr_i_fpath, 'r') as json_file:
-        centr_i = json.load(json_file)
-
-    centr_misc_fpath = os.path.join(input_dir, 'node_centrality_misc.json')
-    if os.path.isfile(centr_misc_fpath):
-        with open(centr_misc_fpath, 'r') as json_file:
-            centr_misc = json.load(json_file)
-
-    centr_by_node = {}
-    header = [
-        'node',
-        'intra degree', 'inter indegree',
-        'intra betweenness', 'inter betweenness',
-        'intra closeness', 'inter closeness',
-        'inter katz', 'inter closeness']
-
-    if os.path.isfile(centr_misc_fpath):
-        header.extend(['tr sub betweenness', 'relay betweenness'])
-
-    nodes_a = centr_a['degree_centrality'].keys()
-    for node in nodes_a:
-        centr_by_node[node] = {
-            'intra degree': centr_a['degree_centrality'][node],
-            'intra betweenness': centr_a['betweenness_centrality'][node],
-            'intra closeness': centr_a['closeness_centrality'][node]
-        }
-
-    nodes_b = centr_b['degree_centrality'].keys()
-    for node in nodes_b:
-        centr_by_node[node] = {
-            'intra degree': centr_b['degree_centrality'][node],
-            'intra betweenness': centr_b['betweenness_centrality'][node],
-            'intra closeness': centr_b['closeness_centrality'][node]
-        }
-
-    nodes_i = sorted(centr_i['degree_centrality'].keys())
-    for node in nodes_i:
-        node_centr = {
-            'inter indegree': centr_i['indegree_centrality'][node],
-            'inter betweenness': centr_i['betweenness_centrality'][node],
-            'inter closeness': centr_i['closeness_centrality'][node],
-            'inter katz': centr_i['katz_centrality'][node]
-        }
-        centr_by_node[node].update(node_centr)
-
-    if os.path.isfile(centr_misc_fpath):
-        for node in nodes_i:
-            node_centr = {
-                'tr sub betweenness': centr_misc['transm_subst_betweenness_centrality'][node],
-                'relay betweenness': centr_misc['relay_betweenness_centrality'][node]
-            }
-            centr_by_node[node].update(node_centr)
-
-    out_file = open(out_fpath, 'wb')
-    writer = csv.DictWriter(out_file, header, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
-    writer.writeheader()
-
-    for node in nodes_i:
-        row = centr_by_node[node].copy()
-        row.update({'node': node})
-        writer.writerow(row)

@@ -1,0 +1,48 @@
+{
+  "seeds": {
+    "pick": "range",
+    "start": 0,
+    "stop": 60
+  },
+  "base_dir": "/home/agostino/Documents/Simulations/test_mn_centerCC/MN",
+  "build_a": {
+    "name": "A",
+    "model": "user_defined_graph",
+    "user_graph_fpath": "../Simulations/MN_data_new/MN_pow.graphml",
+    "roles": "random_gen_transm_distr",
+    "preassigned_roles_fpath": {
+      "pick": "variable_path",
+      "prefix": "../Simulations_new/temp_mn/MN_pow_roles_",
+      "variable_part_values": {"pick": "range", "start": 0, "stop": 60},
+      "postfix": ".json"
+    },
+    "generators": 0,
+    "distribution_substations": 0,
+    "transmission_substations": 0
+  },
+  "build_b": {
+    "name": "B",
+    "model": "user_defined_graph",
+    "user_graph_fpath": "../Simulations/MN_data_new/MN_com.graphml",
+    "roles": "relay_attached_controllers",
+    "controllers": 1,
+    "controller_placement": "center",
+    "controller_attachment": "prefer_nearest"
+  },
+  "build_inter": {
+    "name": "Inter",
+    "dependency_model": "k-to-n",
+    "k": 1,
+    "n": 1091,
+    "com_access_points": 1,
+    "prefer_nearest": true,
+    "produce_max_matching": true,
+    "max_matching_name": "InterMM"
+  },
+  "misc": {
+    "produce_ab_union": true,
+    "ab_union_name": "UnionAB",
+    "calc_node_centrality": true,
+    "calc_misc_centralities": true
+  }
+}

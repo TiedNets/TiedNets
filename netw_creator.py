@@ -138,8 +138,7 @@ def create_n_to_n_dep(G1, G2, n, max_tries=10, seed=None):
     return Inter_G
 
 
-# TODO: remove the "dependeds_from" stupidity
-def create_m_to_n_dep(G1, G2, m, n, arc_dir='dependeds_from', max_tries=10, seed=None):
+def create_m_to_n_dep(G1, G2, m, n, arc_dir='depends_from', max_tries=10, seed=None):
     if not isinstance(n, integer_types):
         raise TypeError('n is not an integer')
     elif n <= 0:
@@ -208,7 +207,7 @@ def create_m_to_n_dep(G1, G2, m, n, arc_dir='dependeds_from', max_tries=10, seed
         raise RuntimeError("Could not create a {}-to-{} dependency in {} attempts".format(m, n, max_tries))
 
     # if we want (a, b) to mean a depends from b, reverse the arcs
-    if arc_dir == 'dependeds_from':
+    if arc_dir == 'depends_from':
         nx.reverse(Inter_G, copy=False)
 
     return Inter_G
@@ -217,8 +216,7 @@ def create_m_to_n_dep(G1, G2, m, n, arc_dir='dependeds_from', max_tries=10, seed
 # k is the number of control centers supporting each power node
 # n is the number of power nodes that each control center supports
 # com_access_pts is the number of relays a power node uses to access the communication network
-# TODO: add an option com_roles, remove the "dependeds_from" stupidity
-def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False, prefer_nearest=False, com_access_pts=1,
+def create_k_to_n_dep(G1, G2, k, n, arc_dir='depends_from', power_roles=False, prefer_nearest=False, com_access_pts=1,
                       max_tries=100, seed=None):
     if not isinstance(k, integer_types):
         raise TypeError('k is not an integer')
@@ -368,7 +366,7 @@ def create_k_to_n_dep(G1, G2, k, n, arc_dir='dependeds_from', power_roles=False,
 
     # in the k-n description, an arc (a, b) means "a supports b", but this is not very convenient
     # we prefer to represent the same dependencies with reversed arcs, so that (a, b) means "a depends from b"
-    if arc_dir == 'dependeds_from':
+    if arc_dir == 'depends_from':
         nx.reverse(Inter_G, copy=False)
 
     return Inter_G
@@ -995,7 +993,7 @@ def save_graph_centralities(G, file_dir):
     file_name = 'node_centrality_{}.json'.format(G.graph['name'])
     file_path = os.path.join(file_dir, file_name)
     with open(file_path, 'wb') as centr_file:
-        json.dump(centrality_info, centr_file)
+        json.dump(centrality_info, centr_file, indent=2, sort_keys=True)
 
 
 # count the number of node-disjoint paths between two nodes
@@ -1020,10 +1018,11 @@ def count_node_disjoint_paths(G, source, target):
         return paths_cnt
 
 
+# We define the relay betweenness centrality of a relay as the fraction of times it appears in the shortest paths
+# starting from a distribution substation and ending in one of the controllers that substation depends on.
+# Works best for relay attached controllers situation.
 def calc_relay_betweenness(A, B, I):
-    # definition of betweenness centrality, but with source a distribution substation and dest its control center(s)
-    # works best for relay attached controllers situation
-
+    global logger
     relays = []
     controllers = []
     for node_b in B.nodes():
@@ -1037,7 +1036,7 @@ def calc_relay_betweenness(A, B, I):
     for relay in relays:
         hits_by_relay[relay] = 0
 
-    # how many times a node is dependent on the couple (relay, node)
+    # how many times a node is dependent on the couple (relay, controller)
     relay_controller_dep_cnt = {}
 
     for node_a in A.nodes():
@@ -1078,8 +1077,8 @@ def calc_relay_betweenness(A, B, I):
                     if B.node[node]['role'] == 'relay':
                         hits_by_relay[node] += dep_cnt
 
-    print('hits_by_relay {}'.format(hits_by_relay))
-    print('shortest_path_cnt {}'.format(shortest_path_cnt))
+    logger.debug('hits_by_relay {}'.format(hits_by_relay))
+    logger.debug('shortest_path_cnt {}'.format(shortest_path_cnt))
     betw_by_relay = {}
     for relay in relays:
         betw_by_relay[relay] = sf.percent_of_part(hits_by_relay[relay], shortest_path_cnt)
@@ -1096,9 +1095,10 @@ def calc_relay_betweenness(A, B, I):
     return betw_by_node
 
 
+# We define the transmission substation betweenness centrality of a transmission substation as the fraction of times
+# it appears in the shortest paths starting from a communication node and ending in a generator.
 def calc_transm_subst_betweenness(A, B, I):
-    # definition of betweenness centrality, but with source a communication node and dest a generator
-
+    global logger
     distr_subs = []
     transm_subs = []
     generators = []
@@ -1146,8 +1146,8 @@ def calc_transm_subst_betweenness(A, B, I):
                     if A.node[node]['role'] == 'transmission_substation':
                         hits_by_transm_sub[node] += dep_cnt
 
-    print('hits_by_transm_sub {}'.format(hits_by_transm_sub))
-    print('shortest_path_cnt {}'.format(shortest_path_cnt))
+    logger.debug('hits_by_transm_sub {}'.format(hits_by_transm_sub))
+    logger.debug('shortest_path_cnt {}'.format(shortest_path_cnt))
     betw_by_transm_sub = {}
     for transm_sub in transm_subs:
         betw_by_transm_sub[transm_sub] = sf.percent_of_part(hits_by_transm_sub[transm_sub], shortest_path_cnt)
@@ -1202,7 +1202,7 @@ def save_misc_centralities(A, B, I, file_dir):
     file_name = 'node_centrality_misc.json'
     file_path = os.path.join(file_dir, file_name)
     with open(file_path, 'wb') as centr_file:
-        json.dump(centrality_info, centr_file)
+        json.dump(centrality_info, centr_file, indent=2, sort_keys=True)
 
 
 def all_positions_defined(G, excluded=[]):
@@ -1249,7 +1249,7 @@ def run(conf_fpath):
     logger.info('output_dir = {}'.format(output_dir))
 
     # create directory if it does not exist, otherwise ask the user whether to empty it or not
-    sf.makedirs_clean(output_dir, True, True)
+    sf.ensure_dir_clean(output_dir, True, True)
 
     # create the power network
 

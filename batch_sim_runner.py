@@ -13,6 +13,8 @@ except ImportError:
 __author__ = 'Agostino Sturaro'
 
 
+# TODO: THIS FILE IS OBSOLETE, IT WILL BE REMOVED, USE batch_sim_runner_2 instead
+
 def write_conf(conf_fpath, paths, run_options):
     config = ConfigParser()
 
